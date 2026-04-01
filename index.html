@@ -56,7 +56,6 @@
         .balance-control input { width: 80px; padding: 6px 10px; }
         .ban-control { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
         .ban-control input { width: 70px; padding: 6px; }
-        .ban-control select { width: auto; padding: 6px; }
         .topup-btn, .withdraw-btn, .ban-btn, .unban-btn { border: none; padding: 6px 14px; border-radius: 30px; cursor: pointer; font-weight: bold; }
         .topup-btn { background: #2c6e4f; color: white; }
         .withdraw-btn { background: #dc2626; color: white; }
@@ -585,4 +584,11 @@
                                             <td><strong>${user.name}</strong></td>
                                             <td>${user.school}</td>
                                             <td>${user.balance.toFixed(2)} ₽</td>
-                                            <td>${user.isBanned ? '⛔ Забанен' :
+                                            <td>${user.isBanned ? '⛔ Забанен' : '✅ Активен'}${banInfo}</td>
+                                            <td>
+                                                <div class="balance-control">
+                                                    <input type="number" id="amount-${user.id}" placeholder="Сумма" value="100" style="width:80px;">
+                                                    <button class="topup-btn" data-userid="${user.id}" data-op="add">💰 +</button>
+                                                    <button class="withdraw-btn" data-userid="${user.id}" data-op="sub">💸 -</button>
+                                                </div>
+                                            </td
