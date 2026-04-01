@@ -50,7 +50,8 @@
         .admin-stats { background: #f1f5f9; padding: 10px 18px; border-radius: 60px; font-weight: bold; }
         .search-box { display: flex; gap: 10px; align-items: center; background: #f1f5f9; padding: 5px 15px; border-radius: 40px; }
         .search-box input { padding: 8px 15px; border: none; background: transparent; font-size: 0.9rem; width: 200px; outline: none; }
-        .search-box input::placeholder { color: #9ca3af; }
+        .refresh-btn { background: #3b82f6; color: white; border: none; padding: 8px 16px; border-radius: 40px; cursor: pointer; font-weight: bold; }
+        .refresh-btn:hover { background: #2563eb; }
         .users-table { overflow-x: auto; margin-top: 15px; }
         .users-table table { width: 100%; border-collapse: collapse; }
         .users-table th, .users-table td { padding: 12px 8px; text-align: left; border-bottom: 1px solid #e2e8f0; }
@@ -189,15 +190,12 @@
         }
     }
 
-    // Проверка новых пользователей для админа
-    function checkNewUsers() {
+    // Принудительное обновление списка пользователей
+    function forceRefreshUsers() {
         const data = loadData();
-        const isAdmin = currentUser && currentUser.name.toLowerCase() === 'leshr_ak47';
-        if (isAdmin && data.users.length > data.lastSeenUserCount) {
-            const newCount = data.users.length - data.lastSeenUserCount;
-            showToast(`👥 Новый пользователь! Всего зарегистрировано: ${data.users.length}`);
-            localStorage.setItem('lastSeenUserCount', data.users.length);
-        }
+        localStorage.setItem('lastSeenUserCount', data.users.length);
+        showToast(`👥 Список обновлён. Всего пользователей: ${data.users.length}`);
+        renderApp();
     }
 
     function registerUser(name, school, corp, password) {
@@ -296,7 +294,7 @@
         return user.isBanned;
     }
 
-    // ========== ЗАДАНИЯ ==========
+    // ========== ЗАДАНИЯ (сокращённо) ==========
     function createTask(description, price, locationDetails) {
         if(!currentUser) return;
         if(isCurrentUserBanned()) { showToast('Вы заблокированы!', true); return; }
@@ -476,7 +474,6 @@
 
     function renderApp() {
         updateAllBans();
-        checkNewUsers();
 
         const appDiv = document.getElementById('app');
         
@@ -598,12 +595,15 @@
                         <div class="search-box">
                             🔍 <input type="text" id="adminSearch" placeholder="Поиск по имени или школе..." value="${adminSearchTerm}">
                         </div>
-                        <div class="admin-stats">👥 Всего: ${data.users.length} пользователей</div>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="refresh-btn" id="refreshUsersBtn">🔄 Обновить список</button>
+                            <div class="admin-stats">👥 Всего: ${data.users.length} пользователей</div>
+                        </div>
                     </div>
                     <div class="users-table">
-                        <table>
+                         <table>
                             <thead>
-                                <tr><th>Имя</th><th>Школа / Корпус</th><th>Баланс</th><th>Дата рег.</th><th>Статус</th><th>Управление балансом</th><th>Бан</th></tr>
+                                 <tr><th>Имя</th><th>Школа / Корпус</th><th>Баланс</th><th>Дата рег.</th><th>Статус</th><th>Управление балансом</th><th>Бан</th></tr>
                             </thead>
                             <tbody>
                                 ${filteredUsers.map(user => {
@@ -623,8 +623,8 @@
                                             <td>
                                                 <div class="balance-control">
                                                     <input type="number" id="amount-${user.id}" placeholder="Сумма" value="100" style="width:70px;">
-                                                    <button class="topup-btn" data-userid="${user.id}" data-op="add">💰 +</button>
-                                                    <button class="withdraw-btn" data-userid="${user.id}" data-op="sub">💸 -</button>
+                                                    <button class="topup-btn" data-userid="${user.id}">💰 +</button>
+                                                    <button class="withdraw-btn" data-userid="${user.id}">💸 -</button>
                                                 </div>
                                             </td>
                                             <td>
@@ -641,7 +641,7 @@
                                     `;
                                 }).join('')}
                             </tbody>
-                        </table>
+                         </table>
                         ${filteredUsers.length === 0 ? '<div style="text-align:center; padding:20px;">🔍 Ничего не найдено</div>' : ''}
                     </div>
                 </div>
@@ -708,6 +708,7 @@
                 else requestAdminAccess();
             });
             document.getElementById('exitAdminBtn')?.addEventListener('click', exitAdminMode);
+            document.getElementById('refreshUsersBtn')?.addEventListener('click', () => forceRefreshUsers());
             
             const searchInput = document.getElementById('adminSearch');
             if (searchInput) {
@@ -743,7 +744,7 @@
                 btn.addEventListener('click', () => {
                     const userId = btn.dataset.userid;
                     const amount = parseFloat(document.getElementById(`amount-${userId}`)?.value);
-                    if(isNaN(amount) || amount <= 0) { showToast('Введите положительную сумму', true); return; }
+                    if(isNaN(amount) || amount <= 0) { showToast('Введите сумму', true); return; }
                     adminChangeBalance(userId, amount);
                 });
             });
@@ -771,7 +772,6 @@
         }
     }
     
-    // Восстановление сессии при загрузке
     restoreSession();
     renderApp();
 </script>
