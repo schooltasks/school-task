@@ -591,4 +591,145 @@
                                                     <button class="topup-btn" data-userid="${user.id}" data-op="add">💰 +</button>
                                                     <button class="withdraw-btn" data-userid="${user.id}" data-op="sub">💸 -</button>
                                                 </div>
-                                            </td
+                                            </td>
+                                            <td>
+                                                ${!user.isBanned ? `
+                                                    <div class="ban-control">
+                                                        <input type="number" id="days-${user.id}" placeholder="Дни" value="0" style="width:60px;">
+                                                        <input type="number" id="hours-${user.id}" placeholder="Часы" value="0" style="width:60px;">
+                                                        <input type="text" id="reason-${user.id}" placeholder="Причина" style="width:100px;">
+                                                        <button class="ban-btn" data-userid="${user.id}">⛔ Забанить</button>
+                                                    </div>
+                                                ` : `<button class="unban-btn" data-userid="${user.id}">✅ Разбанить</button>`}
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+        
+        const createForm = `
+            <div class="form-card" style="margin:0;">
+                <h3>📝 Создать задание</h3>
+                <div class="warning-message">💰 Стоимость спишется с баланса. Исполнитель получит 95%</div>
+                <div class="form-group"><textarea id="taskDesc" rows="2" placeholder="Что нужно сделать?"></textarea></div>
+                <div class="form-group"><input type="number" id="taskPrice" placeholder="Цена (руб)"></div>
+                <div class="form-group"><input type="text" id="taskLocation" placeholder="Место"></div>
+                <button class="submit-btn" id="createTaskBtn">Создать</button>
+            </div>
+        `;
+        
+        let mainContent = '';
+        if(activeTab === 'allTasks') mainContent = `<h3>📋 Доступные задания</h3>${tasksHtml(openTasks, true, false)}`;
+        else if(activeTab === 'myTasks') mainContent = `<h3>📌 Мои задания</h3>${tasksHtml(myCreatedTasks, false, true)}`;
+        else if(activeTab === 'takenTasks') mainContent = `<h3>⚡ Взятые мной</h3>${tasksHtml(takenByMe, false, false)}`;
+        else if(activeTab === 'create') mainContent = createForm;
+        
+        const adminButtonHtml = isAdmin ? `<button id="adminPanelBtn" style="background:#2c3e50; color:white; border:none; padding:6px 20px; border-radius:60px; margin-left:10px;">🔐 Админка</button>` : '';
+        
+        appDiv.innerHTML = `
+            <div class="header">
+                <div class="logo"><h1>🏫 SchoolTask</h1></div>
+                <div class="user-info">
+                    <div>👋 ${currentUser.name} | ${currentUser.school}</div>
+                    <div class="balance-card">💰 ${currentUser.balance.toFixed(2)} ₽</div>
+                    <button class="logout-btn" id="logoutBtn">Выйти</button>
+                </div>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
+                <span>📢 Пополнение и вывод средств: @leshr_ak47</span>
+                <div>
+                    <button id="topupBtn" style="background:#ffd966; border:none; padding:6px 20px; border-radius:60px; cursor:pointer;">➕ Пополнить</button>
+                    <button id="withdrawBtn" style="background:#f97316; border:none; padding:6px 20px; border-radius:60px; margin-left:10px; cursor:pointer;">💸 Вывод</button>
+                    ${adminButtonHtml}
+                </div>
+            </div>
+            ${adminPanelHtml}
+            <div class="nav-menu">
+                <button class="nav-btn ${activeTab === 'allTasks' ? 'active' : ''}" data-tab="allTasks">📋 Все задания</button>
+                <button class="nav-btn ${activeTab === 'myTasks' ? 'active' : ''}" data-tab="myTasks">📦 Мои</button>
+                <button class="nav-btn ${activeTab === 'takenTasks' ? 'active' : ''}" data-tab="takenTasks">🤝 Взятые</button>
+                <button class="nav-btn ${activeTab === 'create' ? 'active' : ''}" data-tab="create">➕ Создать</button>
+            </div>
+            ${mainContent}
+            <div style="margin-top:20px; text-align:center; font-size:12px; color:#4b5563;">⚠️ Комиссия 5% | Вывод средств через администратора @leshr_ak47</div>
+        `;
+        
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.addEventListener('click', () => { window._activeTab = btn.dataset.tab; renderApp(); });
+        });
+        document.getElementById('logoutBtn')?.addEventListener('click', logout);
+        document.getElementById('topupBtn')?.addEventListener('click', () => showToast('Напишите @leshr_ak47 для пополнения баланса'));
+        document.getElementById('withdrawBtn')?.addEventListener('click', () => showToast('Вывод средств через администратора в Telegram @leshr_ak47'));
+        
+        if(isAdmin) {
+            document.getElementById('adminPanelBtn')?.addEventListener('click', () => {
+                if(adminMode) exitAdminMode();
+                else requestAdminAccess();
+            });
+            document.getElementById('exitAdminBtn')?.addEventListener('click', exitAdminMode);
+        }
+        
+        document.getElementById('createTaskBtn')?.addEventListener('click', () => {
+            const desc = document.getElementById('taskDesc')?.value;
+            const price = document.getElementById('taskPrice')?.value;
+            const loc = document.getElementById('taskLocation')?.value;
+            if(desc && price && loc) createTask(desc, price, loc);
+            else showToast('Заполните все поля', true);
+        });
+        
+        document.querySelectorAll('.take-btn[data-taskid]').forEach(btn => {
+            btn.addEventListener('click', () => takeTask(parseInt(btn.dataset.taskid)));
+        });
+        document.querySelectorAll('.delete-btn[data-taskid]').forEach(btn => {
+            btn.addEventListener('click', () => deleteTask(parseInt(btn.dataset.taskid)));
+        });
+        document.querySelectorAll('.edit-btn[data-taskid]').forEach(btn => {
+            const taskId = parseInt(btn.dataset.taskid);
+            const task = data.tasks.find(t => t.id === taskId);
+            if(task) btn.addEventListener('click', () => showEditModal(task));
+        });
+        
+        if(isAdmin) {
+            document.querySelectorAll('.topup-btn[data-userid]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const userId = btn.dataset.userid;
+                    const amount = parseFloat(document.getElementById(`amount-${userId}`)?.value);
+                    if(isNaN(amount) || amount <= 0) { showToast('Введите положительную сумму', true); return; }
+                    adminChangeBalance(userId, amount);
+                });
+            });
+            document.querySelectorAll('.withdraw-btn[data-userid]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const userId = btn.dataset.userid;
+                    const amount = parseFloat(document.getElementById(`amount-${userId}`)?.value);
+                    if(isNaN(amount) || amount <= 0) { showToast('Введите положительную сумму для списания', true); return; }
+                    adminChangeBalance(userId, -amount);
+                });
+            });
+            document.querySelectorAll('.ban-btn[data-userid]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const userId = btn.dataset.userid;
+                    const days = parseInt(document.getElementById(`days-${userId}`)?.value) || 0;
+                    const hours = parseInt(document.getElementById(`hours-${userId}`)?.value) || 0;
+                    const reason = document.getElementById(`reason-${userId}`)?.value || '';
+                    if (days === 0 && hours === 0) {
+                        if (!confirm('Бан без указания срока (навсегда). Продолжить?')) return;
+                    }
+                    banUserWithDuration(userId, days, hours, reason);
+                });
+            });
+            document.querySelectorAll('.unban-btn[data-userid]').forEach(btn => {
+                btn.addEventListener('click', () => unbanUser(btn.dataset.userid));
+            });
+        }
+    }
+    
+    renderApp();
+</script>
+</body>
+</html>
