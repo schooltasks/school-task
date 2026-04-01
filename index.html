@@ -46,16 +46,20 @@
         @keyframes fadein { from { opacity: 0; transform: translateY(20px);} to { opacity: 1; transform: translateY(0);} }
         .empty-state { text-align: center; padding: 50px; background: white; border-radius: 40px; color: #5a6c7e; }
         .admin-panel { background: white; border-radius: 32px; padding: 24px; margin-bottom: 25px; border: 2px solid #ffd966; }
-        .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
+        .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
         .admin-stats { background: #f1f5f9; padding: 10px 18px; border-radius: 60px; font-weight: bold; }
-        .users-table { overflow-x: auto; }
+        .search-box { display: flex; gap: 10px; align-items: center; background: #f1f5f9; padding: 5px 15px; border-radius: 40px; }
+        .search-box input { padding: 8px 15px; border: none; background: transparent; font-size: 0.9rem; width: 200px; outline: none; }
+        .search-box input::placeholder { color: #9ca3af; }
+        .users-table { overflow-x: auto; margin-top: 15px; }
         .users-table table { width: 100%; border-collapse: collapse; }
         .users-table th, .users-table td { padding: 12px 8px; text-align: left; border-bottom: 1px solid #e2e8f0; }
         .users-table th { background: #f8fafc; }
         .balance-control { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-        .balance-control input { width: 80px; padding: 6px 10px; }
+        .balance-control input { width: 80px; padding: 6px 10px; border-radius: 30px; border: 1px solid #cbd5e1; }
         .ban-control { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
-        .ban-control input { width: 70px; padding: 6px; }
+        .ban-control input { width: 70px; padding: 6px; border-radius: 30px; border: 1px solid #cbd5e1; }
+        .ban-control input:last-child { width: 100px; }
         .topup-btn, .withdraw-btn, .ban-btn, .unban-btn { border: none; padding: 6px 14px; border-radius: 30px; cursor: pointer; font-weight: bold; }
         .topup-btn { background: #2c6e4f; color: white; }
         .withdraw-btn { background: #dc2626; color: white; }
@@ -67,10 +71,16 @@
         .tab-btn.active { background: #1e4a6e; color: white; }
         .banned-row { background: #fee2e2; }
         .ban-info { font-size: 0.7rem; color: #dc2626; margin-top: 4px; }
+        .reg-date { font-size: 0.7rem; color: #6b7280; }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 2000; }
         .modal-content { background: white; border-radius: 32px; padding: 28px; max-width: 500px; width: 90%; }
         .modal-buttons { display: flex; gap: 10px; margin-top: 20px; }
         .modal-buttons button { flex: 1; }
+        @media (max-width: 700px) {
+            .admin-header { flex-direction: column; align-items: stretch; }
+            .search-box { justify-content: center; }
+            .balance-control, .ban-control { flex-direction: column; align-items: stretch; }
+        }
     </style>
 </head>
 <body>
@@ -82,26 +92,29 @@
     let currentUser = null;
     let adminMode = false;
     let authMode = 'login';
+    let adminSearchTerm = '';
 
     // ========== РАБОТА С ДАННЫМИ ==========
     function loadData() {
         if (!localStorage.getItem('schoolTasks_users')) {
             const defaultUsers = [
-                { id: 'u1', name: 'Алексей', school: 'Школа №7', corp: 'Корпус А', balance: 500, password: 'alex123', isBanned: false, banReason: '', banExpires: null },
-                { id: 'u2', name: 'Мария', school: 'Гимназия 1', corp: 'Корпус Б', balance: 320, password: 'maria123', isBanned: false, banReason: '', banExpires: null }
+                { id: 'u1', name: 'Алексей', school: 'Школа №7', corp: 'Корпус А', balance: 500, password: 'alex123', isBanned: false, banReason: '', banExpires: null, registeredAt: new Date().toISOString() },
+                { id: 'u2', name: 'Мария', school: 'Гимназия 1', corp: 'Корпус Б', balance: 320, password: 'maria123', isBanned: false, banReason: '', banExpires: null, registeredAt: new Date().toISOString() }
             ];
             localStorage.setItem('schoolTasks_users', JSON.stringify(defaultUsers));
             localStorage.setItem('schoolTasks_tasks', JSON.stringify([]));
             localStorage.setItem('schoolTasks_nextUserId', 3);
             localStorage.setItem('schoolTasks_nextTaskId', 1);
             localStorage.setItem('adminEarnings', 0);
+            localStorage.setItem('lastSeenUserCount', 2);
         }
         return {
             users: JSON.parse(localStorage.getItem('schoolTasks_users')),
             tasks: JSON.parse(localStorage.getItem('schoolTasks_tasks')),
             nextUserId: parseInt(localStorage.getItem('schoolTasks_nextUserId')),
             nextTaskId: parseInt(localStorage.getItem('schoolTasks_nextTaskId')),
-            adminEarnings: parseFloat(localStorage.getItem('adminEarnings') || 0)
+            adminEarnings: parseFloat(localStorage.getItem('adminEarnings') || 0),
+            lastSeenUserCount: parseInt(localStorage.getItem('lastSeenUserCount') || 0)
         };
     }
 
@@ -120,6 +133,30 @@
         if(isError) toast.style.background = '#b91c1c';
         document.body.appendChild(toast);
         setTimeout(() => toast.remove(), 3000);
+    }
+
+    // Сохранение сессии
+    function saveSession() {
+        if (currentUser) {
+            localStorage.setItem('schoolTasks_session', currentUser.id);
+        } else {
+            localStorage.removeItem('schoolTasks_session');
+        }
+    }
+
+    function restoreSession() {
+        const savedUserId = localStorage.getItem('schoolTasks_session');
+        if (savedUserId) {
+            const data = loadData();
+            const user = data.users.find(u => u.id === savedUserId);
+            if (user && !user.isBanned) {
+                currentUser = user;
+                return true;
+            } else if (user && user.isBanned) {
+                localStorage.removeItem('schoolTasks_session');
+            }
+        }
+        return false;
     }
 
     function checkAndUnbanUser(user) {
@@ -145,9 +182,21 @@
                 let updated = data.users.find(u => u.id === currentUser.id);
                 if (updated && !updated.isBanned && currentUser.isBanned) {
                     currentUser = updated;
+                    saveSession();
                     showToast('✅ Ваш аккаунт разблокирован!');
                 }
             }
+        }
+    }
+
+    // Проверка новых пользователей для админа
+    function checkNewUsers() {
+        const data = loadData();
+        const isAdmin = currentUser && currentUser.name.toLowerCase() === 'leshr_ak47';
+        if (isAdmin && data.users.length > data.lastSeenUserCount) {
+            const newCount = data.users.length - data.lastSeenUserCount;
+            showToast(`👥 Новый пользователь! Всего зарегистрировано: ${data.users.length}`);
+            localStorage.setItem('lastSeenUserCount', data.users.length);
         }
     }
 
@@ -175,12 +224,14 @@
             password: password,
             isBanned: false,
             banReason: '',
-            banExpires: null
+            banExpires: null,
+            registeredAt: new Date().toISOString()
         };
         data.users.push(newUser);
         data.nextUserId++;
         saveData(data.users, data.tasks, data.nextUserId, data.nextTaskId, data.adminEarnings);
         currentUser = newUser;
+        saveSession();
         showToast(`Добро пожаловать, ${newUser.name}!`);
         renderApp();
         return true;
@@ -213,6 +264,7 @@
             return false;
         }
         currentUser = user;
+        saveSession();
         showToast(`С возвращением, ${currentUser.name}!`);
         renderApp();
         return true;
@@ -222,6 +274,7 @@
         currentUser = null;
         adminMode = false;
         authMode = 'login';
+        localStorage.removeItem('schoolTasks_session');
         renderApp();
     }
 
@@ -236,68 +289,42 @@
             user.banExpires = null;
             saveData(data.users, data.tasks, data.nextUserId, data.nextTaskId, data.adminEarnings);
             currentUser = user;
+            saveSession();
             showToast('Ваш аккаунт разблокирован.');
             return false;
         }
         return user.isBanned;
     }
 
+    // ========== ЗАДАНИЯ ==========
     function createTask(description, price, locationDetails) {
         if(!currentUser) return;
-        if(isCurrentUserBanned()) {
-            showToast('Вы заблокированы!', true);
-            return;
-        }
+        if(isCurrentUserBanned()) { showToast('Вы заблокированы!', true); return; }
         let priceNum = parseFloat(price);
-        if(isNaN(priceNum) || priceNum <= 0) {
-            showToast('Цена должна быть положительной', true);
-            return;
-        }
+        if(isNaN(priceNum) || priceNum <= 0) { showToast('Цена должна быть положительной', true); return; }
         let data = loadData();
         let userIdx = data.users.findIndex(u => u.id === currentUser.id);
-        if(data.users[userIdx].balance < priceNum) {
-            showToast(`Недостаточно средств. Баланс: ${data.users[userIdx].balance}₽`, true);
-            return;
-        }
+        if(data.users[userIdx].balance < priceNum) { showToast(`Недостаточно средств. Баланс: ${data.users[userIdx].balance}₽`, true); return; }
         data.users[userIdx].balance -= priceNum;
-        const newTask = {
-            id: data.nextTaskId,
-            creatorId: currentUser.id,
-            description: description.trim(),
-            price: priceNum,
-            location: locationDetails.trim(),
-            status: 'open',
-            takerId: null
-        };
+        const newTask = { id: data.nextTaskId, creatorId: currentUser.id, description: description.trim(), price: priceNum, location: locationDetails.trim(), status: 'open', takerId: null };
         data.tasks.push(newTask);
         data.nextTaskId++;
         saveData(data.users, data.tasks, data.nextUserId, data.nextTaskId, data.adminEarnings);
         currentUser = data.users.find(u => u.id === currentUser.id);
+        saveSession();
         showToast(`Задание создано! -${priceNum}₽`);
         renderApp();
     }
 
     function takeTask(taskId) {
         if(!currentUser) return;
-        if(isCurrentUserBanned()) {
-            showToast('Вы заблокированы!', true);
-            return;
-        }
+        if(isCurrentUserBanned()) { showToast('Вы заблокированы!', true); return; }
         let data = loadData();
         let task = data.tasks.find(t => t.id == taskId);
-        if(!task || task.status !== 'open') {
-            showToast('Задание недоступно', true);
-            return;
-        }
-        if(task.creatorId === currentUser.id) {
-            showToast('Нельзя взять своё задание', true);
-            return;
-        }
+        if(!task || task.status !== 'open') { showToast('Задание недоступно', true); return; }
+        if(task.creatorId === currentUser.id) { showToast('Нельзя взять своё задание', true); return; }
         let creator = data.users.find(u => u.id === task.creatorId);
-        if(creator?.isBanned) {
-            showToast('Автор задания заблокирован', true);
-            return;
-        }
+        if(creator?.isBanned) { showToast('Автор задания заблокирован', true); return; }
         let executor = data.users.find(u => u.id === currentUser.id);
         const totalPrice = task.price;
         const commission = totalPrice * 0.05;
@@ -308,6 +335,7 @@
         task.takerId = currentUser.id;
         saveData(data.users, data.tasks, data.nextUserId, data.nextTaskId, adminEarnings);
         currentUser = data.users.find(u => u.id === currentUser.id);
+        saveSession();
         showToast(`Вы взяли задание! +${executorGain.toFixed(2)}₽ (комиссия 5%)`);
         renderApp();
     }
@@ -318,19 +346,14 @@
         let taskIndex = data.tasks.findIndex(t => t.id == taskId);
         if(taskIndex === -1) return;
         let task = data.tasks[taskIndex];
-        if(task.creatorId !== currentUser.id) {
-            showToast('Можно удалять только свои задания', true);
-            return;
-        }
-        if(task.status !== 'open') {
-            showToast('Нельзя удалить уже взятое задание', true);
-            return;
-        }
+        if(task.creatorId !== currentUser.id) { showToast('Можно удалять только свои задания', true); return; }
+        if(task.status !== 'open') { showToast('Нельзя удалить уже взятое задание', true); return; }
         let creator = data.users.find(u => u.id === task.creatorId);
         if(creator) creator.balance += task.price;
         data.tasks.splice(taskIndex, 1);
         saveData(data.users, data.tasks, data.nextUserId, data.nextTaskId, data.adminEarnings);
         currentUser = data.users.find(u => u.id === currentUser.id);
+        saveSession();
         showToast(`Задание удалено, ${task.price}₽ возвращено`);
         renderApp();
     }
@@ -342,35 +365,27 @@
         if(!task) { showToast('Задание не найдено', true); return false; }
         if(task.creatorId !== currentUser.id) { showToast('Редактировать можно только свои задания', true); return false; }
         if(task.status !== 'open') { showToast('Нельзя редактировать уже взятое задание', true); return false; }
-
         let newPriceNum = parseFloat(newPrice);
         if(isNaN(newPriceNum) || newPriceNum <= 0) { showToast('Цена должна быть положительной', true); return false; }
-
         let creator = data.users.find(u => u.id === task.creatorId);
         let oldPrice = task.price;
         let priceDiff = newPriceNum - oldPrice;
-
         if(priceDiff > 0) {
-            if(creator.balance < priceDiff) {
-                showToast(`Недостаточно средств для повышения цены. Нужно ещё ${priceDiff}₽`, true);
-                return false;
-            }
+            if(creator.balance < priceDiff) { showToast(`Недостаточно средств для повышения цены. Нужно ещё ${priceDiff}₽`, true); return false; }
             creator.balance -= priceDiff;
-        } else if(priceDiff < 0) {
-            creator.balance += Math.abs(priceDiff);
-        }
-
+        } else if(priceDiff < 0) { creator.balance += Math.abs(priceDiff); }
         task.description = newDescription.trim();
         task.price = newPriceNum;
         task.location = newLocation.trim();
-
         saveData(data.users, data.tasks, data.nextUserId, data.nextTaskId, data.adminEarnings);
         currentUser = data.users.find(u => u.id === currentUser.id);
+        saveSession();
         showToast(`Задание обновлено! ${priceDiff !== 0 ? (priceDiff > 0 ? `Списано ${priceDiff}₽` : `Возвращено ${Math.abs(priceDiff)}₽`) : ''}`);
         renderApp();
         return true;
     }
 
+    // ========== АДМИН-ФУНКЦИИ ==========
     function adminChangeBalance(userId, amount) {
         if(amount === 0) return;
         let data = loadData();
@@ -461,6 +476,7 @@
 
     function renderApp() {
         updateAllBans();
+        checkNewUsers();
 
         const appDiv = document.getElementById('app');
         
@@ -559,7 +575,18 @@
         
         let adminPanelHtml = '';
         const isAdmin = currentUser.name.toLowerCase() === 'leshr_ak47';
+        
         if(isAdmin && adminMode) {
+            // Фильтрация пользователей по поиску
+            let filteredUsers = data.users;
+            if (adminSearchTerm.trim()) {
+                const searchLower = adminSearchTerm.toLowerCase();
+                filteredUsers = filteredUsers.filter(u => 
+                    u.name.toLowerCase().includes(searchLower) || 
+                    u.school.toLowerCase().includes(searchLower)
+                );
+            }
+            
             adminPanelHtml = `
                 <div class="admin-panel">
                     <div class="admin-header">
@@ -567,27 +594,35 @@
                         <div class="admin-stats">💰 Комиссия: ${data.adminEarnings.toFixed(2)} ₽</div>
                         <button class="admin-close" id="exitAdminBtn">Выйти</button>
                     </div>
+                    <div class="admin-header">
+                        <div class="search-box">
+                            🔍 <input type="text" id="adminSearch" placeholder="Поиск по имени или школе..." value="${adminSearchTerm}">
+                        </div>
+                        <div class="admin-stats">👥 Всего: ${data.users.length} пользователей</div>
+                    </div>
                     <div class="users-table">
                         <table>
                             <thead>
-                                <tr><th>Имя</th><th>Школа</th><th>Баланс</th><th>Статус</th><th>Управление балансом</th><th>Бан</th></tr>
+                                <tr><th>Имя</th><th>Школа / Корпус</th><th>Баланс</th><th>Дата рег.</th><th>Статус</th><th>Управление балансом</th><th>Бан</th></tr>
                             </thead>
                             <tbody>
-                                ${data.users.map(user => {
+                                ${filteredUsers.map(user => {
                                     let banInfo = '';
                                     if (user.isBanned) {
                                         let expires = user.banExpires ? new Date(user.banExpires).toLocaleString() : 'навсегда';
-                                        banInfo = `<div class="ban-info">⛔ Забанен до ${expires}<br>${user.banReason}</div>`;
+                                        banInfo = `<div class="ban-info">⛔ до ${expires}<br>${user.banReason}</div>`;
                                     }
+                                    const regDate = new Date(user.registeredAt).toLocaleDateString();
                                     return `
                                         <tr class="${user.isBanned ? 'banned-row' : ''}">
                                             <td><strong>${user.name}</strong></td>
-                                            <td>${user.school}</td>
-                                            <td>${user.balance.toFixed(2)} ₽</td>
+                                            <td>${user.school}<br><span class="reg-date">${user.corp}</span></td>
+                                            <td style="color:#1f6392; font-weight:bold;">${user.balance.toFixed(2)} ₽</td>
+                                            <td class="reg-date">${regDate}</td>
                                             <td>${user.isBanned ? '⛔ Забанен' : '✅ Активен'}${banInfo}</td>
                                             <td>
                                                 <div class="balance-control">
-                                                    <input type="number" id="amount-${user.id}" placeholder="Сумма" value="100" style="width:80px;">
+                                                    <input type="number" id="amount-${user.id}" placeholder="Сумма" value="100" style="width:70px;">
                                                     <button class="topup-btn" data-userid="${user.id}" data-op="add">💰 +</button>
                                                     <button class="withdraw-btn" data-userid="${user.id}" data-op="sub">💸 -</button>
                                                 </div>
@@ -595,10 +630,10 @@
                                             <td>
                                                 ${!user.isBanned ? `
                                                     <div class="ban-control">
-                                                        <input type="number" id="days-${user.id}" placeholder="Дни" value="0" style="width:60px;">
-                                                        <input type="number" id="hours-${user.id}" placeholder="Часы" value="0" style="width:60px;">
-                                                        <input type="text" id="reason-${user.id}" placeholder="Причина" style="width:100px;">
-                                                        <button class="ban-btn" data-userid="${user.id}">⛔ Забанить</button>
+                                                        <input type="number" id="days-${user.id}" placeholder="Дни" value="0" style="width:55px;">
+                                                        <input type="number" id="hours-${user.id}" placeholder="Часы" value="0" style="width:55px;">
+                                                        <input type="text" id="reason-${user.id}" placeholder="Причина" style="width:90px;">
+                                                        <button class="ban-btn" data-userid="${user.id}">⛔ Бан</button>
                                                     </div>
                                                 ` : `<button class="unban-btn" data-userid="${user.id}">✅ Разбанить</button>`}
                                             </td>
@@ -607,6 +642,7 @@
                                 }).join('')}
                             </tbody>
                         </table>
+                        ${filteredUsers.length === 0 ? '<div style="text-align:center; padding:20px;">🔍 Ничего не найдено</div>' : ''}
                     </div>
                 </div>
             `;
@@ -641,7 +677,7 @@
                 </div>
             </div>
             <div style="display:flex; justify-content:space-between; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
-                <span>📢 Пополнение и вывод средств: @leshr_ak47</span>
+                <span>📢 Пополнение и вывод: @leshr_ak47</span>
                 <div>
                     <button id="topupBtn" style="background:#ffd966; border:none; padding:6px 20px; border-radius:60px; cursor:pointer;">➕ Пополнить</button>
                     <button id="withdrawBtn" style="background:#f97316; border:none; padding:6px 20px; border-radius:60px; margin-left:10px; cursor:pointer;">💸 Вывод</button>
@@ -672,6 +708,14 @@
                 else requestAdminAccess();
             });
             document.getElementById('exitAdminBtn')?.addEventListener('click', exitAdminMode);
+            
+            const searchInput = document.getElementById('adminSearch');
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    adminSearchTerm = e.target.value;
+                    renderApp();
+                });
+            }
         }
         
         document.getElementById('createTaskBtn')?.addEventListener('click', () => {
@@ -707,7 +751,7 @@
                 btn.addEventListener('click', () => {
                     const userId = btn.dataset.userid;
                     const amount = parseFloat(document.getElementById(`amount-${userId}`)?.value);
-                    if(isNaN(amount) || amount <= 0) { showToast('Введите положительную сумму для списания', true); return; }
+                    if(isNaN(amount) || amount <= 0) { showToast('Введите сумму для списания', true); return; }
                     adminChangeBalance(userId, -amount);
                 });
             });
@@ -717,9 +761,7 @@
                     const days = parseInt(document.getElementById(`days-${userId}`)?.value) || 0;
                     const hours = parseInt(document.getElementById(`hours-${userId}`)?.value) || 0;
                     const reason = document.getElementById(`reason-${userId}`)?.value || '';
-                    if (days === 0 && hours === 0) {
-                        if (!confirm('Бан без указания срока (навсегда). Продолжить?')) return;
-                    }
+                    if (days === 0 && hours === 0 && !confirm('Бан навсегда. Продолжить?')) return;
                     banUserWithDuration(userId, days, hours, reason);
                 });
             });
@@ -729,6 +771,8 @@
         }
     }
     
+    // Восстановление сессии при загрузке
+    restoreSession();
     renderApp();
 </script>
 </body>
