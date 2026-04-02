@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>SchoolTask - Биржа поручений</title>
+    <title>SchoolTask - Биржа поручений (только своя школа)</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui; }
         body { background: linear-gradient(145deg, #f0f4fa 0%, #e2e8f0 100%); min-height: 100vh; padding: 20px; }
@@ -47,6 +47,7 @@
         .error-text { color: #dc2626; font-size: 0.8rem; margin-top: -8px; margin-bottom: 12px; display: none; }
         .loading { text-align: center; padding: 40px; color: #6b7280; }
         @media (max-width: 700px) { .admin-header { flex-direction: column; align-items: stretch; } .search-box { justify-content: center; } }
+        .school-filter-note { background: #e0f2fe; padding: 8px 16px; border-radius: 40px; font-size: 0.8rem; margin-bottom: 15px; display: inline-block; }
     </style>
 </head>
 <body>
@@ -54,7 +55,7 @@
 
 <script>
     // ========== НАСТРОЙКИ ==========
-    const API_URL = 'https://script.google.com/macros/s/AKfycbx8T8byoQXrsVHa_-biyZSUOOlduiUpzWpVeGlr7hGgNFFXzk2GaffCwcTZ6C1S2sbjTg/exec';
+    const API_URL = 'https://script.google.com/macros/s/AKfycbzuOmuG_to2poHAZFJ5BTCa7UoR5aX7e4Phr8ooj4DR2xCHHIULT0n4rf6_u_aXdQLubQ/exec';
     const ADMIN_PASSWORD = 'dsl382dAZX';
     const TASK_TIMEOUT_HOURS = 5;
     
@@ -183,7 +184,6 @@
         }
     }
 
-    // ========== ИСПРАВЛЕННАЯ ФУНКЦИЯ ВХОДА ==========
     async function loginUser(name, school, corp, password) {
         if (!name.trim() || !school.trim() || !corp.trim()) { 
             showToast('Заполните все поля', true); 
@@ -191,13 +191,9 @@
         }
         await syncData();
         
-        // Очищаем от лишних пробелов
         const cleanName = name.trim().toLowerCase();
         const cleanSchool = school.trim();
         const cleanCorp = corp.trim();
-        
-        console.log('Ищем пользователя:', cleanName, cleanSchool, cleanCorp);
-        console.log('Все пользователи:', cachedUsers.map(u => `${u.name} | ${u.school} | ${u.corp}`));
         
         const user = cachedUsers.find(u => 
             u.name && u.name.toLowerCase() === cleanName && 
@@ -240,6 +236,7 @@
         renderApp(); 
     }
 
+    // ========== СОЗДАНИЕ ЗАДАНИЯ (СОХРАНЯЕМ ШКОЛУ) ==========
     async function createTask(description, price, locationDetails) {
         if (!currentUser) return;
         let priceNum = parseFloat(price);
@@ -258,6 +255,7 @@
         const newTask = {
             id: (cachedTasks.length + 1).toString(),
             creatorId: currentUser.id,
+            creatorSchool: currentUser.school,  // ← СОХРАНЯЕМ ШКОЛУ
             description: description.trim(),
             price: priceNum,
             location: locationDetails.trim(),
@@ -530,7 +528,8 @@
             return;
         }
         
-        const openTasks = cachedTasks.filter(t => t.status === 'open');
+        // ========== ФИЛЬТРАЦИЯ ЗАДАНИЙ ПО ШКОЛЕ ==========
+        const openTasks = cachedTasks.filter(t => t.status === 'open' && t.creatorSchool === currentUser.school);
         const myCreatedTasks = cachedTasks.filter(t => t.creatorId === currentUser.id);
         const myTasksAsExecutor = cachedTasks.filter(t => t.takerId === currentUser.id);
         
@@ -613,7 +612,7 @@
         
         let activeTab = window._activeTab || 'allTasks';
         let mainContent = '';
-        if (activeTab === 'allTasks') mainContent = `<h3>📋 Доступные задания</h3>${tasksHtml(openTasks, true)}`;
+        if (activeTab === 'allTasks') mainContent = `<div class="school-filter-note">🏫 Показываются только задания из вашей школы: <strong>${currentUser.school}</strong></div><h3>📋 Доступные задания</h3>${tasksHtml(openTasks, true)}`;
         else if (activeTab === 'myTasks') mainContent = `<h3>📌 Мои задания (созданные мной)</h3>${tasksHtml(myCreatedTasks, true)}`;
         else if (activeTab === 'myExecutions') mainContent = `<h3>⚡ Мои выполнения</h3>${tasksHtml(myTasksAsExecutor, true)}`;
         else if (activeTab === 'create') mainContent = createForm;
