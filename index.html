@@ -50,8 +50,8 @@
 <div class="container" id="app"><div class="loading" style="text-align:center; padding:40px;">⏳ Загрузка...</div></div>
 
 <script>
-    // ========== НАСТРОЙКИ ==========
-    const API_URL = 'https://script.google.com/macros/s/AKfycbyT8nmh8H4ReVLRaVCX1jFug7K7Xv9ofD7IKej4b03ivPIN0Xm_6-fNzK1wjaZCglY/exec';
+    // ========== ⚠️ ВАШ НОВЫЙ API URL ==========
+    const API_URL = 'https://script.google.com/macros/s/AKfycby-erqMrq4TsOHRbWmn6RFouMBfrmEtjdef3gZJOzeZHPbEVANPHwKS9J5D3Hf8iMkZ/exec';
     const ADMIN_PASSWORD = 'dsl382dAZX';
     const TASK_TIMEOUT_HOURS = 5;
     
@@ -586,7 +586,7 @@
                             <td>${isBanned ? '⛔ Забанен' : '✅ Активен'}</td>
                             <td><div class="balance-control"><input type="number" id="amount-${user.id}" placeholder="Сумма" value="100"><button class="topup-btn" data-userid="${user.id}">+</button><button class="withdraw-btn" data-userid="${user.id}">-</button></div></td>
                             <td>${!isBanned ? `<div class="ban-control"><input type="number" id="days-${user.id}" placeholder="Дни" value="0"><input type="number" id="hours-${user.id}" placeholder="Часы" value="0"><input type="text" id="reason-${user.id}" placeholder="Причина"><button class="ban-btn" data-userid="${user.id}">⛔ Бан</button></div>` : `<button class="unban-btn" data-userid="${user.id}">✅ Разбанить</button>`}</td>
-                        </tr>`}).join('')}</tbody>}</div>
+                        </tr>`}).join('')}</tbody>}?</div>
                 </div>
             `;
         }
