@@ -51,7 +51,7 @@
 
 <script>
     // ========== НАСТРОЙКИ ==========
-    const API_URL = 'https://script.google.com/macros/s/AKfycbz-bAKFpFvRzJCjlklO5bjPwbS13pcfAeWT6F2uWogYqjBZgifeebMyaAFbIEkCjf7C/exec';
+    const API_URL = 'https://script.google.com/macros/s/AKfycbyT8nmh8H4ReVLRaVCX1jFug7K7Xv9ofD7IKej4b03ivPIN0Xm_6-fNzK1wjaZCglY/exec';
     const ADMIN_PASSWORD = 'dsl382dAZX';
     const TASK_TIMEOUT_HOURS = 5;
     
@@ -123,7 +123,6 @@
         return cachedUsers.some(u => u.name.toLowerCase() === name.trim().toLowerCase());
     }
 
-    // ========== РЕГИСТРАЦИЯ ==========
     async function registerUser(name, school, corp, password) {
         if (!name.trim() || !school.trim() || !corp.trim()) { 
             showToast('Заполните все поля', true); 
@@ -223,7 +222,6 @@
         renderApp(); 
     }
 
-    // ========== ЗАДАНИЯ ==========
     async function createTask(description, price, locationDetails) {
         if (!currentUser) return;
         let priceNum = parseFloat(price);
@@ -373,7 +371,6 @@
         }
     }
 
-    // ========== АДМИН-ФУНКЦИИ ==========
     async function adminChangeBalance(userId, amount) {
         if (amount === 0) return;
         const user = cachedUsers.find(u => u.id === userId);
@@ -432,11 +429,9 @@
 
     function exitAdminMode() { adminMode = false; renderApp(); }
 
-    // ========== ОТРИСОВКА ==========
     async function renderApp() {
         await syncData();
         
-        // Автоматический возврат денег при просрочке подтверждения
         const now = new Date();
         for (let task of cachedTasks) {
             if (task.status === 'awaiting_confirmation' && task.completedAt) {
