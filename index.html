@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>SchoolTask - Биржа поручений (быстрая версия)</title>
+    <title>SchoolTask - Биржа поручений</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui; }
         body { background: linear-gradient(145deg, #f0f4fa 0%, #e2e8f0 100%); min-height: 100vh; padding: 20px; }
@@ -41,11 +41,12 @@
         .banned-row { background: #fee2e2; }
         .toast { position: fixed; bottom: 30px; right: 30px; background: #1f2f3e; color: white; padding: 12px 24px; border-radius: 60px; z-index: 1000; animation: fadein 0.3s; }
         @keyframes fadein { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .loading { text-align: center; padding: 40px; color: #6b7280; }
+        .error-text { color: #dc2626; font-size: 0.8rem; margin-top: -8px; margin-bottom: 12px; display: none; }
+        .success-text { color: #10b981; font-size: 0.8rem; margin-top: -8px; margin-bottom: 12px; display: none; }
     </style>
 </head>
 <body>
-<div class="container" id="app"><div class="loading">⏳ Загрузка...</div></div>
+<div class="container" id="app"><div class="loading" style="text-align:center; padding:40px;">⏳ Загрузка...</div></div>
 
 <script>
     // ========== НАСТРОЙКИ ==========
@@ -56,14 +57,10 @@
     let adminMode = false;
     let authMode = 'login';
     let adminSearchTerm = '';
-    
-    // КЭШ - данные загружаются один раз
     let cachedUsers = [];
     let cachedTasks = [];
     let isLoading = false;
-    let lastSyncTime = 0;
 
-    // ========== API ВЫЗОВЫ С КЭШИРОВАНИЕМ ==========
     async function apiCall(params, silent = false) {
         const url = new URL(API_URL);
         Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
@@ -76,16 +73,9 @@
         }
     }
 
-    async function syncData(force = false) {
-        // Не синхронизируем чаще чем раз в 10 секунд (если не force)
-        const now = Date.now();
-        if (!force && now - lastSyncTime < 10000 && cachedUsers.length > 0) {
-            return { users: cachedUsers, tasks: cachedTasks };
-        }
-        
+    async function syncData() {
         if (isLoading) return { users: cachedUsers, tasks: cachedTasks };
         isLoading = true;
-        
         try {
             const [users, tasks] = await Promise.all([
                 apiCall({ action: 'getUsers' }, true),
@@ -93,35 +83,9 @@
             ]);
             if (users && Array.isArray(users)) cachedUsers = users;
             if (tasks && Array.isArray(tasks)) cachedTasks = tasks;
-            lastSyncTime = now;
         } catch (e) {}
-        
         isLoading = false;
         return { users: cachedUsers, tasks: cachedTasks };
-    }
-
-    // Обновление конкретного пользователя в кэше
-    function updateUserInCache(userId, updates) {
-        const index = cachedUsers.findIndex(u => u.id === userId);
-        if (index !== -1) {
-            cachedUsers[index] = { ...cachedUsers[index], ...updates };
-        }
-    }
-
-    // Обновление задания в кэше
-    function updateTaskInCache(taskId, updates) {
-        const index = cachedTasks.findIndex(t => t.id == taskId);
-        if (index !== -1) {
-            cachedTasks[index] = { ...cachedTasks[index], ...updates };
-        }
-    }
-
-    function addTaskToCache(task) {
-        cachedTasks.push(task);
-    }
-
-    function removeTaskFromCache(taskId) {
-        cachedTasks = cachedTasks.filter(t => t.id != taskId);
     }
 
     function showToast(msg, isError = false) {
@@ -153,19 +117,41 @@
         return false;
     }
 
-    // ========== РЕГИСТРАЦИЯ И ВХОД ==========
+    // ========== ПРОВЕРКА УНИКАЛЬНОСТИ ИМЕНИ ==========
+    function isUsernameTaken(name) {
+        return cachedUsers.some(u => u.name.toLowerCase() === name.trim().toLowerCase());
+    }
+
+    // ========== РЕГИСТРАЦИЯ С ПРОВЕРКОЙ УНИКАЛЬНОСТИ ==========
     async function registerUser(name, school, corp, password) {
-        if (!name.trim() || !school.trim() || !corp.trim()) { showToast('Заполните все поля', true); return false; }
-        if (!password || password.length < 3) { showToast('Пароль не менее 3 символов', true); return false; }
+        if (!name.trim() || !school.trim() || !corp.trim()) { 
+            showToast('Заполните все поля', true); 
+            return false; 
+        }
+        if (!password || password.length < 3) { 
+            showToast('Пароль не менее 3 символов', true); 
+            return false; 
+        }
         
         await syncData();
-        const existing = cachedUsers.find(u => u.name.toLowerCase() === name.trim().toLowerCase() && u.school === school && u.corp === corp);
-        if (existing) { showToast('Пользователь уже существует', true); return false; }
+        
+        // Проверка уникальности имени (глобально)
+        if (isUsernameTaken(name)) {
+            showToast(`❌ Имя "${name}" уже занято! Выберите другое.`, true);
+            return false;
+        }
         
         const nextId = 'u' + (cachedUsers.length + 1);
         const newUser = {
-            id: nextId, name: name.trim(), school: school.trim(), corp: corp.trim(),
-            balance: 0, password: password, isBanned: false, banReason: '', banExpires: null,
+            id: nextId,
+            name: name.trim(),
+            school: school.trim(),
+            corp: corp.trim(),
+            balance: 0,
+            password: password,
+            isBanned: false,
+            banReason: '',
+            banExpires: null,
             registeredAt: new Date().toISOString()
         };
         
@@ -180,18 +166,36 @@
             cachedUsers.push(newUser);
             currentUser = newUser;
             saveSession();
-            showToast(`Добро пожаловать, ${newUser.name}!`);
+            showToast(`✅ Добро пожаловать, ${newUser.name}!`);
             renderApp();
             return true;
-        } else { showToast('Ошибка регистрации', true); return false; }
+        } else { 
+            showToast('Ошибка регистрации. Попробуйте другое имя.', true); 
+            return false; 
+        }
     }
 
     async function loginUser(name, school, corp, password) {
-        if (!name.trim() || !school.trim() || !corp.trim()) { showToast('Заполните все поля', true); return false; }
+        if (!name.trim() || !school.trim() || !corp.trim()) { 
+            showToast('Заполните все поля', true); 
+            return false; 
+        }
         await syncData();
-        const user = cachedUsers.find(u => u.name.toLowerCase() === name.trim().toLowerCase() && u.school === school && u.corp === corp);
-        if (!user) { showToast('Пользователь не найден', true); return false; }
-        if (user.password !== password) { showToast('Неверный пароль', true); return false; }
+        
+        const user = cachedUsers.find(u => 
+            u.name.toLowerCase() === name.trim().toLowerCase() && 
+            u.school === school && 
+            u.corp === corp
+        );
+        
+        if (!user) { 
+            showToast('Пользователь не найден. Проверьте имя, школу и корпус.', true); 
+            return false; 
+        }
+        if (user.password !== password) { 
+            showToast('Неверный пароль', true); 
+            return false; 
+        }
         
         const isBanned = user.isBanned === 'true' || user.isBanned === true;
         if (isBanned && user.banExpires && new Date() > new Date(user.banExpires)) {
@@ -205,6 +209,7 @@
             showToast(`⛔ Аккаунт заблокирован до ${expiresDate}. Причина: ${user.banReason || 'не указана'}`, true);
             return false;
         }
+        
         currentUser = user;
         saveSession();
         showToast(`С возвращением, ${currentUser.name}!`);
@@ -212,18 +217,27 @@
         return true;
     }
 
-    function logout() { currentUser = null; adminMode = false; authMode = 'login'; localStorage.removeItem('schoolTasks_session'); renderApp(); }
+    function logout() { 
+        currentUser = null; 
+        adminMode = false; 
+        authMode = 'login'; 
+        localStorage.removeItem('schoolTasks_session'); 
+        renderApp(); 
+    }
 
-    // ========== ЗАДАНИЯ (с обновлением кэша) ==========
+    // ========== ЗАДАНИЯ (упрощённо) ==========
     async function createTask(description, price, locationDetails) {
         if (!currentUser) return;
         let priceNum = parseFloat(price);
         if (isNaN(priceNum) || priceNum <= 0) { showToast('Цена должна быть положительной', true); return; }
         
+        await syncData();
         const userIdx = cachedUsers.findIndex(u => u.id === currentUser.id);
-        if (cachedUsers[userIdx].balance < priceNum) { showToast(`Недостаточно средств. Баланс: ${cachedUsers[userIdx].balance}₽`, true); return; }
+        if (cachedUsers[userIdx].balance < priceNum) { 
+            showToast(`Недостаточно средств. Баланс: ${cachedUsers[userIdx].balance}₽`, true); 
+            return; 
+        }
         
-        // Сразу обновляем кэш
         cachedUsers[userIdx].balance -= priceNum;
         currentUser.balance = cachedUsers[userIdx].balance;
         
@@ -238,38 +252,30 @@
             createdAt: new Date().toISOString()
         };
         
-        // Отправляем запрос в фоне
-        apiCall({
-            action: 'createTask',
-            id: newTask.id, creatorId: newTask.creatorId, description: newTask.description,
-            price: newTask.price, location: newTask.location, status: 'open',
-            takerId: '', createdAt: newTask.createdAt
-        });
         apiCall({ action: 'updateUser', id: currentUser.id, balance: currentUser.balance });
+        apiCall({ action: 'createTask', ...newTask, takerId: '' });
         
-        addTaskToCache(newTask);
+        cachedTasks.push(newTask);
         showToast(`Задание создано! -${priceNum}₽`);
         renderApp();
     }
 
     async function takeTask(taskId) {
         if (!currentUser) return;
+        await syncData();
         let task = cachedTasks.find(t => t.id == taskId);
         if (!task || task.status !== 'open') { showToast('Задание недоступно', true); return; }
         if (task.creatorId === currentUser.id) { showToast('Нельзя взять своё задание', true); return; }
         
         const totalPrice = parseFloat(task.price);
-        const commission = totalPrice * 0.05;
-        const executorGain = totalPrice - commission;
+        const executorGain = totalPrice * 0.95;
         
-        // Обновляем кэш
         const executor = cachedUsers.find(u => u.id === currentUser.id);
         executor.balance += executorGain;
         currentUser.balance = executor.balance;
         task.status = 'taken';
         task.takerId = currentUser.id;
         
-        // Отправляем в фоне
         apiCall({ action: 'updateUser', id: currentUser.id, balance: executor.balance });
         apiCall({ action: 'updateTask', id: task.id, status: 'taken', takerId: currentUser.id });
         
@@ -279,12 +285,12 @@
 
     async function deleteTask(taskId) {
         if (!currentUser) return;
+        await syncData();
         let task = cachedTasks.find(t => t.id == taskId);
         if (!task) return;
         if (task.creatorId !== currentUser.id) { showToast('Можно удалять только свои задания', true); return; }
         if (task.status !== 'open') { showToast('Нельзя удалить уже взятое задание', true); return; }
         
-        // Обновляем кэш
         const creator = cachedUsers.find(u => u.id === task.creatorId);
         creator.balance += parseFloat(task.price);
         if (currentUser.id === creator.id) currentUser.balance = creator.balance;
@@ -292,7 +298,7 @@
         apiCall({ action: 'updateUser', id: creator.id, balance: creator.balance });
         apiCall({ action: 'deleteTask', id: task.id });
         
-        removeTaskFromCache(taskId);
+        cachedTasks = cachedTasks.filter(t => t.id != taskId);
         showToast(`Задание удалено, ${task.price}₽ возвращено`);
         renderApp();
     }
@@ -303,7 +309,6 @@
         const user = cachedUsers.find(u => u.id === userId);
         if (!user) return;
         user.balance = (parseFloat(user.balance) || 0) + amount;
-        
         apiCall({ action: 'updateUser', id: userId, balance: user.balance });
         if (currentUser && currentUser.id === userId) currentUser.balance = user.balance;
         showToast(`${amount > 0 ? 'Пополнение' : 'Списание'} для ${user.name}: ${amount > 0 ? `+${amount}` : amount}₽`);
@@ -315,18 +320,19 @@
         if (!user) return;
         if (user.id === currentUser?.id) { showToast('Нельзя забанить себя', true); return; }
         
-        let expires = null;
+        let expires = '';
         if (days > 0 || hours > 0) {
-            expires = new Date();
-            expires.setDate(expires.getDate() + days);
-            expires.setHours(expires.getHours() + hours);
+            const exp = new Date();
+            exp.setDate(exp.getDate() + days);
+            exp.setHours(exp.getHours() + hours);
+            expires = exp.toISOString();
         }
         
         user.isBanned = true;
         user.banReason = reason || 'Нарушение правил';
-        user.banExpires = expires ? expires.toISOString() : '';
+        user.banExpires = expires;
         
-        apiCall({ action: 'updateUser', id: userId, isBanned: true, banReason: user.banReason, banExpires: user.banExpires });
+        apiCall({ action: 'updateUser', id: userId, isBanned: true, banReason: user.banReason, banExpires: expires });
         
         let durationText = '';
         if (days > 0 && hours > 0) durationText = `на ${days} дн. ${hours} ч.`;
@@ -343,7 +349,6 @@
         user.isBanned = false;
         user.banReason = '';
         user.banExpires = null;
-        
         apiCall({ action: 'updateUser', id: userId, isBanned: false, banReason: '', banExpires: '' });
         showToast(`✅ ${user.name} разблокирован`);
         renderApp();
@@ -378,7 +383,8 @@
                         <input type="password" id="loginPassword" placeholder="Пароль">
                         <button class="btn-primary" id="loginBtn">Войти</button>
                     ` : `
-                        <input type="text" id="regName" placeholder="Имя">
+                        <input type="text" id="regName" placeholder="Имя (уникальное)">
+                        <div id="regNameError" class="error-text"></div>
                         <input type="text" id="regSchool" placeholder="Школа">
                         <input type="text" id="regCorp" placeholder="Корпус">
                         <input type="password" id="regPassword" placeholder="Пароль (мин. 3 символа)">
@@ -387,6 +393,22 @@
                     <div style="margin-top:15px; text-align:center;">Пополнение и вывод: @leshr_ak47</div>
                 </div>
             `;
+            
+            // Проверка доступности имени в реальном времени (при регистрации)
+            if (!isLoginMode) {
+                const nameInput = document.getElementById('regName');
+                const errorDiv = document.getElementById('regNameError');
+                nameInput?.addEventListener('input', () => {
+                    const name = nameInput.value;
+                    if (name.length > 0 && isUsernameTaken(name)) {
+                        errorDiv.textContent = `❌ Имя "${name}" уже занято`;
+                        errorDiv.style.display = 'block';
+                    } else {
+                        errorDiv.style.display = 'none';
+                    }
+                });
+            }
+            
             document.getElementById('loginTabBtn')?.addEventListener('click', () => { authMode = 'login'; renderApp(); });
             document.getElementById('registerTabBtn')?.addEventListener('click', () => { authMode = 'register'; renderApp(); });
             document.getElementById('loginBtn')?.addEventListener('click', () => {
@@ -407,37 +429,28 @@
             });
             return;
         }
-
-        const openTasks = cachedTasks.filter(t => t.status === 'open' && !cachedUsers.find(u => u.id === t.creatorId)?.isBanned);
+        
+        const openTasks = cachedTasks.filter(t => t.status === 'open');
         const myCreatedTasks = cachedTasks.filter(t => t.creatorId === currentUser.id);
         const takenByMe = cachedTasks.filter(t => t.takerId === currentUser.id && t.status === 'taken');
-
+        
         const tasksHtml = (tasksList, showTakeBtn = true, showEditDelete = false) => {
-            if (!tasksList.length) return '<div class="empty-state" style="text-align:center; padding:40px;">✨ Нет заданий</div>';
+            if (!tasksList.length) return '<div style="text-align:center; padding:40px;">✨ Нет заданий</div>';
             return `<div class="tasks-grid">${tasksList.map(task => {
                 const creator = cachedUsers.find(u => u.id === task.creatorId);
                 const isMy = task.creatorId === currentUser.id;
                 let actionButtons = '';
-                if (task.status === 'open' && !isMy && showTakeBtn && creator?.isBanned !== 'true') {
+                if (task.status === 'open' && !isMy && showTakeBtn) {
                     actionButtons = `<button class="btn-primary take-btn" data-taskid="${task.id}">📌 Взять задание</button>`;
                 } else if (task.status === 'open' && isMy && showEditDelete) {
-                    actionButtons = `<div class="action-buttons"><button class="btn-warning edit-btn" data-taskid="${task.id}">✏️ Редактировать</button><button class="btn-danger delete-btn" data-taskid="${task.id}">❌ Удалить</button></div>`;
-                } else if (task.status === 'open' && isMy) {
-                    actionButtons = `<button class="btn-primary" disabled>Ваше задание</button>`;
+                    actionButtons = `<button class="btn-danger delete-btn" data-taskid="${task.id}">❌ Удалить</button>`;
                 } else if (task.status === 'taken') {
                     actionButtons = `<div style="background:#e9ecef; text-align:center; padding:8px; border-radius:40px;">✅ В работе</div>`;
                 }
-                return `
-                    <div class="task-card">
-                        <div class="task-header"><div class="task-price">${task.price} ₽</div><div class="task-school">${creator ? creator.school : ''}</div></div>
-                        <div class="task-desc">📌 ${task.description}</div>
-                        <div class="task-meta">📍 ${task.location}</div>
-                        ${actionButtons}
-                    </div>
-                `;
+                return `<div class="task-card"><div class="task-header"><div class="task-price">${task.price} ₽</div><div class="task-school">${creator ? creator.school : ''}</div></div><div class="task-desc">📌 ${task.description}</div><div class="task-meta">📍 ${task.location}</div>${actionButtons}</div>`;
             }).join('')}</div>`;
         };
-
+        
         let adminPanelHtml = '';
         const isAdmin = currentUser.name.toLowerCase() === 'leshr_ak47';
         if (isAdmin && adminMode) {
@@ -448,82 +461,44 @@
             }
             adminPanelHtml = `
                 <div class="admin-panel">
-                    <div class="admin-header">
-                        <h2>👑 Админ-панель</h2>
-                        <div class="admin-stats" style="background:#f1f5f9; padding:8px 16px; border-radius:60px;">💰 Комиссия: 0 ₽</div>
-                        <button class="btn-danger" id="exitAdminBtn">Выйти</button>
-                    </div>
-                    <div class="admin-header">
-                        <div class="search-box">🔍 <input type="text" id="adminSearch" placeholder="Поиск..." value="${adminSearchTerm}"></div>
-                        <div><button class="refresh-btn" id="refreshUsersBtn">🔄 Обновить</button> <span class="balance-card">👥 ${cachedUsers.length}</span></div>
-                    </div>
-                    <div class="users-table">
-                        <table style="width:100%;"><thead><tr><th>Имя</th><th>Школа</th><th>Баланс</th><th>Статус</th><th>Действия</th><th>Бан</th></tr></thead>
-                        <tbody>${filteredUsers.map(user => {
-                            const isBanned = user.isBanned === 'true' || user.isBanned === true;
-                            let banInfo = isBanned ? `<div style="font-size:0.7rem; color:#dc2626;">до ${user.banExpires ? new Date(user.banExpires).toLocaleString() : 'навсегда'}<br>${user.banReason}</div>` : '';
-                            return `<tr class="${isBanned ? 'banned-row' : ''}">
-                                <td><strong>${user.name}</strong></td>
-                                <td>${user.school}<br><span style="font-size:0.7rem;">${user.corp}</span></td>
-                                <td style="font-weight:bold;">${parseFloat(user.balance || 0).toFixed(2)} ₽</td>
-                                <td>${isBanned ? '⛔ Забанен' : '✅ Активен'}${banInfo}</td>
-                                <td><div class="balance-control"><input type="number" id="amount-${user.id}" placeholder="Сумма" value="100"><button class="topup-btn" data-userid="${user.id}">+</button><button class="withdraw-btn" data-userid="${user.id}">-</button></div></td>
-                                <td>${!isBanned ? `<div class="ban-control"><input type="number" id="days-${user.id}" placeholder="Дни" value="0"><input type="number" id="hours-${user.id}" placeholder="Часы" value="0"><input type="text" id="reason-${user.id}" placeholder="Причина"><button class="ban-btn" data-userid="${user.id}">⛔ Бан</button></div>` : `<button class="unban-btn" data-userid="${user.id}">✅ Разбанить</button>`}</td>
-                            </tr>`}).join('')}</tbody></table>
-                        ${filteredUsers.length === 0 ? '<div style="text-align:center; padding:20px;">🔍 Ничего не найдено</div>' : ''}
-                    </div>
+                    <div class="admin-header"><h2>👑 Админ-панель</h2><button class="btn-danger" id="exitAdminBtn">Выйти</button></div>
+                    <div class="admin-header"><div class="search-box">🔍 <input type="text" id="adminSearch" placeholder="Поиск..." value="${adminSearchTerm}"></div><div><button class="refresh-btn" id="refreshUsersBtn">🔄 Обновить</button> <span class="balance-card">👥 ${cachedUsers.length}</span></div></div>
+                    <div class="users-table"><table style="width:100%;"><thead><tr><th>Имя</th><th>Школа</th><th>Баланс</th><th>Статус</th><th>Действия</th><th>Бан</th></tr></thead>
+                    <tbody>${filteredUsers.map(user => {
+                        const isBanned = user.isBanned === 'true' || user.isBanned === true;
+                        return `<tr class="${isBanned ? 'banned-row' : ''}">
+                            <td><strong>${user.name}</strong></td>
+                            <td>${user.school}<br><span style="font-size:0.7rem;">${user.corp}</span></td>
+                            <td style="font-weight:bold;">${(user.balance || 0).toFixed(2)} ₽</td>
+                            <td>${isBanned ? '⛔ Забанен' : '✅ Активен'}</td>
+                            <td><div class="balance-control"><input type="number" id="amount-${user.id}" placeholder="Сумма" value="100"><button class="topup-btn" data-userid="${user.id}">+</button><button class="withdraw-btn" data-userid="${user.id}">-</button></div></td>
+                            <td>${!isBanned ? `<div class="ban-control"><input type="number" id="days-${user.id}" placeholder="Дни" value="0"><input type="number" id="hours-${user.id}" placeholder="Часы" value="0"><input type="text" id="reason-${user.id}" placeholder="Причина"><button class="ban-btn" data-userid="${user.id}">⛔ Бан</button></div>` : `<button class="unban-btn" data-userid="${user.id}">✅ Разбанить</button>`}</td>
+                        </tr>`}).join('')}</tbody></table>${filteredUsers.length === 0 ? '<div style="text-align:center; padding:20px;">🔍 Ничего не найдено</div>' : ''}</div>
                 </div>
             `;
         }
-
-        const createForm = `
-            <div class="card">
-                <h3>📝 Создать задание</h3>
-                <div style="background:#fef9e3; padding:12px; border-radius:20px; margin-bottom:15px;">💰 Стоимость спишется с баланса. Исполнитель получит 95%</div>
-                <textarea id="taskDesc" rows="2" placeholder="Что нужно сделать?"></textarea>
-                <input type="number" id="taskPrice" placeholder="Цена (руб)">
-                <input type="text" id="taskLocation" placeholder="Место">
-                <button class="btn-primary" id="createTaskBtn">Создать</button>
-            </div>
-        `;
-
+        
+        const createForm = `<div class="card"><h3>📝 Создать задание</h3><div style="background:#fef9e3; padding:12px; border-radius:20px; margin-bottom:15px;">💰 Стоимость спишется с баланса. Исполнитель получит 95%</div><textarea id="taskDesc" rows="2" placeholder="Что нужно сделать?"></textarea><input type="number" id="taskPrice" placeholder="Цена (руб)"><input type="text" id="taskLocation" placeholder="Место"><button class="btn-primary" id="createTaskBtn">Создать</button></div>`;
+        
         let activeTab = window._activeTab || 'allTasks';
         let mainContent = '';
         if (activeTab === 'allTasks') mainContent = `<h3>📋 Доступные задания</h3>${tasksHtml(openTasks, true, false)}`;
         else if (activeTab === 'myTasks') mainContent = `<h3>📌 Мои задания</h3>${tasksHtml(myCreatedTasks, false, true)}`;
         else if (activeTab === 'takenTasks') mainContent = `<h3>⚡ Взятые мной</h3>${tasksHtml(takenByMe, false, false)}`;
         else if (activeTab === 'create') mainContent = createForm;
-
+        
         const adminButtonHtml = isAdmin ? `<button id="adminPanelBtn" style="background:#2c3e50; color:white; border:none; padding:6px 20px; border-radius:60px;">🔐 Админка</button>` : '';
-
+        
         appDiv.innerHTML = `
-            <div class="header">
-                <div class="logo"><h1>🏫 SchoolTask</h1></div>
-                <div class="user-info">
-                    <div>👋 ${currentUser.name} | ${currentUser.school}</div>
-                    <div class="balance-card">💰 ${parseFloat(currentUser.balance || 0).toFixed(2)} ₽</div>
-                    <button class="btn-danger" id="logoutBtn" style="padding:6px 12px;">Выйти</button>
-                </div>
-            </div>
-            <div style="display:flex; justify-content:space-between; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
-                <span>📢 Пополнение и вывод: @leshr_ak47</span>
-                <div><button id="topupBtn" style="background:#ffd966; border:none; padding:6px 20px; border-radius:60px;">➕ Пополнить</button><button id="withdrawBtn" style="background:#f97316; border:none; padding:6px 20px; border-radius:60px; margin-left:10px;">💸 Вывод</button>${adminButtonHtml}</div>
-            </div>
+            <div class="header"><div class="logo"><h1>🏫 SchoolTask</h1></div><div class="user-info"><div>👋 ${currentUser.name} | ${currentUser.school}</div><div class="balance-card">💰 ${(currentUser.balance || 0).toFixed(2)} ₽</div><button class="btn-danger" id="logoutBtn" style="padding:6px 12px;">Выйти</button></div></div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:15px; flex-wrap:wrap; gap:10px;"><span>📢 Пополнение и вывод: @leshr_ak47</span><div><button id="topupBtn" style="background:#ffd966; border:none; padding:6px 20px; border-radius:60px;">➕ Пополнить</button><button id="withdrawBtn" style="background:#f97316; border:none; padding:6px 20px; border-radius:60px; margin-left:10px;">💸 Вывод</button>${adminButtonHtml}</div></div>
             ${adminPanelHtml}
-            <div class="tabs">
-                <div class="tab ${activeTab === 'allTasks' ? 'active' : ''}" data-tab="allTasks">📋 Все задания</div>
-                <div class="tab ${activeTab === 'myTasks' ? 'active' : ''}" data-tab="myTasks">📦 Мои</div>
-                <div class="tab ${activeTab === 'takenTasks' ? 'active' : ''}" data-tab="takenTasks">🤝 Взятые</div>
-                <div class="tab ${activeTab === 'create' ? 'active' : ''}" data-tab="create">➕ Создать</div>
-            </div>
+            <div class="tabs"><div class="tab ${activeTab === 'allTasks' ? 'active' : ''}" data-tab="allTasks">📋 Все задания</div><div class="tab ${activeTab === 'myTasks' ? 'active' : ''}" data-tab="myTasks">📦 Мои</div><div class="tab ${activeTab === 'takenTasks' ? 'active' : ''}" data-tab="takenTasks">🤝 Взятые</div><div class="tab ${activeTab === 'create' ? 'active' : ''}" data-tab="create">➕ Создать</div></div>
             ${mainContent}
             <div style="margin-top:20px; text-align:center; font-size:12px;">⚠️ Комиссия 5% | Вывод через @leshr_ak47</div>
         `;
-
-        // Обработчики событий
-        document.querySelectorAll('.tab').forEach(el => {
-            el.addEventListener('click', () => { window._activeTab = el.dataset.tab; renderApp(); });
-        });
+        
+        document.querySelectorAll('.tab').forEach(el => el.addEventListener('click', () => { window._activeTab = el.dataset.tab; renderApp(); }));
         document.getElementById('logoutBtn')?.addEventListener('click', logout);
         document.getElementById('topupBtn')?.addEventListener('click', () => showToast('Напишите @leshr_ak47 для пополнения баланса'));
         document.getElementById('withdrawBtn')?.addEventListener('click', () => showToast('Вывод средств через администратора в Telegram @leshr_ak47'));
@@ -531,7 +506,7 @@
         if (isAdmin) {
             document.getElementById('adminPanelBtn')?.addEventListener('click', () => { if (adminMode) exitAdminMode(); else requestAdminAccess(); });
             document.getElementById('exitAdminBtn')?.addEventListener('click', exitAdminMode);
-            document.getElementById('refreshUsersBtn')?.addEventListener('click', async () => { await syncData(true); renderApp(); showToast('Список обновлён'); });
+            document.getElementById('refreshUsersBtn')?.addEventListener('click', async () => { await syncData(); renderApp(); showToast('Список обновлён'); });
             document.getElementById('adminSearch')?.addEventListener('input', (e) => { adminSearchTerm = e.target.value; renderApp(); });
         }
         
@@ -546,7 +521,7 @@
         document.querySelectorAll('.take-btn').forEach(btn => btn.addEventListener('click', () => takeTask(btn.dataset.taskid)));
         document.querySelectorAll('.delete-btn').forEach(btn => btn.addEventListener('click', () => deleteTask(btn.dataset.taskid)));
         
-        if (isAdmin) {
+        if (isAdmin && adminMode) {
             document.querySelectorAll('.topup-btn').forEach(btn => btn.addEventListener('click', () => {
                 const userId = btn.dataset.userid;
                 const amount = parseFloat(document.getElementById(`amount-${userId}`)?.value);
