@@ -50,7 +50,8 @@
 <div class="container" id="app"><div class="loading" style="text-align:center; padding:40px;">⏳ Загрузка...</div></div>
 
 <script>
-    // ========== НОВАЯ ССЫЛКА API ==========
+    // ========== НАСТРОЙКИ ==========
+    // ВАШ НОВЫЙ API URL (нужно будет заменить после переопубликования скрипта)
     const API_URL = 'https://script.google.com/macros/s/AKfycbxiu3p92Bh8uxvVM4cEW_xbqfN0ll2lnfDwfnktdqf6dJSem3IgW2-hjDkwQZxyFvdu/exec';
     const ADMIN_PASSWORD = 'dsl382dAZX';
     const TASK_TIMEOUT_HOURS = 5;
@@ -565,7 +566,8 @@
         };
         
         let adminPanelHtml = '';
-     const isAdmin = currentUser.name.toLowerCase() === 'schooltasks';
+        // АДМИНИСТРАТОР - ТОЛЬКО leshr_ak47 (без учёта регистра)
+        const isAdmin = currentUser.name.toLowerCase() === 'leshr_ak47';
         if (isAdmin && adminMode) {
             let filteredUsers = cachedUsers;
             if (adminSearchTerm.trim()) {
