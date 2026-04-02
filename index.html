@@ -3,62 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>SchoolTask - Биржа поручений</title>
+    <title>SchoolTask - Биржа поручений (быстрая версия)</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui; }
         body { background: linear-gradient(145deg, #f0f4fa 0%, #e2e8f0 100%); min-height: 100vh; padding: 20px; }
         .container { max-width: 1300px; margin: 0 auto; }
-        .card, .header, .admin-panel, .task-card, .form-card { background: white; border-radius: 32px; padding: 20px; margin-bottom: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
+        .header, .card, .admin-panel, .task-card { background: white; border-radius: 32px; padding: 20px; margin-bottom: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
         .header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
         .logo h1 { background: linear-gradient(135deg, #1e2b3c, #2c4c6e); -webkit-background-clip: text; background-clip: text; color: transparent; }
         .user-info { display: flex; align-items: center; gap: 20px; background: #f8fafc; padding: 8px 20px; border-radius: 60px; }
         .balance-card { background: #eef2ff; padding: 6px 16px; border-radius: 40px; font-weight: bold; }
         button { cursor: pointer; border: none; border-radius: 40px; padding: 10px 20px; font-weight: bold; transition: 0.2s; }
         .btn-primary { background: #2c6e4f; color: white; }
-        .btn-primary:hover { background: #1e4a38; }
         .btn-danger { background: #dc2626; color: white; }
         .btn-warning { background: #f59e0b; color: white; }
-        input, textarea { width: 100%; padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 28px; margin-bottom: 12px; font-size: 1rem; }
+        input, textarea { width: 100%; padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 28px; margin-bottom: 12px; }
         .tabs { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
         .tab { background: white; padding: 10px 24px; border-radius: 60px; cursor: pointer; font-weight: 600; }
         .tab.active { background: #1e4a6e; color: white; }
         .tasks-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
         .task-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
         .task-price { font-size: 1.6rem; font-weight: 800; color: #2b6e4f; }
-        .task-school { background: #eef2ff; padding: 4px 12px; border-radius: 30px; font-size: 0.75rem; }
         .action-buttons { display: flex; gap: 10px; margin-top: 12px; }
-        .action-buttons button { flex: 1; }
         .admin-panel { border: 2px solid #ffd966; }
         .admin-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
         .search-box { display: flex; align-items: center; gap: 8px; background: #f1f5f9; padding: 5px 15px; border-radius: 40px; }
         .search-box input { margin: 0; padding: 8px; background: transparent; border: none; width: 200px; }
         .refresh-btn { background: #3b82f6; color: white; padding: 8px 16px; }
         .users-table { overflow-x: auto; }
-        .users-table table { width: 100%; border-collapse: collapse; }
         .users-table th, .users-table td { padding: 12px 8px; text-align: left; border-bottom: 1px solid #e2e8f0; }
-        .users-table th { background: #f8fafc; }
-        .balance-control { display: flex; gap: 5px; flex-wrap: wrap; }
-        .balance-control input { width: 70px; margin: 0; padding: 6px; }
-        .ban-control { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 5px; }
-        .ban-control input { width: 55px; margin: 0; padding: 6px; }
-        .ban-control input:last-child { width: 90px; }
+        .balance-control, .ban-control { display: flex; gap: 5px; flex-wrap: wrap; }
+        .balance-control input, .ban-control input { width: 70px; margin: 0; padding: 6px; }
         .topup-btn, .withdraw-btn, .ban-btn, .unban-btn { padding: 6px 12px; font-size: 0.8rem; }
         .topup-btn { background: #2c6e4f; color: white; }
-        .withdraw-btn { background: #dc2626; color: white; }
-        .ban-btn { background: #dc2626; color: white; }
+        .withdraw-btn, .ban-btn { background: #dc2626; color: white; }
         .unban-btn { background: #10b981; color: white; }
         .banned-row { background: #fee2e2; }
-        .ban-info { font-size: 0.7rem; color: #dc2626; margin-top: 4px; }
         .toast { position: fixed; bottom: 30px; right: 30px; background: #1f2f3e; color: white; padding: 12px 24px; border-radius: 60px; z-index: 1000; animation: fadein 0.3s; }
         @keyframes fadein { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .empty-state { text-align: center; padding: 40px; color: #6b7280; }
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 2000; }
-        .modal-content { background: white; border-radius: 32px; padding: 28px; max-width: 500px; width: 90%; }
-        @media (max-width: 700px) { .admin-header { flex-direction: column; align-items: stretch; } .search-box { justify-content: center; } }
+        .loading { text-align: center; padding: 40px; color: #6b7280; }
     </style>
 </head>
 <body>
-<div class="container" id="app"></div>
+<div class="container" id="app"><div class="loading">⏳ Загрузка...</div></div>
 
 <script>
     // ========== НАСТРОЙКИ ==========
@@ -69,85 +56,72 @@
     let adminMode = false;
     let authMode = 'login';
     let adminSearchTerm = '';
-    let allUsers = [];
-    let allTasks = [];
+    
+    // КЭШ - данные загружаются один раз
+    let cachedUsers = [];
+    let cachedTasks = [];
+    let isLoading = false;
+    let lastSyncTime = 0;
 
-    // ========== API ВЫЗОВЫ ==========
-    async function apiCall(params) {
+    // ========== API ВЫЗОВЫ С КЭШИРОВАНИЕМ ==========
+    async function apiCall(params, silent = false) {
         const url = new URL(API_URL);
         Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
         try {
             const response = await fetch(url.toString());
             return await response.json();
         } catch (error) {
-            console.error('API error:', error);
-            showToast('Ошибка связи с сервером', true);
+            if (!silent) showToast('Ошибка связи с сервером', true);
             return null;
         }
     }
 
-    async function loadUsers() {
-        const result = await apiCall({ action: 'getUsers' });
-        if (result && Array.isArray(result)) {
-            allUsers = result;
-            return allUsers;
+    async function syncData(force = false) {
+        // Не синхронизируем чаще чем раз в 10 секунд (если не force)
+        const now = Date.now();
+        if (!force && now - lastSyncTime < 10000 && cachedUsers.length > 0) {
+            return { users: cachedUsers, tasks: cachedTasks };
         }
-        return [];
+        
+        if (isLoading) return { users: cachedUsers, tasks: cachedTasks };
+        isLoading = true;
+        
+        try {
+            const [users, tasks] = await Promise.all([
+                apiCall({ action: 'getUsers' }, true),
+                apiCall({ action: 'getTasks' }, true)
+            ]);
+            if (users && Array.isArray(users)) cachedUsers = users;
+            if (tasks && Array.isArray(tasks)) cachedTasks = tasks;
+            lastSyncTime = now;
+        } catch (e) {}
+        
+        isLoading = false;
+        return { users: cachedUsers, tasks: cachedTasks };
     }
 
-    async function loadTasks() {
-        const result = await apiCall({ action: 'getTasks' });
-        if (result && Array.isArray(result)) {
-            allTasks = result;
-            return allTasks;
+    // Обновление конкретного пользователя в кэше
+    function updateUserInCache(userId, updates) {
+        const index = cachedUsers.findIndex(u => u.id === userId);
+        if (index !== -1) {
+            cachedUsers[index] = { ...cachedUsers[index], ...updates };
         }
-        return [];
     }
 
-    async function syncData() {
-        await Promise.all([loadUsers(), loadTasks()]);
+    // Обновление задания в кэше
+    function updateTaskInCache(taskId, updates) {
+        const index = cachedTasks.findIndex(t => t.id == taskId);
+        if (index !== -1) {
+            cachedTasks[index] = { ...cachedTasks[index], ...updates };
+        }
     }
 
-    async function registerUserAPI(user) {
-        return await apiCall({
-            action: 'registerUser',
-            id: user.id,
-            name: user.name,
-            school: user.school,
-            corp: user.corp,
-            balance: user.balance,
-            password: user.password,
-            isBanned: user.isBanned || false,
-            banReason: user.banReason || '',
-            banExpires: user.banExpires || '',
-            registeredAt: user.registeredAt || new Date().toISOString()
-        });
+    function addTaskToCache(task) {
+        cachedTasks.push(task);
     }
 
-    async function updateUserAPI(userId, updates) {
-        return await apiCall({ action: 'updateUser', id: userId, ...updates });
-    }
-
-    async function createTaskAPI(task) {
-        return await apiCall({
-            action: 'createTask',
-            id: task.id,
-            creatorId: task.creatorId,
-            description: task.description,
-            price: task.price,
-            location: task.location,
-            status: task.status,
-            takerId: task.takerId || '',
-            createdAt: task.createdAt || new Date().toISOString()
-        });
-    }
-
-    async function updateTaskAPI(taskId, updates) {
-        return await apiCall({ action: 'updateTask', id: taskId, ...updates });
-    }
-
-    async function deleteTaskAPI(taskId) {
-        return await apiCall({ action: 'deleteTask', id: taskId });
+    function removeTaskFromCache(taskId) {
+        cachedTasks = cachedTasks.filter(t => t.id != taskId);
     }
 
     function showToast(msg, isError = false) {
@@ -168,7 +142,7 @@
         const savedUserId = localStorage.getItem('schoolTasks_session');
         if (savedUserId) {
             await syncData();
-            const user = allUsers.find(u => u.id === savedUserId);
+            const user = cachedUsers.find(u => u.id === savedUserId);
             if (user && user.isBanned !== 'true' && user.isBanned !== true) {
                 currentUser = user;
                 return true;
@@ -183,18 +157,27 @@
     async function registerUser(name, school, corp, password) {
         if (!name.trim() || !school.trim() || !corp.trim()) { showToast('Заполните все поля', true); return false; }
         if (!password || password.length < 3) { showToast('Пароль не менее 3 символов', true); return false; }
+        
         await syncData();
-        const existing = allUsers.find(u => u.name.toLowerCase() === name.trim().toLowerCase() && u.school === school && u.corp === corp);
+        const existing = cachedUsers.find(u => u.name.toLowerCase() === name.trim().toLowerCase() && u.school === school && u.corp === corp);
         if (existing) { showToast('Пользователь уже существует', true); return false; }
-        const nextId = 'u' + (allUsers.length + 1);
+        
+        const nextId = 'u' + (cachedUsers.length + 1);
         const newUser = {
             id: nextId, name: name.trim(), school: school.trim(), corp: corp.trim(),
             balance: 0, password: password, isBanned: false, banReason: '', banExpires: null,
             registeredAt: new Date().toISOString()
         };
-        const result = await registerUserAPI(newUser);
+        
+        const result = await apiCall({
+            action: 'registerUser',
+            id: newUser.id, name: newUser.name, school: newUser.school, corp: newUser.corp,
+            balance: newUser.balance, password: newUser.password, isBanned: false,
+            banReason: '', banExpires: '', registeredAt: newUser.registeredAt
+        });
+        
         if (result && result.success) {
-            await syncData();
+            cachedUsers.push(newUser);
             currentUser = newUser;
             saveSession();
             showToast(`Добро пожаловать, ${newUser.name}!`);
@@ -206,13 +189,16 @@
     async function loginUser(name, school, corp, password) {
         if (!name.trim() || !school.trim() || !corp.trim()) { showToast('Заполните все поля', true); return false; }
         await syncData();
-        const user = allUsers.find(u => u.name.toLowerCase() === name.trim().toLowerCase() && u.school === school && u.corp === corp);
+        const user = cachedUsers.find(u => u.name.toLowerCase() === name.trim().toLowerCase() && u.school === school && u.corp === corp);
         if (!user) { showToast('Пользователь не найден', true); return false; }
         if (user.password !== password) { showToast('Неверный пароль', true); return false; }
+        
         const isBanned = user.isBanned === 'true' || user.isBanned === true;
         if (isBanned && user.banExpires && new Date() > new Date(user.banExpires)) {
-            await updateUserAPI(user.id, { isBanned: false, banReason: '', banExpires: '' });
-            await syncData();
+            await apiCall({ action: 'updateUser', id: user.id, isBanned: false, banReason: '', banExpires: '' });
+            user.isBanned = false;
+            user.banReason = '';
+            user.banExpires = null;
             showToast('Срок блокировки истёк, вы разблокированы.');
         } else if (isBanned) {
             let expiresDate = user.banExpires ? new Date(user.banExpires).toLocaleString() : 'навсегда';
@@ -228,18 +214,21 @@
 
     function logout() { currentUser = null; adminMode = false; authMode = 'login'; localStorage.removeItem('schoolTasks_session'); renderApp(); }
 
-    // ========== ЗАДАНИЯ ==========
+    // ========== ЗАДАНИЯ (с обновлением кэша) ==========
     async function createTask(description, price, locationDetails) {
         if (!currentUser) return;
         let priceNum = parseFloat(price);
         if (isNaN(priceNum) || priceNum <= 0) { showToast('Цена должна быть положительной', true); return; }
-        await syncData();
-        const userIdx = allUsers.findIndex(u => u.id === currentUser.id);
-        if (allUsers[userIdx].balance < priceNum) { showToast(`Недостаточно средств. Баланс: ${allUsers[userIdx].balance}₽`, true); return; }
-        allUsers[userIdx].balance -= priceNum;
-        await updateUserAPI(currentUser.id, { balance: allUsers[userIdx].balance });
+        
+        const userIdx = cachedUsers.findIndex(u => u.id === currentUser.id);
+        if (cachedUsers[userIdx].balance < priceNum) { showToast(`Недостаточно средств. Баланс: ${cachedUsers[userIdx].balance}₽`, true); return; }
+        
+        // Сразу обновляем кэш
+        cachedUsers[userIdx].balance -= priceNum;
+        currentUser.balance = cachedUsers[userIdx].balance;
+        
         const newTask = {
-            id: (allTasks.length + 1).toString(),
+            id: (cachedTasks.length + 1).toString(),
             creatorId: currentUser.id,
             description: description.trim(),
             price: priceNum,
@@ -248,122 +237,115 @@
             takerId: null,
             createdAt: new Date().toISOString()
         };
-        await createTaskAPI(newTask);
-        await syncData();
-        currentUser = allUsers.find(u => u.id === currentUser.id);
-        saveSession();
+        
+        // Отправляем запрос в фоне
+        apiCall({
+            action: 'createTask',
+            id: newTask.id, creatorId: newTask.creatorId, description: newTask.description,
+            price: newTask.price, location: newTask.location, status: 'open',
+            takerId: '', createdAt: newTask.createdAt
+        });
+        apiCall({ action: 'updateUser', id: currentUser.id, balance: currentUser.balance });
+        
+        addTaskToCache(newTask);
         showToast(`Задание создано! -${priceNum}₽`);
         renderApp();
     }
 
     async function takeTask(taskId) {
         if (!currentUser) return;
-        await syncData();
-        let task = allTasks.find(t => t.id == taskId);
+        let task = cachedTasks.find(t => t.id == taskId);
         if (!task || task.status !== 'open') { showToast('Задание недоступно', true); return; }
         if (task.creatorId === currentUser.id) { showToast('Нельзя взять своё задание', true); return; }
-        let creator = allUsers.find(u => u.id === task.creatorId);
-        if (creator?.isBanned === 'true' || creator?.isBanned === true) { showToast('Автор задания заблокирован', true); return; }
+        
         const totalPrice = parseFloat(task.price);
         const commission = totalPrice * 0.05;
         const executorGain = totalPrice - commission;
-        const executor = allUsers.find(u => u.id === currentUser.id);
+        
+        // Обновляем кэш
+        const executor = cachedUsers.find(u => u.id === currentUser.id);
         executor.balance += executorGain;
-        await updateUserAPI(executor.id, { balance: executor.balance });
-        await updateTaskAPI(task.id, { status: 'taken', takerId: currentUser.id });
-        await syncData();
-        currentUser = allUsers.find(u => u.id === currentUser.id);
-        saveSession();
+        currentUser.balance = executor.balance;
+        task.status = 'taken';
+        task.takerId = currentUser.id;
+        
+        // Отправляем в фоне
+        apiCall({ action: 'updateUser', id: currentUser.id, balance: executor.balance });
+        apiCall({ action: 'updateTask', id: task.id, status: 'taken', takerId: currentUser.id });
+        
         showToast(`Вы взяли задание! +${executorGain.toFixed(2)}₽ (комиссия 5%)`);
         renderApp();
     }
 
     async function deleteTask(taskId) {
         if (!currentUser) return;
-        await syncData();
-        let task = allTasks.find(t => t.id == taskId);
+        let task = cachedTasks.find(t => t.id == taskId);
         if (!task) return;
         if (task.creatorId !== currentUser.id) { showToast('Можно удалять только свои задания', true); return; }
         if (task.status !== 'open') { showToast('Нельзя удалить уже взятое задание', true); return; }
-        let creator = allUsers.find(u => u.id === task.creatorId);
-        if (creator) {
-            creator.balance += parseFloat(task.price);
-            await updateUserAPI(creator.id, { balance: creator.balance });
-        }
-        await deleteTaskAPI(task.id);
-        await syncData();
-        currentUser = allUsers.find(u => u.id === currentUser.id);
-        saveSession();
+        
+        // Обновляем кэш
+        const creator = cachedUsers.find(u => u.id === task.creatorId);
+        creator.balance += parseFloat(task.price);
+        if (currentUser.id === creator.id) currentUser.balance = creator.balance;
+        
+        apiCall({ action: 'updateUser', id: creator.id, balance: creator.balance });
+        apiCall({ action: 'deleteTask', id: task.id });
+        
+        removeTaskFromCache(taskId);
         showToast(`Задание удалено, ${task.price}₽ возвращено`);
         renderApp();
-    }
-
-    async function editTask(taskId, newDescription, newPrice, newLocation) {
-        if (!currentUser) return;
-        await syncData();
-        let task = allTasks.find(t => t.id == taskId);
-        if (!task) { showToast('Задание не найдено', true); return false; }
-        if (task.creatorId !== currentUser.id) { showToast('Редактировать можно только свои задания', true); return false; }
-        if (task.status !== 'open') { showToast('Нельзя редактировать уже взятое задание', true); return false; }
-        let newPriceNum = parseFloat(newPrice);
-        if (isNaN(newPriceNum) || newPriceNum <= 0) { showToast('Цена должна быть положительной', true); return false; }
-        let creator = allUsers.find(u => u.id === task.creatorId);
-        let oldPrice = parseFloat(task.price);
-        let priceDiff = newPriceNum - oldPrice;
-        if (priceDiff > 0) {
-            if (creator.balance < priceDiff) { showToast(`Недостаточно средств для повышения цены. Нужно ещё ${priceDiff}₽`, true); return false; }
-            creator.balance -= priceDiff;
-        } else if (priceDiff < 0) { creator.balance += Math.abs(priceDiff); }
-        await updateUserAPI(creator.id, { balance: creator.balance });
-        await updateTaskAPI(task.id, { description: newDescription.trim(), price: newPriceNum, location: newLocation.trim() });
-        await syncData();
-        currentUser = allUsers.find(u => u.id === currentUser.id);
-        saveSession();
-        showToast(`Задание обновлено! ${priceDiff !== 0 ? (priceDiff > 0 ? `Списано ${priceDiff}₽` : `Возвращено ${Math.abs(priceDiff)}₽`) : ''}`);
-        renderApp();
-        return true;
     }
 
     // ========== АДМИН-ФУНКЦИИ ==========
     async function adminChangeBalance(userId, amount) {
         if (amount === 0) return;
-        await syncData();
-        let user = allUsers.find(u => u.id === userId);
+        const user = cachedUsers.find(u => u.id === userId);
         if (!user) return;
         user.balance = (parseFloat(user.balance) || 0) + amount;
-        await updateUserAPI(userId, { balance: user.balance });
-        await syncData();
-        if (currentUser && currentUser.id === userId) currentUser = user;
-        showToast(`${amount > 0 ? 'Пополнение' : 'Списание'} для ${user.name}: ${amount > 0 ? `+${amount}` : amount}₽. Новый баланс: ${user.balance}₽`);
+        
+        apiCall({ action: 'updateUser', id: userId, balance: user.balance });
+        if (currentUser && currentUser.id === userId) currentUser.balance = user.balance;
+        showToast(`${amount > 0 ? 'Пополнение' : 'Списание'} для ${user.name}: ${amount > 0 ? `+${amount}` : amount}₽`);
         renderApp();
     }
 
     async function banUserWithDuration(userId, days, hours, reason) {
-        await syncData();
-        let user = allUsers.find(u => u.id === userId);
+        const user = cachedUsers.find(u => u.id === userId);
         if (!user) return;
         if (user.id === currentUser?.id) { showToast('Нельзя забанить себя', true); return; }
+        
         let expires = null;
         if (days > 0 || hours > 0) {
             expires = new Date();
             expires.setDate(expires.getDate() + days);
             expires.setHours(expires.getHours() + hours);
         }
-        await updateUserAPI(userId, { isBanned: true, banReason: reason || 'Нарушение правил', banExpires: expires ? expires.toISOString() : '' });
-        await syncData();
+        
+        user.isBanned = true;
+        user.banReason = reason || 'Нарушение правил';
+        user.banExpires = expires ? expires.toISOString() : '';
+        
+        apiCall({ action: 'updateUser', id: userId, isBanned: true, banReason: user.banReason, banExpires: user.banExpires });
+        
         let durationText = '';
         if (days > 0 && hours > 0) durationText = `на ${days} дн. ${hours} ч.`;
         else if (days > 0) durationText = `на ${days} дн.`;
         else if (hours > 0) durationText = `на ${hours} ч.`;
         else durationText = 'навсегда';
-        showToast(`⛔ ${user.name} заблокирован ${durationText}. Причина: ${reason || 'Нарушение правил'}`);
+        showToast(`⛔ ${user.name} заблокирован ${durationText}`);
         renderApp();
     }
 
     async function unbanUser(userId) {
-        await updateUserAPI(userId, { isBanned: false, banReason: '', banExpires: '' });
-        await syncData();
-        showToast(`✅ ${allUsers.find(u => u.id === userId)?.name} разблокирован`);
+        const user = cachedUsers.find(u => u.id === userId);
+        if (!user) return;
+        user.isBanned = false;
+        user.banReason = '';
+        user.banExpires = null;
+        
+        apiCall({ action: 'updateUser', id: userId, isBanned: false, banReason: '', banExpires: '' });
+        showToast(`✅ ${user.name} разблокирован`);
         renderApp();
     }
 
@@ -375,41 +357,17 @@
 
     function exitAdminMode() { adminMode = false; renderApp(); }
 
-    function showEditModal(task) {
-        const modal = document.createElement('div');
-        modal.className = 'modal';
-        modal.style.display = 'flex';
-        modal.innerHTML = `
-            <div class="modal-content">
-                <h3>✏️ Редактировать задание</h3>
-                <div class="form-group"><label>Описание</label><textarea id="editDesc" rows="2">${task.description}</textarea></div>
-                <div class="form-group"><label>Цена (₽)</label><input type="number" id="editPrice" value="${task.price}"></div>
-                <div class="form-group"><label>Место</label><input type="text" id="editLocation" value="${task.location}"></div>
-                <div class="modal-buttons" style="display:flex; gap:10px; margin-top:20px;"><button class="btn-primary" id="saveEditBtn">Сохранить</button><button class="btn-danger" id="cancelEditBtn">Отмена</button></div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-        modal.querySelector('#saveEditBtn').onclick = () => {
-            const newDesc = modal.querySelector('#editDesc').value;
-            const newPrice = modal.querySelector('#editPrice').value;
-            const newLoc = modal.querySelector('#editLocation').value;
-            if (newDesc && newPrice && newLoc) { editTask(task.id, newDesc, newPrice, newLoc); modal.remove(); }
-            else showToast('Заполните все поля', true);
-        };
-        modal.querySelector('#cancelEditBtn').onclick = () => modal.remove();
-    }
-
     // ========== ОТРИСОВКА ==========
     async function renderApp() {
         await syncData();
-
+        
         const appDiv = document.getElementById('app');
         if (!currentUser) {
             const isLoginMode = authMode === 'login';
             appDiv.innerHTML = `
                 <div class="header"><div class="logo"><h1>🏫 SchoolTask</h1><span>Биржа поручений</span></div></div>
-                <div class="form-card">
-                    <div class="tabs" style="display:flex; gap:15px; margin-bottom:20px;">
+                <div class="card">
+                    <div class="tabs">
                         <div class="tab ${isLoginMode ? 'active' : ''}" id="loginTabBtn">🔐 Вход</div>
                         <div class="tab ${!isLoginMode ? 'active' : ''}" id="registerTabBtn">📝 Регистрация</div>
                     </div>
@@ -450,14 +408,14 @@
             return;
         }
 
-        const openTasks = allTasks.filter(t => t.status === 'open' && !allUsers.find(u => u.id === t.creatorId)?.isBanned);
-        const myCreatedTasks = allTasks.filter(t => t.creatorId === currentUser.id);
-        const takenByMe = allTasks.filter(t => t.takerId === currentUser.id && t.status === 'taken');
+        const openTasks = cachedTasks.filter(t => t.status === 'open' && !cachedUsers.find(u => u.id === t.creatorId)?.isBanned);
+        const myCreatedTasks = cachedTasks.filter(t => t.creatorId === currentUser.id);
+        const takenByMe = cachedTasks.filter(t => t.takerId === currentUser.id && t.status === 'taken');
 
         const tasksHtml = (tasksList, showTakeBtn = true, showEditDelete = false) => {
-            if (!tasksList.length) return '<div class="empty-state">✨ Нет заданий</div>';
+            if (!tasksList.length) return '<div class="empty-state" style="text-align:center; padding:40px;">✨ Нет заданий</div>';
             return `<div class="tasks-grid">${tasksList.map(task => {
-                const creator = allUsers.find(u => u.id === task.creatorId);
+                const creator = cachedUsers.find(u => u.id === task.creatorId);
                 const isMy = task.creatorId === currentUser.id;
                 let actionButtons = '';
                 if (task.status === 'open' && !isMy && showTakeBtn && creator?.isBanned !== 'true') {
@@ -483,7 +441,7 @@
         let adminPanelHtml = '';
         const isAdmin = currentUser.name.toLowerCase() === 'leshr_ak47';
         if (isAdmin && adminMode) {
-            let filteredUsers = allUsers;
+            let filteredUsers = cachedUsers;
             if (adminSearchTerm.trim()) {
                 const searchLower = adminSearchTerm.toLowerCase();
                 filteredUsers = filteredUsers.filter(u => u.name.toLowerCase().includes(searchLower) || u.school.toLowerCase().includes(searchLower));
@@ -492,30 +450,24 @@
                 <div class="admin-panel">
                     <div class="admin-header">
                         <h2>👑 Админ-панель</h2>
-                        <div class="admin-stats">💰 Комиссия: 0 ₽ (будет добавлена)</div>
+                        <div class="admin-stats" style="background:#f1f5f9; padding:8px 16px; border-radius:60px;">💰 Комиссия: 0 ₽</div>
                         <button class="btn-danger" id="exitAdminBtn">Выйти</button>
                     </div>
                     <div class="admin-header">
-                        <div class="search-box">🔍 <input type="text" id="adminSearch" placeholder="Поиск по имени или школе..." value="${adminSearchTerm}"></div>
-                        <div><button class="refresh-btn" id="refreshUsersBtn">🔄 Обновить список</button> <span class="balance-card">👥 Всего: ${allUsers.length}</span></div>
+                        <div class="search-box">🔍 <input type="text" id="adminSearch" placeholder="Поиск..." value="${adminSearchTerm}"></div>
+                        <div><button class="refresh-btn" id="refreshUsersBtn">🔄 Обновить</button> <span class="balance-card">👥 ${cachedUsers.length}</span></div>
                     </div>
                     <div class="users-table">
-                        <table><thead><tr><th>Имя</th><th>Школа / Корпус</th><th>Баланс</th><th>Дата рег.</th><th>Статус</th><th>Баланс</th><th>Бан</th></tr></thead>
+                        <table style="width:100%;"><thead><tr><th>Имя</th><th>Школа</th><th>Баланс</th><th>Статус</th><th>Действия</th><th>Бан</th></tr></thead>
                         <tbody>${filteredUsers.map(user => {
                             const isBanned = user.isBanned === 'true' || user.isBanned === true;
-                            let banInfo = '';
-                            if (isBanned) {
-                                let expires = user.banExpires ? new Date(user.banExpires).toLocaleString() : 'навсегда';
-                                banInfo = `<div class="ban-info">⛔ до ${expires}<br>${user.banReason}</div>`;
-                            }
-                            const regDate = user.registeredAt ? new Date(user.registeredAt).toLocaleDateString() : '—';
+                            let banInfo = isBanned ? `<div style="font-size:0.7rem; color:#dc2626;">до ${user.banExpires ? new Date(user.banExpires).toLocaleString() : 'навсегда'}<br>${user.banReason}</div>` : '';
                             return `<tr class="${isBanned ? 'banned-row' : ''}">
                                 <td><strong>${user.name}</strong></td>
                                 <td>${user.school}<br><span style="font-size:0.7rem;">${user.corp}</span></td>
                                 <td style="font-weight:bold;">${parseFloat(user.balance || 0).toFixed(2)} ₽</td>
-                                <td class="reg-date">${regDate}</td>
                                 <td>${isBanned ? '⛔ Забанен' : '✅ Активен'}${banInfo}</td>
-                                <td><div class="balance-control"><input type="number" id="amount-${user.id}" placeholder="Сумма" value="100"><button class="topup-btn" data-userid="${user.id}">💰 +</button><button class="withdraw-btn" data-userid="${user.id}">💸 -</button></div></td>
+                                <td><div class="balance-control"><input type="number" id="amount-${user.id}" placeholder="Сумма" value="100"><button class="topup-btn" data-userid="${user.id}">+</button><button class="withdraw-btn" data-userid="${user.id}">-</button></div></td>
                                 <td>${!isBanned ? `<div class="ban-control"><input type="number" id="days-${user.id}" placeholder="Дни" value="0"><input type="number" id="hours-${user.id}" placeholder="Часы" value="0"><input type="text" id="reason-${user.id}" placeholder="Причина"><button class="ban-btn" data-userid="${user.id}">⛔ Бан</button></div>` : `<button class="unban-btn" data-userid="${user.id}">✅ Разбанить</button>`}</td>
                             </tr>`}).join('')}</tbody></table>
                         ${filteredUsers.length === 0 ? '<div style="text-align:center; padding:20px;">🔍 Ничего не найдено</div>' : ''}
@@ -525,9 +477,9 @@
         }
 
         const createForm = `
-            <div class="form-card">
+            <div class="card">
                 <h3>📝 Создать задание</h3>
-                <div class="warning-message" style="background:#fef9e3; padding:12px; border-radius:20px; margin-bottom:15px;">💰 Стоимость спишется с баланса. Исполнитель получит 95%</div>
+                <div style="background:#fef9e3; padding:12px; border-radius:20px; margin-bottom:15px;">💰 Стоимость спишется с баланса. Исполнитель получит 95%</div>
                 <textarea id="taskDesc" rows="2" placeholder="Что нужно сделать?"></textarea>
                 <input type="number" id="taskPrice" placeholder="Цена (руб)">
                 <input type="text" id="taskLocation" placeholder="Место">
@@ -565,21 +517,24 @@
                 <div class="tab ${activeTab === 'create' ? 'active' : ''}" data-tab="create">➕ Создать</div>
             </div>
             ${mainContent}
-            <div style="margin-top:20px; text-align:center; font-size:12px;">⚠️ Комиссия 5% | Вывод средств через администратора @leshr_ak47</div>
+            <div style="margin-top:20px; text-align:center; font-size:12px;">⚠️ Комиссия 5% | Вывод через @leshr_ak47</div>
         `;
 
+        // Обработчики событий
         document.querySelectorAll('.tab').forEach(el => {
             el.addEventListener('click', () => { window._activeTab = el.dataset.tab; renderApp(); });
         });
         document.getElementById('logoutBtn')?.addEventListener('click', logout);
         document.getElementById('topupBtn')?.addEventListener('click', () => showToast('Напишите @leshr_ak47 для пополнения баланса'));
         document.getElementById('withdrawBtn')?.addEventListener('click', () => showToast('Вывод средств через администратора в Telegram @leshr_ak47'));
+        
         if (isAdmin) {
             document.getElementById('adminPanelBtn')?.addEventListener('click', () => { if (adminMode) exitAdminMode(); else requestAdminAccess(); });
             document.getElementById('exitAdminBtn')?.addEventListener('click', exitAdminMode);
-            document.getElementById('refreshUsersBtn')?.addEventListener('click', async () => { await syncData(); renderApp(); showToast('Список обновлён'); });
+            document.getElementById('refreshUsersBtn')?.addEventListener('click', async () => { await syncData(true); renderApp(); showToast('Список обновлён'); });
             document.getElementById('adminSearch')?.addEventListener('input', (e) => { adminSearchTerm = e.target.value; renderApp(); });
         }
+        
         document.getElementById('createTaskBtn')?.addEventListener('click', () => {
             const desc = document.getElementById('taskDesc')?.value;
             const price = document.getElementById('taskPrice')?.value;
@@ -587,13 +542,10 @@
             if (desc && price && loc) createTask(desc, price, loc);
             else showToast('Заполните все поля', true);
         });
-        document.querySelectorAll('.take-btn').forEach(btn => btn.addEventListener('click', () => takeTask(parseInt(btn.dataset.taskid))));
-        document.querySelectorAll('.delete-btn').forEach(btn => btn.addEventListener('click', () => deleteTask(parseInt(btn.dataset.taskid))));
-        document.querySelectorAll('.edit-btn').forEach(btn => {
-            const taskId = parseInt(btn.dataset.taskid);
-            const task = allTasks.find(t => t.id == taskId);
-            if (task) btn.addEventListener('click', () => showEditModal(task));
-        });
+        
+        document.querySelectorAll('.take-btn').forEach(btn => btn.addEventListener('click', () => takeTask(btn.dataset.taskid)));
+        document.querySelectorAll('.delete-btn').forEach(btn => btn.addEventListener('click', () => deleteTask(btn.dataset.taskid)));
+        
         if (isAdmin) {
             document.querySelectorAll('.topup-btn').forEach(btn => btn.addEventListener('click', () => {
                 const userId = btn.dataset.userid;
