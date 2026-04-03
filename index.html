@@ -8,7 +8,6 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui; }
         body { background: linear-gradient(145deg, #f0f4fa 0%, #e2e8f0 100%); min-height: 100vh; padding: 20px; transition: background 0.3s, color 0.3s; }
         
-        /* Тёмная тема */
         body.dark-theme {
             background: linear-gradient(145deg, #1a1a2e 0%, #16213e 100%);
             color: #e2e8f0;
@@ -89,14 +88,12 @@
         .error-text { color: #dc2626; font-size: 0.8rem; margin-top: -8px; margin-bottom: 12px; display: none; }
         .loading { text-align: center; padding: 40px; color: #6b7280; }
         
-        /* Рейтинг звёздами */
         .stars { display: flex; gap: 5px; margin: 10px 0; }
         .star { font-size: 24px; cursor: pointer; color: #cbd5e1; transition: 0.2s; }
         .star.active { color: #f59e0b; }
         .star:hover { transform: scale(1.1); }
         .user-rating { display: inline-flex; align-items: center; gap: 5px; background: #fef3c7; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; }
         
-        /* Модальные окна */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -176,6 +173,7 @@
     const ADMIN_PASSWORD = 'dsl382dAZX';
     const TASK_TIMEOUT_HOURS = 5;
     
+    // Состояние приложения
     let currentUser = null;
     let adminMode = false;
     let authMode = 'login';
@@ -185,10 +183,28 @@
     let cachedReviews = [];
     let cachedMessages = {};
     let isLoading = false;
+    let isCreatingTask = false;
     let isDarkTheme = localStorage.getItem('darkTheme') === 'true';
-
+    
+    // Кэширование
+    let cacheExpiry = 0;
+    const CACHE_DURATION = 30000; // 30 секунд
+    
+    // Пагинация
+    let currentPage = 0;
+    const ITEMS_PER_PAGE = 10;
+    
     // Применяем тему при загрузке
     if (isDarkTheme) document.body.classList.add('dark-theme');
+
+    // ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
+    function debounce(func, delay) {
+        let timeout;
+        return function(...args) {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(this, args), delay);
+        };
+    }
 
     function toggleTheme() {
         isDarkTheme = !isDarkTheme;
@@ -216,9 +232,15 @@
         }
     }
 
-    async function syncData() {
+    async function syncData(force = false) {
+        const now = Date.now();
+        if (!force && cacheExpiry > now && cachedUsers.length > 0) {
+            return { users: cachedUsers, tasks: cachedTasks, reviews: cachedReviews };
+        }
+        
         if (isLoading) return { users: cachedUsers, tasks: cachedTasks, reviews: cachedReviews };
         isLoading = true;
+        
         try {
             const [users, tasks, reviews] = await Promise.all([
                 apiCall({ action: 'getUsers' }, true),
@@ -228,9 +250,16 @@
             if (users && Array.isArray(users)) cachedUsers = users;
             if (tasks && Array.isArray(tasks)) cachedTasks = tasks;
             if (reviews && Array.isArray(reviews)) cachedReviews = reviews;
+            cacheExpiry = now + CACHE_DURATION;
         } catch (e) {}
+        
         isLoading = false;
         return { users: cachedUsers, tasks: cachedTasks, reviews: cachedReviews };
+    }
+
+    function forceSync() {
+        cacheExpiry = 0;
+        return syncData(true);
     }
 
     function showToast(msg, isError = false) {
@@ -243,8 +272,11 @@
     }
 
     function saveSession() {
-        if (currentUser) localStorage.setItem('schoolTasks_session', currentUser.id);
-        else localStorage.removeItem('schoolTasks_session');
+        if (currentUser) {
+            localStorage.setItem('schoolTasks_session', currentUser.id);
+        } else {
+            localStorage.removeItem('schoolTasks_session');
+        }
     }
 
     async function restoreSession() {
@@ -283,7 +315,7 @@
             return false;
         }
         
-        const nextId = 'u' + (cachedUsers.length + 1);
+        const nextId = 'u' + Date.now();
         const newUser = {
             id: nextId,
             name: name.trim(),
@@ -369,6 +401,7 @@
         currentUser = user;
         saveSession();
         showToast(`✅ С возвращением, ${currentUser.name}!`);
+        currentPage = 0;
         renderApp();
         return true;
     }
@@ -377,19 +410,28 @@
         currentUser = null; 
         adminMode = false; 
         authMode = 'login'; 
+        currentPage = 0;
         localStorage.removeItem('schoolTasks_session'); 
         renderApp(); 
     }
 
     async function createTask(description, price, locationDetails) {
         if (!currentUser) return;
+        if (isCreatingTask) {
+            showToast('Подождите, задание уже создаётся...', true);
+            return;
+        }
+        
         let priceNum = parseFloat(price);
         if (isNaN(priceNum) || priceNum <= 0) { showToast('Цена должна быть положительной', true); return; }
+        
+        isCreatingTask = true;
         
         await syncData();
         const userIdx = cachedUsers.findIndex(u => u.id === currentUser.id);
         if (cachedUsers[userIdx].balance < priceNum) { 
             showToast(`Недостаточно средств. Баланс: ${cachedUsers[userIdx].balance}₽`, true); 
+            isCreatingTask = false;
             return; 
         }
         
@@ -397,7 +439,7 @@
         currentUser.balance = cachedUsers[userIdx].balance;
         
         const newTask = {
-            id: (cachedTasks.length + 1).toString(),
+            id: Date.now().toString(),
             creatorId: currentUser.id,
             creatorSchool: currentUser.school,
             description: description.trim(),
@@ -410,11 +452,20 @@
             createdAt: new Date().toISOString()
         };
         
-        apiCall({ action: 'updateUser', id: currentUser.id, balance: currentUser.balance });
-        apiCall({ action: 'createTask', ...newTask, takerId: '' });
+        await apiCall({ action: 'updateUser', id: currentUser.id, balance: currentUser.balance });
+        const result = await apiCall({ action: 'createTask', ...newTask, takerId: '' });
         
-        cachedTasks.push(newTask);
-        showToast(`Задание создано! -${priceNum}₽ (деньги заморожены до подтверждения)`);
+        if (result && result.success) {
+            cachedTasks.push(newTask);
+            cacheExpiry = 0;
+            showToast(`Задание создано! -${priceNum}₽ (деньги заморожены до подтверждения)`);
+        } else {
+            cachedUsers[userIdx].balance += priceNum;
+            currentUser.balance = cachedUsers[userIdx].balance;
+            showToast('Ошибка создания задания', true);
+        }
+        
+        isCreatingTask = false;
         renderApp();
     }
 
@@ -429,9 +480,10 @@
         task.takerId = currentUser.id;
         task.takenAt = new Date().toISOString();
         
-        apiCall({ action: 'updateTask', id: task.id, status: 'in_progress', takerId: currentUser.id, takenAt: task.takenAt });
+        await apiCall({ action: 'updateTask', id: task.id, status: 'in_progress', takerId: currentUser.id, takenAt: task.takenAt });
         
         showToast(`📢 Вы взяли задание! Выполните его и нажмите "Подтвердить выполнение".`);
+        cacheExpiry = 0;
         renderApp();
     }
 
@@ -445,9 +497,10 @@
         task.status = 'awaiting_confirmation';
         task.completedAt = new Date().toISOString();
         
-        apiCall({ action: 'updateTask', id: task.id, status: 'awaiting_confirmation', completedAt: task.completedAt });
+        await apiCall({ action: 'updateTask', id: task.id, status: 'awaiting_confirmation', completedAt: task.completedAt });
         
         showToast(`✅ Вы отметили задание как выполненное. Ожидайте подтверждения от создателя.`);
+        cacheExpiry = 0;
         renderApp();
     }
 
@@ -465,22 +518,22 @@
         const executor = cachedUsers.find(u => u.id === task.takerId);
         if (executor) {
             executor.balance = (parseFloat(executor.balance) || 0) + executorGain;
-            apiCall({ action: 'updateUser', id: executor.id, balance: executor.balance });
+            await apiCall({ action: 'updateUser', id: executor.id, balance: executor.balance });
         }
         
         task.status = 'completed';
         
-        apiCall({ action: 'updateTask', id: task.id, status: 'completed' });
+        await apiCall({ action: 'updateTask', id: task.id, status: 'completed' });
         
         showToast(`💰 Подтверждено! ${executorGain.toFixed(2)}₽ переведено исполнителю. Комиссия 5% (${commission.toFixed(2)}₽)`);
         
-        // Предлагаем оставить отзыв
         setTimeout(() => {
             if (confirm(`Хотите оставить отзыв об исполнителе ${executor?.name}?`)) {
                 showReviewModal(task.takerId, task.id);
             }
         }, 500);
         
+        cacheExpiry = 0;
         renderApp();
     }
 
@@ -494,15 +547,16 @@
         const creator = cachedUsers.find(u => u.id === task.creatorId);
         if (creator) {
             creator.balance = (parseFloat(creator.balance) || 0) + parseFloat(task.price);
-            apiCall({ action: 'updateUser', id: creator.id, balance: creator.balance });
+            await apiCall({ action: 'updateUser', id: creator.id, balance: creator.balance });
             if (currentUser.id === creator.id) currentUser.balance = creator.balance;
         }
         
         task.status = 'disputed';
         
-        apiCall({ action: 'updateTask', id: task.id, status: 'disputed' });
+        await apiCall({ action: 'updateTask', id: task.id, status: 'disputed' });
         
         showToast(`⚠️ Вы отметили, что не получили услугу. Деньги возвращены на ваш баланс.`);
+        cacheExpiry = 0;
         renderApp();
     }
 
@@ -517,18 +571,19 @@
         const creator = cachedUsers.find(u => u.id === task.creatorId);
         if (creator) {
             creator.balance = (parseFloat(creator.balance) || 0) + parseFloat(task.price);
-            apiCall({ action: 'updateUser', id: creator.id, balance: creator.balance });
+            await apiCall({ action: 'updateUser', id: creator.id, balance: creator.balance });
             if (currentUser.id === creator.id) currentUser.balance = creator.balance;
         }
         
-        apiCall({ action: 'deleteTask', id: task.id });
+        await apiCall({ action: 'deleteTask', id: task.id });
         
         cachedTasks = cachedTasks.filter(t => t.id != taskId);
+        cacheExpiry = 0;
         showToast(`Задание удалено, ${task.price}₽ возвращено на баланс`);
         renderApp();
     }
 
-    // ========== СИСТЕМА ОТЗЫВОВ ==========
+    // ========== ОТЗЫВЫ ==========
     async function addReview(userId, taskId, rating, comment) {
         const newReview = {
             id: Date.now().toString(),
@@ -543,7 +598,6 @@
         await apiCall({ action: 'addReview', ...newReview });
         cachedReviews.push(newReview);
         
-        // Обновляем рейтинг пользователя
         const user = cachedUsers.find(u => u.id === userId);
         const userReviews = cachedReviews.filter(r => r.toUserId === userId);
         const totalRating = userReviews.reduce((sum, r) => sum + parseInt(r.rating), 0);
@@ -555,12 +609,13 @@
         user.ratingCount = newRatingCount;
         
         showToast(`⭐ Спасибо за отзыв!`);
+        cacheExpiry = 0;
         renderApp();
     }
 
     function getUserRating(userId) {
         const user = cachedUsers.find(u => u.id === userId);
-        if (!user || user.ratingCount === 0 || user.ratingCount === '0') return null;
+        if (!user || user.ratingCount == 0) return null;
         return { rating: parseFloat(user.rating).toFixed(1), count: user.ratingCount };
     }
 
@@ -656,7 +711,6 @@
     async function openChat(taskId) {
         await syncData();
         
-        // Загружаем сообщения для этого задания
         const saved = await apiCall({ action: 'getMessages', taskId: taskId }, true);
         if (saved && saved.messages) {
             cachedMessages[taskId] = JSON.parse(saved.messages);
@@ -700,7 +754,6 @@
             const input = modal.querySelector('#chatMessageInput');
             await sendMessage(taskId, input.value);
             input.value = '';
-            // Обновляем чат
             const newMessages = cachedMessages[taskId] || [];
             messagesDiv.innerHTML = newMessages.map(m => `
                 <div class="message ${m.fromUserId === currentUser.id ? 'message-mine' : 'message-other'}">
@@ -735,6 +788,7 @@
         await apiCall({ action: 'updateUser', id: userId, balance: user.balance });
         if (currentUser && currentUser.id === userId) currentUser.balance = user.balance;
         showToast(`${amount > 0 ? 'Пополнение' : 'Списание'} для ${user.name}: ${amount > 0 ? `+${amount}` : amount}₽`);
+        cacheExpiry = 0;
         renderApp();
     }
 
@@ -763,6 +817,7 @@
         else if (hours > 0) durationText = `на ${hours} ч.`;
         else durationText = 'навсегда';
         showToast(`⛔ ${user.name} заблокирован ${durationText}`);
+        cacheExpiry = 0;
         renderApp();
     }
 
@@ -774,6 +829,7 @@
         user.banExpires = null;
         await apiCall({ action: 'updateUser', id: userId, isBanned: false, banReason: '', banExpires: '' });
         showToast(`✅ ${user.name} разблокирован`);
+        cacheExpiry = 0;
         renderApp();
     }
 
@@ -785,6 +841,7 @@
 
     function exitAdminMode() { adminMode = false; renderApp(); }
 
+    // ========== ОСНОВНОЙ РЕНДЕР ==========
     async function renderApp() {
         await syncData();
         
@@ -872,71 +929,80 @@
             return;
         }
         
-        // ========== ФИЛЬТР ЗАДАНИЙ ТОЛЬКО ПО СВОЕЙ ШКОЛЕ ==========
+        // Фильтр заданий
         const openTasks = cachedTasks.filter(t => t.status === 'open' && t.creatorSchool === currentUser.school);
         const myCreatedTasks = cachedTasks.filter(t => t.creatorId === currentUser.id);
         const myTasksAsExecutor = cachedTasks.filter(t => t.takerId === currentUser.id);
         
-        const tasksHtml = (tasksList, showActions = true) => {
+        // Пагинация для открытых заданий
+        const start = currentPage * ITEMS_PER_PAGE;
+        const end = start + ITEMS_PER_PAGE;
+        const paginatedTasks = openTasks.slice(start, end);
+        const hasMore = end < openTasks.length;
+        
+        const tasksHtml = (tasksList, showActions = true, showPagination = false) => {
             if (!tasksList.length) return '<div class="empty-state" style="text-align:center; padding:40px;">✨ Нет заданий</div>';
-            return `<div class="tasks-grid">${tasksList.map(task => {
-                const creator = cachedUsers.find(u => u.id === task.creatorId);
-                const taker = cachedUsers.find(u => u.id === task.takerId);
-                const isCreator = task.creatorId === currentUser.id;
-                const isTaker = task.takerId === currentUser.id;
-                const statusInfo = getTaskStatusText(task.status);
-                const creatorRating = getUserRating(task.creatorId);
-                const canChat = (task.status === 'in_progress' || task.status === 'awaiting_confirmation') && (isCreator || isTaker);
-                const hasReviewed = cachedReviews.some(r => r.taskId === task.id && r.fromUserId === currentUser.id);
-                
-                let actionButtons = '';
-                
-                if (task.status === 'open' && !isCreator && showActions) {
-                    actionButtons = `<button class="btn-primary take-btn" data-taskid="${task.id}">📌 Взять задание</button>`;
-                }
-                
-                if (task.status === 'in_progress' && isTaker && showActions) {
-                    actionButtons = `<button class="btn-success confirm-complete-btn" data-taskid="${task.id}">✅ Подтвердить выполнение</button>`;
-                }
-                
-                if (task.status === 'awaiting_confirmation' && isCreator && showActions) {
-                    actionButtons = `
-                        <div class="action-buttons">
-                            <button class="btn-success confirm-receipt-btn" data-taskid="${task.id}">💰 Подтвердить получение</button>
-                            <button class="btn-danger cancel-receipt-btn" data-taskid="${task.id}">❌ Не получил</button>
+            return `
+                <div class="tasks-grid">${tasksList.map(task => {
+                    const creator = cachedUsers.find(u => u.id === task.creatorId);
+                    const taker = cachedUsers.find(u => u.id === task.takerId);
+                    const isCreator = task.creatorId === currentUser.id;
+                    const isTaker = task.takerId === currentUser.id;
+                    const statusInfo = getTaskStatusText(task.status);
+                    const creatorRating = getUserRating(task.creatorId);
+                    const canChat = (task.status === 'in_progress' || task.status === 'awaiting_confirmation') && (isCreator || isTaker);
+                    const hasReviewed = cachedReviews.some(r => r.taskId === task.id && r.fromUserId === currentUser.id);
+                    
+                    let actionButtons = '';
+                    
+                    if (task.status === 'open' && !isCreator && showActions) {
+                        actionButtons = `<button class="btn-primary take-btn" data-taskid="${task.id}">📌 Взять задание</button>`;
+                    }
+                    
+                    if (task.status === 'in_progress' && isTaker && showActions) {
+                        actionButtons = `<button class="btn-success confirm-complete-btn" data-taskid="${task.id}">✅ Подтвердить выполнение</button>`;
+                    }
+                    
+                    if (task.status === 'awaiting_confirmation' && isCreator && showActions) {
+                        actionButtons = `
+                            <div class="action-buttons">
+                                <button class="btn-success confirm-receipt-btn" data-taskid="${task.id}">💰 Подтвердить получение</button>
+                                <button class="btn-danger cancel-receipt-btn" data-taskid="${task.id}">❌ Не получил</button>
+                            </div>
+                        `;
+                    }
+                    
+                    if (task.status === 'open' && isCreator && showActions) {
+                        actionButtons = `<button class="btn-danger delete-task-btn" data-taskid="${task.id}">❌ Удалить задание</button>`;
+                    }
+                    
+                    if (canChat && showActions) {
+                        actionButtons += `<button class="btn-info chat-btn" data-taskid="${task.id}">💬 Чат</button>`;
+                    }
+                    
+                    if (task.status === 'completed' && !isCreator && showActions && !hasReviewed) {
+                        actionButtons += `<button class="btn-warning review-btn" data-userid="${task.creatorId}" data-taskid="${task.id}">⭐ Оставить отзыв</button>`;
+                    }
+                    
+                    return `<div class="task-card">
+                        <div class="task-header">
+                            <div class="task-price">${task.price} ₽</div>
+                            <div class="task-status ${statusInfo.class}">${statusInfo.text}</div>
                         </div>
-                    `;
-                }
-                
-                if (task.status === 'open' && isCreator && showActions) {
-                    actionButtons = `<button class="btn-danger delete-task-btn" data-taskid="${task.id}">❌ Удалить задание</button>`;
-                }
-                
-                if (canChat && showActions) {
-                    actionButtons += `<button class="btn-info chat-btn" data-taskid="${task.id}">💬 Чат</button>`;
-                }
-                
-                if (task.status === 'completed' && !isCreator && showActions && !hasReviewed) {
-                    actionButtons += `<button class="btn-warning review-btn" data-userid="${task.creatorId}" data-taskid="${task.id}">⭐ Оставить отзыв</button>`;
-                }
-                
-                return `<div class="task-card">
-                    <div class="task-header">
-                        <div class="task-price">${task.price} ₽</div>
-                        <div class="task-status ${statusInfo.class}">${statusInfo.text}</div>
-                    </div>
-                    <div class="task-desc">📌 ${task.description}</div>
-                    <div class="task-meta">📍 ${task.location}</div>
-                    <div style="font-size:0.7rem; color:#6b7280;">
-                        👤 Создатель: ${creator ? creator.name : '?'} (${creator ? creator.school : ''})
-                        ${creatorRating ? `<span class="user-rating">⭐ ${creatorRating.rating} (${creatorRating.count})</span>` : ''}
-                        ${taker ? `<br>👤 Исполнитель: ${taker.name}` : ''}
-                        ${taker ? `<button class="btn-outline view-reviews-btn" data-userid="${taker.id}" style="margin-left:10px; padding:2px 10px; font-size:0.7rem;">📋 Отзывы</button>` : ''}
-                        ${creator && !taker ? `<button class="btn-outline view-reviews-btn" data-userid="${creator.id}" style="margin-left:10px; padding:2px 10px; font-size:0.7rem;">📋 Отзывы</button>` : ''}
-                    </div>
-                    ${actionButtons}
-                </div>`;
-            }).join('')}</div>`;
+                        <div class="task-desc">📌 ${task.description}</div>
+                        <div class="task-meta">📍 ${task.location}</div>
+                        <div style="font-size:0.7rem; color:#6b7280;">
+                            👤 Создатель: ${creator ? creator.name : '?'} (${creator ? creator.school : ''})
+                            ${creatorRating ? `<span class="user-rating">⭐ ${creatorRating.rating} (${creatorRating.count})</span>` : ''}
+                            ${taker ? `<br>👤 Исполнитель: ${taker.name}` : ''}
+                            ${taker ? `<button class="btn-outline view-reviews-btn" data-userid="${taker.id}" style="margin-left:10px; padding:2px 10px; font-size:0.7rem;">📋 Отзывы</button>` : ''}
+                            ${creator && !taker ? `<button class="btn-outline view-reviews-btn" data-userid="${creator.id}" style="margin-left:10px; padding:2px 10px; font-size:0.7rem;">📋 Отзывы</button>` : ''}
+                        </div>
+                        ${actionButtons}
+                    </div>`;
+                }).join('')}</div>
+                ${showPagination && hasMore ? `<button id="loadMoreBtn" class="btn-primary" style="margin-top:20px; width:100%;">📚 Загрузить ещё (${openTasks.length - end} осталось)</button>` : ''}
+            `;
         };
         
         let adminPanelHtml = '';
@@ -963,7 +1029,7 @@
                             <td>${isBanned ? '⛔ Забанен' : '✅ Активен'}${isBanned && user.banExpires ? `<div class="ban-info" style="font-size:0.7rem; color:#dc2626;">до ${new Date(user.banExpires).toLocaleString()}<br>${user.banReason || ''}</div>` : ''}</td>
                             <td><div class="balance-control"><input type="number" id="amount-${user.id}" placeholder="Сумма" value="100"><button class="topup-btn" data-userid="${user.id}">💰 +</button><button class="withdraw-btn" data-userid="${user.id}">💸 -</button></div></td>
                             <td>${!isBanned ? `<div class="ban-control"><input type="number" id="days-${user.id}" placeholder="Дни" value="0"><input type="number" id="hours-${user.id}" placeholder="Часы" value="0"><input type="text" id="reason-${user.id}" placeholder="Причина" style="width:100px;"><button class="ban-btn" data-userid="${user.id}">⛔ Бан</button></div>` : `<button class="unban-btn" data-userid="${user.id}">✅ Разбанить</button>`}</td>
-                        </table>`}).join('')}</tbody></table></div>
+                        </tr>`}).join('')}</tbody>}?</div>
                 </div>
             `;
         }
@@ -972,9 +1038,9 @@
         
         let activeTab = window._activeTab || 'allTasks';
         let mainContent = '';
-        if (activeTab === 'allTasks') mainContent = `<h3>📋 Доступные задания (школа ${currentUser.school})</h3>${tasksHtml(openTasks, true)}`;
-        else if (activeTab === 'myTasks') mainContent = `<h3>📌 Мои задания (созданные мной)</h3>${tasksHtml(myCreatedTasks, true)}`;
-        else if (activeTab === 'myExecutions') mainContent = `<h3>⚡ Мои выполнения</h3>${tasksHtml(myTasksAsExecutor, true)}`;
+        if (activeTab === 'allTasks') mainContent = `<h3>📋 Доступные задания (школа ${currentUser.school})</h3>${tasksHtml(paginatedTasks, true, true)}`;
+        else if (activeTab === 'myTasks') mainContent = `<h3>📌 Мои задания (созданные мной)</h3>${tasksHtml(myCreatedTasks, true, false)}`;
+        else if (activeTab === 'myExecutions') mainContent = `<h3>⚡ Мои выполнения</h3>${tasksHtml(myTasksAsExecutor, true, false)}`;
         else if (activeTab === 'create') mainContent = createForm;
         
         const adminButtonHtml = isAdmin ? `<button id="adminPanelBtn" style="background:#2c3e50; color:white; border:none; padding:6px 20px; border-radius:60px;">🔐 Админка</button>` : '';
@@ -1008,7 +1074,12 @@
             <div style="margin-top:20px; text-align:center; font-size:12px; color:#4b5563;">⚠️ Комиссия 5% | ${TASK_TIMEOUT_HOURS} часов на подтверждение получения</div>
         `;
         
-        document.querySelectorAll('.tab').forEach(el => el.addEventListener('click', () => { window._activeTab = el.dataset.tab; renderApp(); }));
+        // Обработчики событий
+        document.querySelectorAll('.tab').forEach(el => el.addEventListener('click', () => { 
+            window._activeTab = el.dataset.tab; 
+            currentPage = 0;
+            renderApp(); 
+        }));
         document.getElementById('logoutBtn')?.addEventListener('click', logout);
         document.getElementById('topupBtn')?.addEventListener('click', () => showToast('Напишите @leshr_ak47 для пополнения баланса'));
         document.getElementById('withdrawBtn')?.addEventListener('click', () => showToast('Вывод средств через администратора в Telegram @leshr_ak47'));
@@ -1017,8 +1088,16 @@
         if (isAdmin) {
             document.getElementById('adminPanelBtn')?.addEventListener('click', () => { if (adminMode) exitAdminMode(); else requestAdminAccess(); });
             document.getElementById('exitAdminBtn')?.addEventListener('click', exitAdminMode);
-            document.getElementById('refreshUsersBtn')?.addEventListener('click', async () => { await syncData(); renderApp(); showToast('Список обновлён'); });
-            document.getElementById('adminSearch')?.addEventListener('input', (e) => { adminSearchTerm = e.target.value; renderApp(); });
+            document.getElementById('refreshUsersBtn')?.addEventListener('click', async () => { await forceSync(); renderApp(); showToast('Список обновлён'); });
+            
+            const searchInput = document.getElementById('adminSearch');
+            if (searchInput) {
+                const debouncedSearch = debounce((value) => {
+                    adminSearchTerm = value;
+                    renderApp();
+                }, 300);
+                searchInput.addEventListener('input', (e) => debouncedSearch(e.target.value));
+            }
         }
         
         document.getElementById('createTaskBtn')?.addEventListener('click', () => {
@@ -1027,6 +1106,11 @@
             const loc = document.getElementById('taskLocation')?.value;
             if (desc && price && loc) createTask(desc, price, loc);
             else showToast('Заполните все поля', true);
+        });
+        
+        document.getElementById('loadMoreBtn')?.addEventListener('click', () => {
+            currentPage++;
+            renderApp();
         });
         
         document.querySelectorAll('.take-btn').forEach(btn => btn.addEventListener('click', () => takeTask(btn.dataset.taskid)));
