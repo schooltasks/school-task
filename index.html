@@ -183,7 +183,7 @@
         }
     }
 
-    // ========== ИСПРАВЛЕННАЯ ФУНКЦИЯ ВХОДА ==========
+    // ========== ИСПРАВЛЕННАЯ ФУНКЦИЯ ВХОДА (сравнение как строки) ==========
     async function loginUser(name, school, corp, password) {
         const cleanName = name ? name.trim() : '';
         const cleanSchool = school ? school.toString().trim() : '';
@@ -201,6 +201,7 @@
         
         await syncData();
         
+        // Ищем пользователя (сравниваем как строки, чтобы число и строка совпали)
         const user = cachedUsers.find(u => 
             u.name === cleanName && 
             u.school.toString() === cleanSchool && 
@@ -208,7 +209,7 @@
         );
         
         if (!user) { 
-            showToast(`❌ Пользователь не найден. Проверьте:\nИмя: "${cleanName}"\nШкола: "${cleanSchool}"\nКорпус: "${cleanCorp}"`, true); 
+            showToast(`❌ Пользователь не найден.\nИмя: "${cleanName}"\nШкола: "${cleanSchool}"\nКорпус: "${cleanCorp}"`, true); 
             return false; 
         }
         
