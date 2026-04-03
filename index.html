@@ -156,7 +156,7 @@
             school: school.trim(),
             corp: corp.trim(),
             balance: 0,
-            password: password,
+            password: password.trim(),
             isBanned: false,
             banReason: '',
             banExpires: null,
@@ -183,12 +183,12 @@
         }
     }
 
-    // ========== ИСПРАВЛЕННАЯ ФУНКЦИЯ ВХОДА (сравнение как строки) ==========
+    // ========== ИСПРАВЛЕННАЯ ФУНКЦИЯ ВХОДА ==========
     async function loginUser(name, school, corp, password) {
-        const cleanName = name ? name.trim() : '';
+        const cleanName = name ? name.toString().trim() : '';
         const cleanSchool = school ? school.toString().trim() : '';
         const cleanCorp = corp ? corp.toString().trim() : '';
-        const cleanPassword = password ? password.trim() : '';
+        const cleanPassword = password ? password.toString().trim() : '';
         
         if (!cleanName || !cleanSchool || !cleanCorp) { 
             showToast('Заполните все поля (имя, школа, корпус)', true); 
@@ -201,20 +201,21 @@
         
         await syncData();
         
-        // Ищем пользователя (сравниваем как строки, чтобы число и строка совпали)
-        const user = cachedUsers.find(u => 
-            u.name === cleanName && 
-            u.school.toString() === cleanSchool && 
-            u.corp.toString() === cleanCorp
-        );
+        const user = cachedUsers.find(u => {
+            const userName = u.name ? u.name.toString().trim() : '';
+            const userSchool = u.school ? u.school.toString().trim() : '';
+            const userCorp = u.corp ? u.corp.toString().trim() : '';
+            return userName === cleanName && userSchool === cleanSchool && userCorp === cleanCorp;
+        });
         
         if (!user) { 
-            showToast(`❌ Пользователь не найден.\nИмя: "${cleanName}"\nШкола: "${cleanSchool}"\nКорпус: "${cleanCorp}"`, true); 
+            showToast(`❌ Пользователь не найден.\nПроверьте данные`, true); 
             return false; 
         }
         
-        if (user.password !== cleanPassword) { 
-            showToast('❌ Неверный пароль', true); 
+        const userPassword = user.password ? user.password.toString().trim() : '';
+        if (userPassword !== cleanPassword) { 
+            showToast(`❌ Неверный пароль для пользователя ${user.name}`, true); 
             return false; 
         }
         
@@ -535,6 +536,7 @@
             return;
         }
         
+        // ========== ФИЛЬТР ЗАДАНИЙ ТОЛЬКО ПО СВОЕЙ ШКОЛЕ ==========
         const openTasks = cachedTasks.filter(t => t.status === 'open' && t.creatorSchool === currentUser.school);
         const myCreatedTasks = cachedTasks.filter(t => t.creatorId === currentUser.id);
         const myTasksAsExecutor = cachedTasks.filter(t => t.takerId === currentUser.id);
@@ -618,7 +620,7 @@
         
         let activeTab = window._activeTab || 'allTasks';
         let mainContent = '';
-        if (activeTab === 'allTasks') mainContent = `<h3>📋 Доступные задания</h3>${tasksHtml(openTasks, true)}`;
+        if (activeTab === 'allTasks') mainContent = `<h3>📋 Доступные задания (школа ${currentUser.school})</h3>${tasksHtml(openTasks, true)}`;
         else if (activeTab === 'myTasks') mainContent = `<h3>📌 Мои задания (созданные мной)</h3>${tasksHtml(myCreatedTasks, true)}`;
         else if (activeTab === 'myExecutions') mainContent = `<h3>⚡ Мои выполнения</h3>${tasksHtml(myTasksAsExecutor, true)}`;
         else if (activeTab === 'create') mainContent = createForm;
