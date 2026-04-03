@@ -169,7 +169,7 @@
 
 <script>
     // ========== НАСТРОЙКИ ==========
-    const API_URL = 'https://script.google.com/macros/s/AKfycbzZYflQRD5bQlirohtNe7RofqV_G70YI7L8xD29j-oK7h9s3tPO_Fzm-OhWnaYOedMZwg/exec';
+    const API_URL = 'https://script.google.com/macros/s/AKfycbwy3VOArLHWEsstVY1xV39ik8yNtqt1ftbE7X7VJuwn-AOhsr-kJwLXITJIYPSWINFW4g/exec';
     const ADMIN_PASSWORD = 'dsl382dAZX';
     const TASK_TIMEOUT_HOURS = 5;
     
@@ -196,6 +196,17 @@
     
     // Применяем тему при загрузке
     if (isDarkTheme) document.body.classList.add('dark-theme');
+
+    // ========== ХЕШ-ФУНКЦИЯ ДЛЯ ЗАЩИТЫ СЕССИИ ==========
+    function simpleHash(str) {
+        if (!str) return '';
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            hash = ((hash << 5) - hash) + str.charCodeAt(i);
+            hash |= 0;
+        }
+        return hash.toString();
+    }
 
     // ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
     function debounce(func, delay) {
@@ -271,26 +282,87 @@
         setTimeout(() => toast.remove(), 3000);
     }
 
+    // ========== ЗАЩИЩЁННАЯ СИСТЕМА СЕССИЙ ==========
     function saveSession() {
         if (currentUser) {
-            localStorage.setItem('schoolTasks_session', currentUser.id);
+            const sessionData = {
+                id: currentUser.id,
+                name: currentUser.name,
+                school: currentUser.school,
+                corp: currentUser.corp,
+                passwordHash: simpleHash(currentUser.password),
+                savedAt: Date.now()
+            };
+            localStorage.setItem('schoolTasks_session', JSON.stringify(sessionData));
+            // Дополнительно сохраняем в sessionStorage для проверки
+            sessionStorage.setItem('schoolTasks_currentUserId', currentUser.id);
         } else {
             localStorage.removeItem('schoolTasks_session');
+            sessionStorage.removeItem('schoolTasks_currentUserId');
         }
     }
 
     async function restoreSession() {
-        const savedUserId = localStorage.getItem('schoolTasks_session');
-        if (savedUserId) {
-            await syncData();
-            const user = cachedUsers.find(u => u.id === savedUserId);
-            if (user && user.isBanned !== 'true' && user.isBanned !== true) {
-                currentUser = user;
-                return true;
-            } else {
+        const savedSession = localStorage.getItem('schoolTasks_session');
+        if (!savedSession) return false;
+        
+        try {
+            const sessionData = JSON.parse(savedSession);
+            
+            // Проверка возраста сессии (максимум 7 дней)
+            const SESSION_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
+            if (Date.now() - sessionData.savedAt > SESSION_MAX_AGE) {
                 localStorage.removeItem('schoolTasks_session');
+                return false;
             }
+            
+            await syncData();
+            
+            // Поиск пользователя (сначала по ID, потом по уникальной комбинации)
+            let user = cachedUsers.find(u => u.id === sessionData.id);
+            
+            if (!user) {
+                user = cachedUsers.find(u => 
+                    u.name === sessionData.name && 
+                    u.school === sessionData.school &&
+                    u.corp === sessionData.corp
+                );
+            }
+            
+            if (!user) {
+                localStorage.removeItem('schoolTasks_session');
+                return false;
+            }
+            
+            // Проверка хеша пароля (защита от подмены)
+            const currentHash = simpleHash(user.password);
+            if (currentHash !== sessionData.passwordHash) {
+                console.warn('Хеш пароля не совпадает, сессия недействительна');
+                localStorage.removeItem('schoolTasks_session');
+                return false;
+            }
+            
+            // Проверка бана
+            const isBanned = user.isBanned === 'true' || user.isBanned === true;
+            if (isBanned) {
+                if (user.banExpires && new Date() > new Date(user.banExpires)) {
+                    await apiCall({ action: 'updateUser', id: user.id, isBanned: false, banReason: '', banExpires: '' });
+                    user.isBanned = false;
+                } else {
+                    localStorage.removeItem('schoolTasks_session');
+                    return false;
+                }
+            }
+            
+            currentUser = user;
+            // Обновляем сессию
+            saveSession();
+            return true;
+        } catch (e) {
+            console.error('Ошибка восстановления сессии:', e);
+            localStorage.removeItem('schoolTasks_session');
         }
+        
         return false;
     }
 
@@ -412,6 +484,7 @@
         authMode = 'login'; 
         currentPage = 0;
         localStorage.removeItem('schoolTasks_session'); 
+        sessionStorage.removeItem('schoolTasks_currentUserId');
         renderApp(); 
     }
 
@@ -1029,7 +1102,7 @@
                             <td>${isBanned ? '⛔ Забанен' : '✅ Активен'}${isBanned && user.banExpires ? `<div class="ban-info" style="font-size:0.7rem; color:#dc2626;">до ${new Date(user.banExpires).toLocaleString()}<br>${user.banReason || ''}</div>` : ''}</td>
                             <td><div class="balance-control"><input type="number" id="amount-${user.id}" placeholder="Сумма" value="100"><button class="topup-btn" data-userid="${user.id}">💰 +</button><button class="withdraw-btn" data-userid="${user.id}">💸 -</button></div></td>
                             <td>${!isBanned ? `<div class="ban-control"><input type="number" id="days-${user.id}" placeholder="Дни" value="0"><input type="number" id="hours-${user.id}" placeholder="Часы" value="0"><input type="text" id="reason-${user.id}" placeholder="Причина" style="width:100px;"><button class="ban-btn" data-userid="${user.id}">⛔ Бан</button></div>` : `<button class="unban-btn" data-userid="${user.id}">✅ Разбанить</button>`}</td>
-                        </tr>`}).join('')}</tbody>}?</div>
+                        </tr>`}).join('')}</tbody>}</table></div>
                 </div>
             `;
         }
