@@ -15,9 +15,7 @@
         body.dark-theme .header,
         body.dark-theme .card,
         body.dark-theme .admin-panel,
-        body.dark-theme .task-card,
-        body.dark-theme .chat-modal,
-        body.dark-theme .reviews-modal {
+        body.dark-theme .task-card {
             background: #1e293b;
             color: #e2e8f0;
         }
@@ -169,7 +167,7 @@
 
 <script>
     // ========== НАСТРОЙКИ ==========
-    const API_URL = 'https://script.google.com/macros/s/AKfycbwy3VOArLHWEsstVY1xV39ik8yNtqt1ftbE7X7VJuwn-AOhsr-kJwLXITJIYPSWINFW4g/exec';
+    const API_URL = 'https://script.google.com/macros/s/AKfycbzTLKkVLGixNs9PC-2YkZLikOySqnJLOUKFIt52taOOHVxm6vLiEbsdlB-r5SG1RaidIQ/exec';
     const ADMIN_PASSWORD = 'dsl382dAZX';
     const TASK_TIMEOUT_HOURS = 5;
     
@@ -188,24 +186,17 @@
     
     // Кэширование
     let cacheExpiry = 0;
-    const CACHE_DURATION = 30000; // 30 секунд
+    const CACHE_DURATION = 30000;
     
     // Пагинация
     let currentPage = 0;
     const ITEMS_PER_PAGE = 10;
     
-    // Применяем тему при загрузке
     if (isDarkTheme) document.body.classList.add('dark-theme');
 
-    // ========== ХЕШ-ФУНКЦИЯ ДЛЯ ЗАЩИТЫ СЕССИИ ==========
-    function simpleHash(str) {
-        if (!str) return '';
-        let hash = 0;
-        for (let i = 0; i < str.length; i++) {
-            hash = ((hash << 5) - hash) + str.charCodeAt(i);
-            hash |= 0;
-        }
-        return hash.toString();
+    // ========== ГЕНЕРАЦИЯ ТОКЕНА ==========
+    function generateSessionToken() {
+        return 'token_' + Date.now() + '_' + Math.random().toString(36).substring(2, 15);
     }
 
     // ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
@@ -285,20 +276,21 @@
     // ========== ЗАЩИЩЁННАЯ СИСТЕМА СЕССИЙ ==========
     function saveSession() {
         if (currentUser) {
+            if (!currentUser.sessionToken) {
+                currentUser.sessionToken = generateSessionToken();
+            }
             const sessionData = {
-                id: currentUser.id,
-                name: currentUser.name,
-                school: currentUser.school,
-                corp: currentUser.corp,
-                passwordHash: simpleHash(currentUser.password),
+                userId: currentUser.id,
+                userName: currentUser.name,
+                userSchool: currentUser.school,
+                userCorp: currentUser.corp,
+                sessionToken: currentUser.sessionToken,
                 savedAt: Date.now()
             };
             localStorage.setItem('schoolTasks_session', JSON.stringify(sessionData));
-            // Дополнительно сохраняем в sessionStorage для проверки
-            sessionStorage.setItem('schoolTasks_currentUserId', currentUser.id);
+            apiCall({ action: 'updateUser', id: currentUser.id, sessionToken: currentUser.sessionToken }, true);
         } else {
             localStorage.removeItem('schoolTasks_session');
-            sessionStorage.removeItem('schoolTasks_currentUserId');
         }
     }
 
@@ -308,9 +300,7 @@
         
         try {
             const sessionData = JSON.parse(savedSession);
-            
-            // Проверка возраста сессии (максимум 7 дней)
-            const SESSION_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
+            const SESSION_MAX_AGE = 30 * 24 * 60 * 60 * 1000;
             if (Date.now() - sessionData.savedAt > SESSION_MAX_AGE) {
                 localStorage.removeItem('schoolTasks_session');
                 return false;
@@ -318,51 +308,24 @@
             
             await syncData();
             
-            // Поиск пользователя (сначала по ID, потом по уникальной комбинации)
-            let user = cachedUsers.find(u => u.id === sessionData.id);
+            let user = cachedUsers.find(u => u.id === sessionData.userId);
             
-            if (!user) {
-                user = cachedUsers.find(u => 
-                    u.name === sessionData.name && 
-                    u.school === sessionData.school &&
-                    u.corp === sessionData.corp
-                );
-            }
-            
-            if (!user) {
-                localStorage.removeItem('schoolTasks_session');
-                return false;
-            }
-            
-            // Проверка хеша пароля (защита от подмены)
-            const currentHash = simpleHash(user.password);
-            if (currentHash !== sessionData.passwordHash) {
-                console.warn('Хеш пароля не совпадает, сессия недействительна');
-                localStorage.removeItem('schoolTasks_session');
-                return false;
-            }
-            
-            // Проверка бана
-            const isBanned = user.isBanned === 'true' || user.isBanned === true;
-            if (isBanned) {
-                if (user.banExpires && new Date() > new Date(user.banExpires)) {
-                    await apiCall({ action: 'updateUser', id: user.id, isBanned: false, banReason: '', banExpires: '' });
-                    user.isBanned = false;
-                } else {
-                    localStorage.removeItem('schoolTasks_session');
-                    return false;
+            if (user && 
+                user.name === sessionData.userName && 
+                user.school === sessionData.userSchool && 
+                user.corp === sessionData.userCorp &&
+                user.sessionToken === sessionData.sessionToken) {
+                
+                const isBanned = user.isBanned === 'true' || user.isBanned === true;
+                if (!isBanned) {
+                    currentUser = user;
+                    return true;
                 }
             }
-            
-            currentUser = user;
-            // Обновляем сессию
-            saveSession();
-            return true;
+            localStorage.removeItem('schoolTasks_session');
         } catch (e) {
-            console.error('Ошибка восстановления сессии:', e);
             localStorage.removeItem('schoolTasks_session');
         }
-        
         return false;
     }
 
@@ -383,7 +346,7 @@
         await syncData();
         
         if (isUsernameTaken(name)) {
-            showToast(`❌ Имя "${name}" уже занято! Выберите другое.`, true);
+            showToast(`❌ Имя "${name}" уже занято!`, true);
             return false;
         }
         
@@ -400,6 +363,7 @@
             banExpires: null,
             rating: 0,
             ratingCount: 0,
+            sessionToken: '',
             registeredAt: new Date().toISOString()
         };
         
@@ -419,7 +383,7 @@
             renderApp();
             return true;
         } else { 
-            showToast('Ошибка регистрации. Проверьте интернет или обратитесь к администратору.', true); 
+            showToast('Ошибка регистрации', true); 
             return false; 
         }
     }
@@ -431,7 +395,7 @@
         const cleanPassword = password ? password.toString().trim() : '';
         
         if (!cleanName || !cleanSchool || !cleanCorp) { 
-            showToast('Заполните все поля (имя, школа, корпус)', true); 
+            showToast('Заполните все поля', true); 
             return false; 
         }
         if (!cleanPassword) { 
@@ -449,26 +413,24 @@
         });
         
         if (!user) { 
-            showToast(`❌ Пользователь не найден.\nПроверьте данные`, true); 
+            showToast('❌ Пользователь не найден', true); 
             return false; 
         }
         
         const userPassword = user.password ? user.password.toString().trim() : '';
         if (userPassword !== cleanPassword) { 
-            showToast(`❌ Неверный пароль для пользователя ${user.name}`, true); 
+            showToast('❌ Неверный пароль', true); 
             return false; 
         }
         
         const isBanned = user.isBanned === 'true' || user.isBanned === true;
-        if (isBanned && user.banExpires && new Date() > new Date(user.banExpires)) {
-            await apiCall({ action: 'updateUser', id: user.id, isBanned: false, banReason: '', banExpires: '' });
-            user.isBanned = false;
-            showToast('Срок блокировки истёк, вы разблокированы.');
-        } else if (isBanned) {
-            let expiresDate = user.banExpires ? new Date(user.banExpires).toLocaleString() : 'навсегда';
-            showToast(`⛔ Аккаунт заблокирован до ${expiresDate}. Причина: ${user.banReason || 'не указана'}`, true);
+        if (isBanned) {
+            showToast('⛔ Аккаунт заблокирован', true);
             return false;
         }
+        
+        user.sessionToken = generateSessionToken();
+        await apiCall({ action: 'updateUser', id: user.id, sessionToken: user.sessionToken });
         
         currentUser = user;
         saveSession();
@@ -479,12 +441,14 @@
     }
 
     function logout() { 
+        if (currentUser) {
+            apiCall({ action: 'updateUser', id: currentUser.id, sessionToken: '' }, true);
+        }
         currentUser = null; 
         adminMode = false; 
         authMode = 'login'; 
         currentPage = 0;
         localStorage.removeItem('schoolTasks_session'); 
-        sessionStorage.removeItem('schoolTasks_currentUserId');
         renderApp(); 
     }
 
@@ -531,7 +495,7 @@
         if (result && result.success) {
             cachedTasks.push(newTask);
             cacheExpiry = 0;
-            showToast(`Задание создано! -${priceNum}₽ (деньги заморожены до подтверждения)`);
+            showToast(`Задание создано! -${priceNum}₽`);
         } else {
             cachedUsers[userIdx].balance += priceNum;
             currentUser.balance = cachedUsers[userIdx].balance;
@@ -555,7 +519,7 @@
         
         await apiCall({ action: 'updateTask', id: task.id, status: 'in_progress', takerId: currentUser.id, takenAt: task.takenAt });
         
-        showToast(`📢 Вы взяли задание! Выполните его и нажмите "Подтвердить выполнение".`);
+        showToast(`📢 Вы взяли задание!`);
         cacheExpiry = 0;
         renderApp();
     }
@@ -565,14 +529,14 @@
         await syncData();
         let task = cachedTasks.find(t => t.id == taskId);
         if (!task || task.status !== 'in_progress') { showToast('Задание нельзя подтвердить', true); return; }
-        if (task.takerId !== currentUser.id) { showToast('Только исполнитель может подтвердить выполнение', true); return; }
+        if (task.takerId !== currentUser.id) { showToast('Только исполнитель может подтвердить', true); return; }
         
         task.status = 'awaiting_confirmation';
         task.completedAt = new Date().toISOString();
         
         await apiCall({ action: 'updateTask', id: task.id, status: 'awaiting_confirmation', completedAt: task.completedAt });
         
-        showToast(`✅ Вы отметили задание как выполненное. Ожидайте подтверждения от создателя.`);
+        showToast(`✅ Вы отметили задание как выполненное.`);
         cacheExpiry = 0;
         renderApp();
     }
@@ -582,7 +546,7 @@
         await syncData();
         let task = cachedTasks.find(t => t.id == taskId);
         if (!task || task.status !== 'awaiting_confirmation') { showToast('Задание нельзя подтвердить', true); return; }
-        if (task.creatorId !== currentUser.id) { showToast('Только создатель может подтвердить получение', true); return; }
+        if (task.creatorId !== currentUser.id) { showToast('Только создатель может подтвердить', true); return; }
         
         const totalPrice = parseFloat(task.price);
         const commission = totalPrice * 0.05;
@@ -598,14 +562,7 @@
         
         await apiCall({ action: 'updateTask', id: task.id, status: 'completed' });
         
-        showToast(`💰 Подтверждено! ${executorGain.toFixed(2)}₽ переведено исполнителю. Комиссия 5% (${commission.toFixed(2)}₽)`);
-        
-        setTimeout(() => {
-            if (confirm(`Хотите оставить отзыв об исполнителе ${executor?.name}?`)) {
-                showReviewModal(task.takerId, task.id);
-            }
-        }, 500);
-        
+        showToast(`💰 Подтверждено! +${executorGain.toFixed(2)}₽ исполнителю`);
         cacheExpiry = 0;
         renderApp();
     }
@@ -615,7 +572,7 @@
         await syncData();
         let task = cachedTasks.find(t => t.id == taskId);
         if (!task || task.status !== 'awaiting_confirmation') { showToast('Задание нельзя отменить', true); return; }
-        if (task.creatorId !== currentUser.id) { showToast('Только создатель может отметить "не получил"', true); return; }
+        if (task.creatorId !== currentUser.id) { showToast('Только создатель может отметить', true); return; }
         
         const creator = cachedUsers.find(u => u.id === task.creatorId);
         if (creator) {
@@ -628,7 +585,7 @@
         
         await apiCall({ action: 'updateTask', id: task.id, status: 'disputed' });
         
-        showToast(`⚠️ Вы отметили, что не получили услугу. Деньги возвращены на ваш баланс.`);
+        showToast(`⚠️ Деньги возвращены на баланс`);
         cacheExpiry = 0;
         renderApp();
     }
@@ -639,7 +596,7 @@
         let task = cachedTasks.find(t => t.id == taskId);
         if (!task) return;
         if (task.creatorId !== currentUser.id) { showToast('Можно удалять только свои задания', true); return; }
-        if (task.status !== 'open') { showToast('Нельзя удалить задание, которое уже взято', true); return; }
+        if (task.status !== 'open') { showToast('Нельзя удалить задание в работе', true); return; }
         
         const creator = cachedUsers.find(u => u.id === task.creatorId);
         if (creator) {
@@ -652,201 +609,15 @@
         
         cachedTasks = cachedTasks.filter(t => t.id != taskId);
         cacheExpiry = 0;
-        showToast(`Задание удалено, ${task.price}₽ возвращено на баланс`);
+        showToast(`Задание удалено, деньги возвращены`);
         renderApp();
-    }
-
-    // ========== ОТЗЫВЫ ==========
-    async function addReview(userId, taskId, rating, comment) {
-        const newReview = {
-            id: Date.now().toString(),
-            fromUserId: currentUser.id,
-            toUserId: userId,
-            taskId: taskId,
-            rating: parseInt(rating),
-            comment: comment.trim(),
-            createdAt: new Date().toISOString()
-        };
-        
-        await apiCall({ action: 'addReview', ...newReview });
-        cachedReviews.push(newReview);
-        
-        const user = cachedUsers.find(u => u.id === userId);
-        const userReviews = cachedReviews.filter(r => r.toUserId === userId);
-        const totalRating = userReviews.reduce((sum, r) => sum + parseInt(r.rating), 0);
-        const newRating = totalRating / userReviews.length;
-        const newRatingCount = userReviews.length;
-        
-        await apiCall({ action: 'updateUser', id: userId, rating: newRating, ratingCount: newRatingCount });
-        user.rating = newRating;
-        user.ratingCount = newRatingCount;
-        
-        showToast(`⭐ Спасибо за отзыв!`);
-        cacheExpiry = 0;
-        renderApp();
-    }
-
-    function getUserRating(userId) {
-        const user = cachedUsers.find(u => u.id === userId);
-        if (!user || user.ratingCount == 0) return null;
-        return { rating: parseFloat(user.rating).toFixed(1), count: user.ratingCount };
-    }
-
-    function showReviewModal(userId, taskId) {
-        const user = cachedUsers.find(u => u.id === userId);
-        let selectedRating = 5;
-        
-        const modal = document.createElement('div');
-        modal.className = 'modal-overlay';
-        modal.innerHTML = `
-            <div class="reviews-modal">
-                <div class="reviews-header">
-                    <h3>⭐ Оценить ${user?.name}</h3>
-                    <button class="btn-danger" id="closeReviewModal" style="padding: 5px 15px;">✕</button>
-                </div>
-                <div style="padding: 20px;">
-                    <div class="stars" id="starRating">
-                        ${[1,2,3,4,5].map(s => `<span class="star ${s <= 5 ? 'active' : ''}" data-rating="${s}">★</span>`).join('')}
-                    </div>
-                    <textarea id="reviewComment" rows="3" placeholder="Напишите отзыв (необязательно)"></textarea>
-                    <button class="btn-primary" id="submitReview" style="width:100%;">Отправить отзыв</button>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-        
-        const stars = modal.querySelectorAll('.star');
-        stars.forEach(star => {
-            star.addEventListener('click', () => {
-                const rating = parseInt(star.dataset.rating);
-                selectedRating = rating;
-                stars.forEach(s => {
-                    if (parseInt(s.dataset.rating) <= rating) s.classList.add('active');
-                    else s.classList.remove('active');
-                });
-            });
-        });
-        
-        modal.querySelector('#closeReviewModal').onclick = () => modal.remove();
-        modal.querySelector('#submitReview').onclick = () => {
-            const comment = modal.querySelector('#reviewComment').value;
-            addReview(userId, taskId, selectedRating, comment);
-            modal.remove();
-        };
-    }
-
-    function showUserReviews(userId) {
-        const user = cachedUsers.find(u => u.id === userId);
-        const reviews = cachedReviews.filter(r => r.toUserId === userId);
-        
-        const modal = document.createElement('div');
-        modal.className = 'modal-overlay';
-        modal.innerHTML = `
-            <div class="reviews-modal">
-                <div class="reviews-header">
-                    <h3>⭐ Отзывы о ${user?.name}</h3>
-                    <button class="btn-danger" id="closeReviewsModal" style="padding: 5px 15px;">✕</button>
-                </div>
-                <div style="padding: 20px; max-height: 60vh; overflow-y: auto;">
-                    ${reviews.length === 0 ? '<p>Пока нет отзывов</p>' : reviews.map(r => {
-                        const fromUser = cachedUsers.find(u => u.id === r.fromUserId);
-                        return `
-                            <div class="review-item">
-                                <div class="stars" style="margin:0;">${'★'.repeat(parseInt(r.rating))}${'☆'.repeat(5-parseInt(r.rating))}</div>
-                                <p>${r.comment || 'Без комментария'}</p>
-                                <small>${fromUser?.name} • ${new Date(r.createdAt).toLocaleDateString()}</small>
-                            </div>
-                        `;
-                    }).join('')}
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-        modal.querySelector('#closeReviewsModal').onclick = () => modal.remove();
-    }
-
-    // ========== ЧАТ ==========
-    async function sendMessage(taskId, message) {
-        if (!message.trim()) return;
-        
-        if (!cachedMessages[taskId]) cachedMessages[taskId] = [];
-        cachedMessages[taskId].push({
-            id: Date.now().toString(),
-            fromUserId: currentUser.id,
-            message: message.trim(),
-            timestamp: new Date().toISOString()
-        });
-        
-        await apiCall({ action: 'saveMessage', taskId: taskId, messages: JSON.stringify(cachedMessages[taskId]) }, true);
-        renderApp();
-    }
-
-    async function openChat(taskId) {
-        await syncData();
-        
-        const saved = await apiCall({ action: 'getMessages', taskId: taskId }, true);
-        if (saved && saved.messages) {
-            cachedMessages[taskId] = JSON.parse(saved.messages);
-        } else if (!cachedMessages[taskId]) {
-            cachedMessages[taskId] = [];
-        }
-        
-        const task = cachedTasks.find(t => t.id == taskId);
-        const otherUserId = task.creatorId === currentUser.id ? task.takerId : task.creatorId;
-        const otherUser = cachedUsers.find(u => u.id === otherUserId);
-        
-        const modal = document.createElement('div');
-        modal.className = 'modal-overlay';
-        modal.innerHTML = `
-            <div class="chat-modal">
-                <div class="chat-header">
-                    <h3>💬 Чат с ${otherUser?.name}</h3>
-                    <button class="btn-danger" id="closeChat" style="padding: 5px 15px;">✕</button>
-                </div>
-                <div class="chat-messages" id="chatMessages">
-                    ${cachedMessages[taskId].map(m => `
-                        <div class="message ${m.fromUserId === currentUser.id ? 'message-mine' : 'message-other'}">
-                            <strong>${m.fromUserId === currentUser.id ? 'Я' : otherUser?.name}:</strong> ${m.message}
-                            <div style="font-size:0.7rem; opacity:0.7;">${new Date(m.timestamp).toLocaleTimeString()}</div>
-                        </div>
-                    `).join('')}
-                </div>
-                <div class="chat-input">
-                    <input type="text" id="chatMessageInput" placeholder="Введите сообщение...">
-                    <button class="btn-primary" id="sendMessageBtn">📤</button>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(modal);
-        
-        const messagesDiv = modal.querySelector('#chatMessages');
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        
-        modal.querySelector('#closeChat').onclick = () => modal.remove();
-        modal.querySelector('#sendMessageBtn').onclick = async () => {
-            const input = modal.querySelector('#chatMessageInput');
-            await sendMessage(taskId, input.value);
-            input.value = '';
-            const newMessages = cachedMessages[taskId] || [];
-            messagesDiv.innerHTML = newMessages.map(m => `
-                <div class="message ${m.fromUserId === currentUser.id ? 'message-mine' : 'message-other'}">
-                    <strong>${m.fromUserId === currentUser.id ? 'Я' : otherUser?.name}:</strong> ${m.message}
-                    <div style="font-size:0.7rem; opacity:0.7;">${new Date(m.timestamp).toLocaleTimeString()}</div>
-                </div>
-            `).join('');
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        };
-        
-        modal.querySelector('#chatMessageInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') modal.querySelector('#sendMessageBtn').click();
-        });
     }
 
     function getTaskStatusText(status) {
         switch(status) {
             case 'open': return { text: '📋 Доступно', class: 'status-open' };
             case 'in_progress': return { text: '⏳ Выполняется', class: 'status-progress' };
-            case 'awaiting_confirmation': return { text: '🕐 Ожидает подтверждения', class: 'status-awaiting' };
+            case 'awaiting_confirmation': return { text: '🕐 Ожидает', class: 'status-awaiting' };
             case 'completed': return { text: '✅ Выполнено', class: 'status-completed' };
             case 'disputed': return { text: '⚠️ Спор', class: 'status-disputed' };
             default: return { text: status, class: 'status-open' };
@@ -1002,12 +773,10 @@
             return;
         }
         
-        // Фильтр заданий
         const openTasks = cachedTasks.filter(t => t.status === 'open' && t.creatorSchool === currentUser.school);
         const myCreatedTasks = cachedTasks.filter(t => t.creatorId === currentUser.id);
         const myTasksAsExecutor = cachedTasks.filter(t => t.takerId === currentUser.id);
         
-        // Пагинация для открытых заданий
         const start = currentPage * ITEMS_PER_PAGE;
         const end = start + ITEMS_PER_PAGE;
         const paginatedTasks = openTasks.slice(start, end);
@@ -1022,9 +791,7 @@
                     const isCreator = task.creatorId === currentUser.id;
                     const isTaker = task.takerId === currentUser.id;
                     const statusInfo = getTaskStatusText(task.status);
-                    const creatorRating = getUserRating(task.creatorId);
                     const canChat = (task.status === 'in_progress' || task.status === 'awaiting_confirmation') && (isCreator || isTaker);
-                    const hasReviewed = cachedReviews.some(r => r.taskId === task.id && r.fromUserId === currentUser.id);
                     
                     let actionButtons = '';
                     
@@ -1053,10 +820,6 @@
                         actionButtons += `<button class="btn-info chat-btn" data-taskid="${task.id}">💬 Чат</button>`;
                     }
                     
-                    if (task.status === 'completed' && !isCreator && showActions && !hasReviewed) {
-                        actionButtons += `<button class="btn-warning review-btn" data-userid="${task.creatorId}" data-taskid="${task.id}">⭐ Оставить отзыв</button>`;
-                    }
-                    
                     return `<div class="task-card">
                         <div class="task-header">
                             <div class="task-price">${task.price} ₽</div>
@@ -1066,10 +829,7 @@
                         <div class="task-meta">📍 ${task.location}</div>
                         <div style="font-size:0.7rem; color:#6b7280;">
                             👤 Создатель: ${creator ? creator.name : '?'} (${creator ? creator.school : ''})
-                            ${creatorRating ? `<span class="user-rating">⭐ ${creatorRating.rating} (${creatorRating.count})</span>` : ''}
                             ${taker ? `<br>👤 Исполнитель: ${taker.name}` : ''}
-                            ${taker ? `<button class="btn-outline view-reviews-btn" data-userid="${taker.id}" style="margin-left:10px; padding:2px 10px; font-size:0.7rem;">📋 Отзывы</button>` : ''}
-                            ${creator && !taker ? `<button class="btn-outline view-reviews-btn" data-userid="${creator.id}" style="margin-left:10px; padding:2px 10px; font-size:0.7rem;">📋 Отзывы</button>` : ''}
                         </div>
                         ${actionButtons}
                     </div>`;
@@ -1089,50 +849,49 @@
             adminPanelHtml = `
                 <div class="admin-panel">
                     <div class="admin-header"><h2>👑 Админ-панель</h2><button class="btn-danger" id="exitAdminBtn">Выйти</button></div>
-                    <div class="admin-header"><div class="search-box">🔍 <input type="text" id="adminSearch" placeholder="Поиск по имени или школе..." value="${adminSearchTerm}"></div><div><button class="refresh-btn" id="refreshUsersBtn">🔄 Обновить</button> <span class="balance-card">👥 ${cachedUsers.length}</span></div></div>
-                    <div class="users-table"><table style="width:100%;"><thead><tr><th>Имя</th><th>Школа / Корпус</th><th>Баланс</th><th>Рейтинг</th><th>Статус</th><th>Управление балансом</th><th>Бан</th></tr></thead>
+                    <div class="admin-header"><div class="search-box">🔍 <input type="text" id="adminSearch" placeholder="Поиск..." value="${adminSearchTerm}"></div><div><button class="refresh-btn" id="refreshUsersBtn">🔄 Обновить</button> <span class="balance-card">👥 ${cachedUsers.length}</span></div></div>
+                    <div class="users-table"><table><thead><tr><th>Имя</th><th>Школа</th><th>Баланс</th><th>Статус</th><th>Баланс</th><th>Бан</th></tr></thead>
                     <tbody>${filteredUsers.map(user => {
                         const isBanned = user.isBanned === 'true' || user.isBanned === true;
-                        const rating = getUserRating(user.id);
-                        return `<tr class="${isBanned ? 'banned-row' : ''}">
-                            <td><strong>${user.name || '?'}</strong> <button class="view-reviews-btn" data-userid="${user.id}" style="padding:2px 8px; font-size:0.7rem;">⭐</button></td>
-                            <td>${user.school || '?'}<br><span style="font-size:0.7rem;">${user.corp || '?'}</span></td>
-                            <td style="font-weight:bold;">${(parseFloat(user.balance) || 0).toFixed(2)} ₽</td>
-                            <td>${rating ? `⭐ ${rating.rating} (${rating.count})` : 'Нет отзывов'}</td>
-                            <td>${isBanned ? '⛔ Забанен' : '✅ Активен'}${isBanned && user.banExpires ? `<div class="ban-info" style="font-size:0.7rem; color:#dc2626;">до ${new Date(user.banExpires).toLocaleString()}<br>${user.banReason || ''}</div>` : ''}</td>
-                            <td><div class="balance-control"><input type="number" id="amount-${user.id}" placeholder="Сумма" value="100"><button class="topup-btn" data-userid="${user.id}">💰 +</button><button class="withdraw-btn" data-userid="${user.id}">💸 -</button></div></td>
-                            <td>${!isBanned ? `<div class="ban-control"><input type="number" id="days-${user.id}" placeholder="Дни" value="0"><input type="number" id="hours-${user.id}" placeholder="Часы" value="0"><input type="text" id="reason-${user.id}" placeholder="Причина" style="width:100px;"><button class="ban-btn" data-userid="${user.id}">⛔ Бан</button></div>` : `<button class="unban-btn" data-userid="${user.id}">✅ Разбанить</button>`}</td>
-                        </tr>`}).join('')}</tbody>}</table></div>
+                        return `<tr>
+                            <td><strong>${user.name || '?'}</strong></td>
+                            <td>${user.school || '?'}<br><small>${user.corp || '?'}</small></td>
+                            <td>${(parseFloat(user.balance) || 0).toFixed(2)} ₽</td>
+                            <td>${isBanned ? '⛔ Забанен' : '✅ Активен'}</td>
+                            <td><div class="balance-control"><input type="number" id="amount-${user.id}" value="100"><button class="topup-btn" data-userid="${user.id}">+</button><button class="withdraw-btn" data-userid="${user.id}">-</button></div></td>
+                            <td>${!isBanned ? `<div class="ban-control"><input type="number" id="days-${user.id}" placeholder="Дни" value="0"><input type="number" id="hours-${user.id}" placeholder="Часы" value="0"><input type="text" id="reason-${user.id}" placeholder="Причина"><button class="ban-btn" data-userid="${user.id}">⛔ Бан</button></div>` : `<button class="unban-btn" data-userid="${user.id}">✅ Разбанить</button>`}</td>
+                        </tr>`;
+                    }).join('')}</tbody></table></div>
                 </div>
             `;
         }
         
-        const createForm = `<div class="card"><h3>📝 Создать задание</h3><div style="background:#fef9e3; padding:12px; border-radius:20px; margin-bottom:15px;">💰 Деньги будут заморожены до подтверждения получения</div><textarea id="taskDesc" rows="2" placeholder="Что нужно сделать? (например: принеси булочку в 40 кабинет)"></textarea><input type="number" id="taskPrice" placeholder="Цена (руб)"><input type="text" id="taskLocation" placeholder="Место (кабинет, этаж)"><button class="btn-primary" id="createTaskBtn">Создать</button></div>`;
+        const createForm = `<div class="card"><h3>📝 Создать задание</h3><textarea id="taskDesc" rows="2" placeholder="Что нужно сделать?"></textarea><input type="number" id="taskPrice" placeholder="Цена (руб)"><input type="text" id="taskLocation" placeholder="Место"><button class="btn-primary" id="createTaskBtn">Создать</button></div>`;
         
         let activeTab = window._activeTab || 'allTasks';
         let mainContent = '';
         if (activeTab === 'allTasks') mainContent = `<h3>📋 Доступные задания (школа ${currentUser.school})</h3>${tasksHtml(paginatedTasks, true, true)}`;
-        else if (activeTab === 'myTasks') mainContent = `<h3>📌 Мои задания (созданные мной)</h3>${tasksHtml(myCreatedTasks, true, false)}`;
+        else if (activeTab === 'myTasks') mainContent = `<h3>📌 Мои задания</h3>${tasksHtml(myCreatedTasks, true, false)}`;
         else if (activeTab === 'myExecutions') mainContent = `<h3>⚡ Мои выполнения</h3>${tasksHtml(myTasksAsExecutor, true, false)}`;
         else if (activeTab === 'create') mainContent = createForm;
         
-        const adminButtonHtml = isAdmin ? `<button id="adminPanelBtn" style="background:#2c3e50; color:white; border:none; padding:6px 20px; border-radius:60px;">🔐 Админка</button>` : '';
+        const adminButtonHtml = isAdmin ? `<button id="adminPanelBtn" style="background:#2c3e50; color:white;">🔐 Админка</button>` : '';
         
         appDiv.innerHTML = `
             <div class="header">
-                <div class="logo"><h1>🏫 SchoolTask</h1><span>Биржа поручений</span></div>
+                <div class="logo"><h1>🏫 SchoolTask</h1></div>
                 <div class="user-info">
                     <div>👋 ${currentUser.name} | ${currentUser.school}</div>
                     <div class="balance-card">💰 ${(parseFloat(currentUser.balance) || 0).toFixed(2)} ₽</div>
                     <button class="theme-toggle" id="themeToggleBtn">${isDarkTheme ? '☀️' : '🌙'}</button>
-                    <button class="btn-danger" id="logoutBtn" style="padding:6px 12px;">Выйти</button>
+                    <button class="btn-danger" id="logoutBtn">Выйти</button>
                 </div>
             </div>
-            <div style="display:flex; justify-content:space-between; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
                 <span>📢 Пополнение и вывод: @leshr_ak47</span>
                 <div>
-                    <button id="topupBtn" style="background:#ffd966; border:none; padding:6px 20px; border-radius:60px;">➕ Пополнить</button>
-                    <button id="withdrawBtn" style="background:#f97316; border:none; padding:6px 20px; border-radius:60px; margin-left:10px;">💸 Вывод</button>
+                    <button id="topupBtn" style="background:#ffd966;">➕ Пополнить</button>
+                    <button id="withdrawBtn" style="background:#f97316;">💸 Вывод</button>
                     ${adminButtonHtml}
                 </div>
             </div>
@@ -1144,24 +903,23 @@
                 <div class="tab ${activeTab === 'create' ? 'active' : ''}" data-tab="create">➕ Создать</div>
             </div>
             ${mainContent}
-            <div style="margin-top:20px; text-align:center; font-size:12px; color:#4b5563;">⚠️ Комиссия 5% | ${TASK_TIMEOUT_HOURS} часов на подтверждение получения</div>
+            <div style="margin-top:20px; text-align:center; font-size:12px;">⚠️ Комиссия 5% | ${TASK_TIMEOUT_HOURS} часов на подтверждение</div>
         `;
         
-        // Обработчики событий
         document.querySelectorAll('.tab').forEach(el => el.addEventListener('click', () => { 
             window._activeTab = el.dataset.tab; 
             currentPage = 0;
             renderApp(); 
         }));
         document.getElementById('logoutBtn')?.addEventListener('click', logout);
-        document.getElementById('topupBtn')?.addEventListener('click', () => showToast('Напишите @leshr_ak47 для пополнения баланса'));
-        document.getElementById('withdrawBtn')?.addEventListener('click', () => showToast('Вывод средств через администратора в Telegram @leshr_ak47'));
+        document.getElementById('topupBtn')?.addEventListener('click', () => showToast('Напишите @leshr_ak47'));
+        document.getElementById('withdrawBtn')?.addEventListener('click', () => showToast('Вывод через @leshr_ak47'));
         document.getElementById('themeToggleBtn')?.addEventListener('click', toggleTheme);
         
         if (isAdmin) {
             document.getElementById('adminPanelBtn')?.addEventListener('click', () => { if (adminMode) exitAdminMode(); else requestAdminAccess(); });
             document.getElementById('exitAdminBtn')?.addEventListener('click', exitAdminMode);
-            document.getElementById('refreshUsersBtn')?.addEventListener('click', async () => { await forceSync(); renderApp(); showToast('Список обновлён'); });
+            document.getElementById('refreshUsersBtn')?.addEventListener('click', async () => { await forceSync(); renderApp(); showToast('Обновлено'); });
             
             const searchInput = document.getElementById('adminSearch');
             if (searchInput) {
@@ -1191,9 +949,6 @@
         document.querySelectorAll('.confirm-complete-btn').forEach(btn => btn.addEventListener('click', () => confirmCompletion(btn.dataset.taskid)));
         document.querySelectorAll('.confirm-receipt-btn').forEach(btn => btn.addEventListener('click', () => confirmReceipt(btn.dataset.taskid)));
         document.querySelectorAll('.cancel-receipt-btn').forEach(btn => btn.addEventListener('click', () => markAsNotReceived(btn.dataset.taskid)));
-        document.querySelectorAll('.chat-btn').forEach(btn => btn.addEventListener('click', () => openChat(btn.dataset.taskid)));
-        document.querySelectorAll('.review-btn').forEach(btn => btn.addEventListener('click', () => showReviewModal(btn.dataset.userid, btn.dataset.taskid)));
-        document.querySelectorAll('.view-reviews-btn').forEach(btn => btn.addEventListener('click', () => showUserReviews(btn.dataset.userid)));
         
         if (isAdmin && adminMode) {
             document.querySelectorAll('.topup-btn').forEach(btn => btn.addEventListener('click', () => {
@@ -1213,7 +968,6 @@
                 const days = parseInt(document.getElementById(`days-${userId}`)?.value) || 0;
                 const hours = parseInt(document.getElementById(`hours-${userId}`)?.value) || 0;
                 const reason = document.getElementById(`reason-${userId}`)?.value || '';
-                if (days === 0 && hours === 0 && !confirm('Бан навсегда. Продолжить?')) return;
                 banUserWithDuration(userId, days, hours, reason);
             }));
             document.querySelectorAll('.unban-btn').forEach(btn => btn.addEventListener('click', () => unbanUser(btn.dataset.userid)));
