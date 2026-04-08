@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>SchoolTask - Биржа поручений</title>
+    <link rel="manifest" href="manifest.json">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui; }
         body { background: linear-gradient(145deg, #f0f4fa 0%, #e2e8f0 100%); min-height: 100vh; padding: 20px; transition: background 0.3s, color 0.3s; }
@@ -12,43 +13,27 @@
             background: linear-gradient(145deg, #1a1a2e 0%, #16213e 100%);
             color: #e2e8f0;
         }
-        body.dark-theme .header,
-        body.dark-theme .card,
-        body.dark-theme .admin-panel,
-        body.dark-theme .task-card {
+        body.dark-theme .header, body.dark-theme .card, body.dark-theme .admin-panel, body.dark-theme .task-card,
+        body.dark-theme .chat-modal, body.dark-theme .reviews-modal, body.dark-theme .leaderboard-modal {
             background: #1e293b;
             color: #e2e8f0;
         }
-        body.dark-theme .user-info {
-            background: #334155;
+        body.dark-theme .user-info { background: #334155; }
+        body.dark-theme .tab { background: #334155; color: #e2e8f0; }
+        body.dark-theme .tab.active { background: #3b82f6; }
+        body.dark-theme input, body.dark-theme textarea, body.dark-theme select {
+            background: #334155; border-color: #475569; color: #e2e8f0;
         }
-        body.dark-theme .tab {
-            background: #334155;
-            color: #e2e8f0;
-        }
-        body.dark-theme .tab.active {
-            background: #3b82f6;
-        }
-        body.dark-theme input,
-        body.dark-theme textarea {
-            background: #334155;
-            border-color: #475569;
-            color: #e2e8f0;
-        }
-        body.dark-theme .search-box {
-            background: #334155;
-        }
-        body.dark-theme .users-table th,
-        body.dark-theme .users-table td {
-            border-bottom-color: #475569;
-        }
+        body.dark-theme .search-box { background: #334155; }
+        body.dark-theme .users-table th, body.dark-theme .users-table td { border-bottom-color: #475569; }
         
         .container { max-width: 1300px; margin: 0 auto; }
         .header, .card, .admin-panel, .task-card { background: white; border-radius: 32px; padding: 20px; margin-bottom: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
         .header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
         .logo h1 { background: linear-gradient(135deg, #1e2b3c, #2c4c6e); -webkit-background-clip: text; background-clip: text; color: transparent; font-size: 1.6rem; }
-        .user-info { display: flex; align-items: center; gap: 20px; background: #f8fafc; padding: 8px 20px; border-radius: 60px; }
+        .user-info { display: flex; align-items: center; gap: 20px; background: #f8fafc; padding: 8px 20px; border-radius: 60px; flex-wrap: wrap; }
         .balance-card { background: #eef2ff; padding: 6px 16px; border-radius: 40px; font-weight: bold; }
+        .level-badge { background: linear-gradient(135deg, #f59e0b, #ea580c); padding: 4px 12px; border-radius: 40px; font-weight: bold; color: white; font-size: 0.8rem; }
         button { cursor: pointer; border: none; border-radius: 40px; padding: 10px 20px; font-weight: bold; transition: 0.2s; }
         .btn-primary { background: #2c6e4f; color: white; }
         .btn-success { background: #10b981; color: white; }
@@ -57,7 +42,7 @@
         .btn-info { background: #3b82f6; color: white; }
         .btn-outline { background: transparent; border: 1px solid #cbd5e1; }
         .theme-toggle { background: #334155; color: white; padding: 8px 16px; border-radius: 60px; font-size: 0.9rem; }
-        input, textarea { width: 100%; padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 28px; margin-bottom: 12px; font-size: 1rem; }
+        input, textarea, select { width: 100%; padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 28px; margin-bottom: 12px; font-size: 1rem; }
         .tabs { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
         .tab { background: white; padding: 10px 24px; border-radius: 60px; cursor: pointer; font-weight: 600; }
         .tab.active { background: #1e4a6e; color: white; }
@@ -93,73 +78,35 @@
         .user-rating { display: inline-flex; align-items: center; gap: 5px; background: #fef3c7; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; }
         
         .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.7);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 2000;
         }
-        .chat-modal, .reviews-modal {
-            background: white;
-            border-radius: 32px;
-            width: 90%;
-            max-width: 500px;
-            max-height: 80vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
+        .chat-modal, .reviews-modal, .leaderboard-modal {
+            background: white; border-radius: 32px; width: 90%; max-width: 500px; max-height: 80vh;
+            display: flex; flex-direction: column; overflow: hidden;
         }
-        .chat-header, .reviews-header {
-            padding: 16px 20px;
-            border-bottom: 1px solid #e2e8f0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .chat-header, .reviews-header, .leaderboard-header {
+            padding: 16px 20px; border-bottom: 1px solid #e2e8f0;
+            display: flex; justify-content: space-between; align-items: center;
         }
-        .chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-        .message {
-            max-width: 80%;
-            padding: 10px 14px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-        }
-        .message-mine {
-            background: #3b82f6;
-            color: white;
-            align-self: flex-end;
-        }
-        .message-other {
-            background: #e2e8f0;
-            align-self: flex-start;
-        }
-        .chat-input {
-            display: flex;
-            gap: 10px;
-            padding: 16px;
-            border-top: 1px solid #e2e8f0;
-        }
-        .chat-input input {
-            flex: 1;
-            margin: 0;
-        }
-        .review-item {
-            padding: 12px;
-            border-bottom: 1px solid #e2e8f0;
-        }
+        .chat-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+        .message { max-width: 80%; padding: 10px 14px; border-radius: 20px; font-size: 0.9rem; }
+        .message-mine { background: #3b82f6; color: white; align-self: flex-end; }
+        .message-other { background: #e2e8f0; align-self: flex-start; }
+        .chat-input { display: flex; gap: 10px; padding: 16px; border-top: 1px solid #e2e8f0; }
+        .chat-input input { flex: 1; margin: 0; }
+        .review-item { padding: 12px; border-bottom: 1px solid #e2e8f0; }
+        .leaderboard-item { display: flex; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid #e2e8f0; }
+        .rank-1 { background: linear-gradient(135deg, #ffd700, #ffb347); color: #1e293b; }
+        .rank-2 { background: linear-gradient(135deg, #c0c0c0, #a8a8a8); color: #1e293b; }
+        .rank-3 { background: linear-gradient(135deg, #cd7f32, #b87333); color: white; }
         
-        @media (max-width: 700px) { .admin-header { flex-direction: column; align-items: stretch; } .search-box { justify-content: center; } }
+        .filter-group { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
+        .filter-group input, .filter-group select { width: auto; flex: 1; min-width: 120px; margin: 0; }
+        .photo-preview { max-width: 100%; max-height: 150px; border-radius: 16px; margin-top: 10px; }
+        .install-btn { background: #6366f1; color: white; }
+        
+        @media (max-width: 700px) { .admin-header { flex-direction: column; align-items: stretch; } .search-box { justify-content: center; } .filter-group { flex-direction: column; } .filter-group input, .filter-group select { width: 100%; } }
     </style>
 </head>
 <body>
@@ -167,11 +114,10 @@
 
 <script>
     // ========== НАСТРОЙКИ ==========
-    const API_URL = 'https://script.google.com/macros/s/AKfycbzTLKkVLGixNs9PC-2YkZLikOySqnJLOUKFIt52taOOHVxm6vLiEbsdlB-r5SG1RaidIQ/exec';
+    const API_URL = 'https://script.google.com/macros/s/AKfycbxkU2ooskyApKjDLa9DQUj6-IAvZke7-igF695UNB8K0jBSk9TBEHySdIOcCe6CJhQ/exec';
     const ADMIN_PASSWORD = 'dsl382dAZX';
     const TASK_TIMEOUT_HOURS = 5;
     
-    // Состояние приложения
     let currentUser = null;
     let adminMode = false;
     let authMode = 'login';
@@ -183,23 +129,18 @@
     let isLoading = false;
     let isCreatingTask = false;
     let isDarkTheme = localStorage.getItem('darkTheme') === 'true';
-    
-    // Кэширование
+    let currentPage = 0;
+    const ITEMS_PER_PAGE = 10;
+    let filters = { minPrice: '', maxPrice: '', category: '', distance: '' };
     let cacheExpiry = 0;
     const CACHE_DURATION = 30000;
     
-    // Пагинация
-    let currentPage = 0;
-    const ITEMS_PER_PAGE = 10;
-    
     if (isDarkTheme) document.body.classList.add('dark-theme');
 
-    // ========== ГЕНЕРАЦИЯ ТОКЕНА ==========
     function generateSessionToken() {
         return 'token_' + Date.now() + '_' + Math.random().toString(36).substring(2, 15);
     }
 
-    // ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
     function debounce(func, delay) {
         let timeout;
         return function(...args) {
@@ -239,10 +180,8 @@
         if (!force && cacheExpiry > now && cachedUsers.length > 0) {
             return { users: cachedUsers, tasks: cachedTasks, reviews: cachedReviews };
         }
-        
         if (isLoading) return { users: cachedUsers, tasks: cachedTasks, reviews: cachedReviews };
         isLoading = true;
-        
         try {
             const [users, tasks, reviews] = await Promise.all([
                 apiCall({ action: 'getUsers' }, true),
@@ -254,15 +193,11 @@
             if (reviews && Array.isArray(reviews)) cachedReviews = reviews;
             cacheExpiry = now + CACHE_DURATION;
         } catch (e) {}
-        
         isLoading = false;
         return { users: cachedUsers, tasks: cachedTasks, reviews: cachedReviews };
     }
 
-    function forceSync() {
-        cacheExpiry = 0;
-        return syncData(true);
-    }
+    function forceSync() { cacheExpiry = 0; return syncData(true); }
 
     function showToast(msg, isError = false) {
         const toast = document.createElement('div');
@@ -273,20 +208,18 @@
         setTimeout(() => toast.remove(), 3000);
     }
 
-    // ========== ЗАЩИЩЁННАЯ СИСТЕМА СЕССИЙ ==========
+    function getLevel(rating, completedCount) {
+        if (completedCount >= 100 && rating >= 4.9) return { name: '👑 Легенда', color: '#8b5cf6', level: 5 };
+        if (completedCount >= 50 && rating >= 4.8) return { name: '🔴 Мастер', color: '#ef4444', level: 4 };
+        if (completedCount >= 20 && rating >= 4.5) return { name: '🟠 Проверенный', color: '#f97316', level: 3 };
+        if (completedCount >= 5 && rating >= 4.0) return { name: '🟡 Надёжный', color: '#eab308', level: 2 };
+        return { name: '🟢 Новичок', color: '#22c55e', level: 1 };
+    }
+
     function saveSession() {
         if (currentUser) {
-            if (!currentUser.sessionToken) {
-                currentUser.sessionToken = generateSessionToken();
-            }
-            const sessionData = {
-                userId: currentUser.id,
-                userName: currentUser.name,
-                userSchool: currentUser.school,
-                userCorp: currentUser.corp,
-                sessionToken: currentUser.sessionToken,
-                savedAt: Date.now()
-            };
+            if (!currentUser.sessionToken) currentUser.sessionToken = generateSessionToken();
+            const sessionData = { userId: currentUser.id, userName: currentUser.name, userSchool: currentUser.school, userCorp: currentUser.corp, sessionToken: currentUser.sessionToken, savedAt: Date.now() };
             localStorage.setItem('schoolTasks_session', JSON.stringify(sessionData));
             apiCall({ action: 'updateUser', id: currentUser.id, sessionToken: currentUser.sessionToken }, true);
         } else {
@@ -297,95 +230,31 @@
     async function restoreSession() {
         const savedSession = localStorage.getItem('schoolTasks_session');
         if (!savedSession) return false;
-        
         try {
             const sessionData = JSON.parse(savedSession);
-            const SESSION_MAX_AGE = 30 * 24 * 60 * 60 * 1000;
-            if (Date.now() - sessionData.savedAt > SESSION_MAX_AGE) {
-                localStorage.removeItem('schoolTasks_session');
-                return false;
-            }
-            
+            if (Date.now() - sessionData.savedAt > 30*24*60*60*1000) { localStorage.removeItem('schoolTasks_session'); return false; }
             await syncData();
-            
             let user = cachedUsers.find(u => u.id === sessionData.userId);
-            
-            if (user && 
-                user.name === sessionData.userName && 
-                user.school === sessionData.userSchool && 
-                user.corp === sessionData.userCorp &&
-                user.sessionToken === sessionData.sessionToken) {
-                
-                const isBanned = user.isBanned === 'true' || user.isBanned === true;
-                if (!isBanned) {
-                    currentUser = user;
-                    return true;
-                }
+            if (user && user.name === sessionData.userName && user.school === sessionData.userSchool && user.corp === sessionData.userCorp && user.sessionToken === sessionData.sessionToken) {
+                if (user.isBanned !== 'true' && user.isBanned !== true) { currentUser = user; return true; }
             }
             localStorage.removeItem('schoolTasks_session');
-        } catch (e) {
-            localStorage.removeItem('schoolTasks_session');
-        }
+        } catch(e) { localStorage.removeItem('schoolTasks_session'); }
         return false;
     }
 
-    function isUsernameTaken(name) {
-        return cachedUsers.some(u => u.name && u.name.toLowerCase() === name.trim().toLowerCase());
-    }
+    function isUsernameTaken(name) { return cachedUsers.some(u => u.name && u.name.toLowerCase() === name.trim().toLowerCase()); }
 
     async function registerUser(name, school, corp, password) {
-        if (!name.trim() || !school.trim() || !corp.trim()) { 
-            showToast('Заполните все поля', true); 
-            return false; 
-        }
-        if (!password || password.length < 3) { 
-            showToast('Пароль не менее 3 символов', true); 
-            return false; 
-        }
-        
+        if (!name.trim() || !school.trim() || !corp.trim()) { showToast('Заполните все поля', true); return false; }
+        if (!password || password.length < 3) { showToast('Пароль не менее 3 символов', true); return false; }
         await syncData();
-        
-        if (isUsernameTaken(name)) {
-            showToast(`❌ Имя "${name}" уже занято!`, true);
-            return false;
-        }
-        
+        if (isUsernameTaken(name)) { showToast(`❌ Имя "${name}" уже занято!`, true); return false; }
         const nextId = 'u' + Date.now();
-        const newUser = {
-            id: nextId,
-            name: name.trim(),
-            school: school.trim(),
-            corp: corp.trim(),
-            balance: 0,
-            password: password.trim(),
-            isBanned: false,
-            banReason: '',
-            banExpires: null,
-            rating: 0,
-            ratingCount: 0,
-            sessionToken: '',
-            registeredAt: new Date().toISOString()
-        };
-        
-        const result = await apiCall({
-            action: 'registerUser',
-            id: newUser.id, name: newUser.name, school: newUser.school, corp: newUser.corp,
-            balance: newUser.balance, password: newUser.password, isBanned: false,
-            banReason: '', banExpires: '', registeredAt: newUser.registeredAt,
-            rating: 0, ratingCount: 0
-        });
-        
-        if (result && result.success) {
-            cachedUsers.push(newUser);
-            currentUser = newUser;
-            saveSession();
-            showToast(`✅ Добро пожаловать, ${newUser.name}!`);
-            renderApp();
-            return true;
-        } else { 
-            showToast('Ошибка регистрации', true); 
-            return false; 
-        }
+        const newUser = { id: nextId, name: name.trim(), school: school.trim(), corp: corp.trim(), balance: 0, password: password.trim(), isBanned: false, banReason: '', banExpires: null, rating: 0, ratingCount: 0, level: 1, sessionToken: '', avatar: '', status: 'Активен', totalEarned: 0, totalSpent: 0, tasksCompleted: 0, tasksCreated: 0, registeredAt: new Date().toISOString() };
+        const result = await apiCall({ action: 'registerUser', id: newUser.id, name: newUser.name, school: newUser.school, corp: newUser.corp, balance: newUser.balance, password: newUser.password, isBanned: false, banReason: '', banExpires: '', registeredAt: newUser.registeredAt, rating: 0, ratingCount: 0, level: 1, avatar: '', status: 'Активен', totalEarned: 0, totalSpent: 0, tasksCompleted: 0, tasksCreated: 0 });
+        if (result && result.success) { cachedUsers.push(newUser); currentUser = newUser; saveSession(); showToast(`✅ Добро пожаловать, ${newUser.name}!`); renderApp(); return true; }
+        else { showToast('Ошибка регистрации', true); return false; }
     }
 
     async function loginUser(name, school, corp, password) {
@@ -393,45 +262,15 @@
         const cleanSchool = school ? school.toString().trim() : '';
         const cleanCorp = corp ? corp.toString().trim() : '';
         const cleanPassword = password ? password.toString().trim() : '';
-        
-        if (!cleanName || !cleanSchool || !cleanCorp) { 
-            showToast('Заполните все поля', true); 
-            return false; 
-        }
-        if (!cleanPassword) { 
-            showToast('Введите пароль', true); 
-            return false; 
-        }
-        
+        if (!cleanName || !cleanSchool || !cleanCorp) { showToast('Заполните все поля', true); return false; }
+        if (!cleanPassword) { showToast('Введите пароль', true); return false; }
         await syncData();
-        
-        const user = cachedUsers.find(u => {
-            const userName = u.name ? u.name.toString().trim() : '';
-            const userSchool = u.school ? u.school.toString().trim() : '';
-            const userCorp = u.corp ? u.corp.toString().trim() : '';
-            return userName === cleanName && userSchool === cleanSchool && userCorp === cleanCorp;
-        });
-        
-        if (!user) { 
-            showToast('❌ Пользователь не найден', true); 
-            return false; 
-        }
-        
-        const userPassword = user.password ? user.password.toString().trim() : '';
-        if (userPassword !== cleanPassword) { 
-            showToast('❌ Неверный пароль', true); 
-            return false; 
-        }
-        
-        const isBanned = user.isBanned === 'true' || user.isBanned === true;
-        if (isBanned) {
-            showToast('⛔ Аккаунт заблокирован', true);
-            return false;
-        }
-        
+        const user = cachedUsers.find(u => { return (u.name ? u.name.toString().trim() : '') === cleanName && (u.school ? u.school.toString().trim() : '') === cleanSchool && (u.corp ? u.corp.toString().trim() : '') === cleanCorp; });
+        if (!user) { showToast('❌ Пользователь не найден', true); return false; }
+        if ((user.password ? user.password.toString().trim() : '') !== cleanPassword) { showToast('❌ Неверный пароль', true); return false; }
+        if (user.isBanned === 'true' || user.isBanned === true) { showToast('⛔ Аккаунт заблокирован', true); return false; }
         user.sessionToken = generateSessionToken();
         await apiCall({ action: 'updateUser', id: user.id, sessionToken: user.sessionToken });
-        
         currentUser = user;
         saveSession();
         showToast(`✅ С возвращением, ${currentUser.name}!`);
@@ -440,71 +279,40 @@
         return true;
     }
 
-    function logout() { 
-        if (currentUser) {
-            apiCall({ action: 'updateUser', id: currentUser.id, sessionToken: '' }, true);
-        }
-        currentUser = null; 
-        adminMode = false; 
-        authMode = 'login'; 
-        currentPage = 0;
-        localStorage.removeItem('schoolTasks_session'); 
-        renderApp(); 
+    function logout() {
+        if (currentUser) apiCall({ action: 'updateUser', id: currentUser.id, sessionToken: '' }, true);
+        currentUser = null; adminMode = false; authMode = 'login'; currentPage = 0;
+        localStorage.removeItem('schoolTasks_session');
+        renderApp();
     }
 
-    async function createTask(description, price, locationDetails) {
+    async function createTask(description, price, locationDetails, category, photoFile) {
         if (!currentUser) return;
-        if (isCreatingTask) {
-            showToast('Подождите, задание уже создаётся...', true);
-            return;
-        }
-        
+        if (isCreatingTask) { showToast('Подождите...', true); return; }
         let priceNum = parseFloat(price);
         if (isNaN(priceNum) || priceNum <= 0) { showToast('Цена должна быть положительной', true); return; }
-        
         isCreatingTask = true;
-        
         await syncData();
         const userIdx = cachedUsers.findIndex(u => u.id === currentUser.id);
-        if (cachedUsers[userIdx].balance < priceNum) { 
-            showToast(`Недостаточно средств. Баланс: ${cachedUsers[userIdx].balance}₽`, true); 
-            isCreatingTask = false;
-            return; 
-        }
-        
+        if (cachedUsers[userIdx].balance < priceNum) { showToast(`Недостаточно средств. Баланс: ${cachedUsers[userIdx].balance}₽`, true); isCreatingTask = false; return; }
         cachedUsers[userIdx].balance -= priceNum;
         currentUser.balance = cachedUsers[userIdx].balance;
+        currentUser.totalSpent = (parseFloat(currentUser.totalSpent) || 0) + priceNum;
+        currentUser.tasksCreated = (parseInt(currentUser.tasksCreated) || 0) + 1;
         
-        const newTask = {
-            id: Date.now().toString(),
-            creatorId: currentUser.id,
-            creatorSchool: currentUser.school,
-            description: description.trim(),
-            price: priceNum,
-            location: locationDetails.trim(),
-            status: 'open',
-            takerId: null,
-            takenAt: null,
-            completedAt: null,
-            createdAt: new Date().toISOString()
-        };
+        let photoUrl = '';
+        if (photoFile) { photoUrl = await uploadPhoto(photoFile); }
         
-        await apiCall({ action: 'updateUser', id: currentUser.id, balance: currentUser.balance });
+        const newTask = { id: Date.now().toString(), creatorId: currentUser.id, creatorSchool: currentUser.school, description: description.trim(), price: priceNum, location: locationDetails.trim(), category: category || 'Разное', status: 'open', takerId: null, takenAt: null, completedAt: null, createdAt: new Date().toISOString(), photoUrl: photoUrl };
+        await apiCall({ action: 'updateUser', id: currentUser.id, balance: currentUser.balance, totalSpent: currentUser.totalSpent, tasksCreated: currentUser.tasksCreated });
         const result = await apiCall({ action: 'createTask', ...newTask, takerId: '' });
-        
-        if (result && result.success) {
-            cachedTasks.push(newTask);
-            cacheExpiry = 0;
-            showToast(`Задание создано! -${priceNum}₽`);
-        } else {
-            cachedUsers[userIdx].balance += priceNum;
-            currentUser.balance = cachedUsers[userIdx].balance;
-            showToast('Ошибка создания задания', true);
-        }
-        
+        if (result && result.success) { cachedTasks.push(newTask); cacheExpiry = 0; showToast(`Задание создано! -${priceNum}₽`); }
+        else { cachedUsers[userIdx].balance += priceNum; currentUser.balance = cachedUsers[userIdx].balance; showToast('Ошибка создания задания', true); }
         isCreatingTask = false;
         renderApp();
     }
+
+    async function uploadPhoto(file) { return URL.createObjectURL(file); }
 
     async function takeTask(taskId) {
         if (!currentUser) return;
@@ -512,30 +320,27 @@
         let task = cachedTasks.find(t => t.id == taskId);
         if (!task || task.status !== 'open') { showToast('Задание недоступно', true); return; }
         if (task.creatorId === currentUser.id) { showToast('Нельзя взять своё задание', true); return; }
-        
         task.status = 'in_progress';
         task.takerId = currentUser.id;
         task.takenAt = new Date().toISOString();
-        
         await apiCall({ action: 'updateTask', id: task.id, status: 'in_progress', takerId: currentUser.id, takenAt: task.takenAt });
-        
         showToast(`📢 Вы взяли задание!`);
         cacheExpiry = 0;
         renderApp();
     }
 
-    async function confirmCompletion(taskId) {
+    async function confirmCompletion(taskId, photoFile) {
         if (!currentUser) return;
         await syncData();
         let task = cachedTasks.find(t => t.id == taskId);
         if (!task || task.status !== 'in_progress') { showToast('Задание нельзя подтвердить', true); return; }
         if (task.takerId !== currentUser.id) { showToast('Только исполнитель может подтвердить', true); return; }
-        
+        let photoUrl = '';
+        if (photoFile) { photoUrl = await uploadPhoto(photoFile); }
         task.status = 'awaiting_confirmation';
         task.completedAt = new Date().toISOString();
-        
-        await apiCall({ action: 'updateTask', id: task.id, status: 'awaiting_confirmation', completedAt: task.completedAt });
-        
+        task.photoUrl = photoUrl;
+        await apiCall({ action: 'updateTask', id: task.id, status: 'awaiting_confirmation', completedAt: task.completedAt, photoUrl: photoUrl });
         showToast(`✅ Вы отметили задание как выполненное.`);
         cacheExpiry = 0;
         renderApp();
@@ -547,21 +352,18 @@
         let task = cachedTasks.find(t => t.id == taskId);
         if (!task || task.status !== 'awaiting_confirmation') { showToast('Задание нельзя подтвердить', true); return; }
         if (task.creatorId !== currentUser.id) { showToast('Только создатель может подтвердить', true); return; }
-        
         const totalPrice = parseFloat(task.price);
         const commission = totalPrice * 0.05;
         const executorGain = totalPrice - commission;
-        
         const executor = cachedUsers.find(u => u.id === task.takerId);
         if (executor) {
             executor.balance = (parseFloat(executor.balance) || 0) + executorGain;
-            await apiCall({ action: 'updateUser', id: executor.id, balance: executor.balance });
+            executor.totalEarned = (parseFloat(executor.totalEarned) || 0) + executorGain;
+            executor.tasksCompleted = (parseInt(executor.tasksCompleted) || 0) + 1;
+            await apiCall({ action: 'updateUser', id: executor.id, balance: executor.balance, totalEarned: executor.totalEarned, tasksCompleted: executor.tasksCompleted });
         }
-        
         task.status = 'completed';
-        
         await apiCall({ action: 'updateTask', id: task.id, status: 'completed' });
-        
         showToast(`💰 Подтверждено! +${executorGain.toFixed(2)}₽ исполнителю`);
         cacheExpiry = 0;
         renderApp();
@@ -573,18 +375,14 @@
         let task = cachedTasks.find(t => t.id == taskId);
         if (!task || task.status !== 'awaiting_confirmation') { showToast('Задание нельзя отменить', true); return; }
         if (task.creatorId !== currentUser.id) { showToast('Только создатель может отметить', true); return; }
-        
         const creator = cachedUsers.find(u => u.id === task.creatorId);
         if (creator) {
             creator.balance = (parseFloat(creator.balance) || 0) + parseFloat(task.price);
             await apiCall({ action: 'updateUser', id: creator.id, balance: creator.balance });
             if (currentUser.id === creator.id) currentUser.balance = creator.balance;
         }
-        
         task.status = 'disputed';
-        
         await apiCall({ action: 'updateTask', id: task.id, status: 'disputed' });
-        
         showToast(`⚠️ Деньги возвращены на баланс`);
         cacheExpiry = 0;
         renderApp();
@@ -597,20 +395,120 @@
         if (!task) return;
         if (task.creatorId !== currentUser.id) { showToast('Можно удалять только свои задания', true); return; }
         if (task.status !== 'open') { showToast('Нельзя удалить задание в работе', true); return; }
-        
         const creator = cachedUsers.find(u => u.id === task.creatorId);
         if (creator) {
             creator.balance = (parseFloat(creator.balance) || 0) + parseFloat(task.price);
             await apiCall({ action: 'updateUser', id: creator.id, balance: creator.balance });
             if (currentUser.id === creator.id) currentUser.balance = creator.balance;
         }
-        
         await apiCall({ action: 'deleteTask', id: task.id });
-        
         cachedTasks = cachedTasks.filter(t => t.id != taskId);
         cacheExpiry = 0;
         showToast(`Задание удалено, деньги возвращены`);
         renderApp();
+    }
+
+    async function addReview(userId, taskId, rating, comment, photoFile) {
+        let photoUrl = '';
+        if (photoFile) photoUrl = await uploadPhoto(photoFile);
+        const newReview = { id: Date.now().toString(), fromUserId: currentUser.id, toUserId: userId, taskId: taskId, rating: parseInt(rating), comment: comment.trim(), createdAt: new Date().toISOString(), photoUrl: photoUrl };
+        await apiCall({ action: 'addReview', ...newReview });
+        cachedReviews.push(newReview);
+        const user = cachedUsers.find(u => u.id === userId);
+        const userReviews = cachedReviews.filter(r => r.toUserId === userId);
+        const totalRating = userReviews.reduce((sum, r) => sum + parseInt(r.rating), 0);
+        const newRating = totalRating / userReviews.length;
+        const newRatingCount = userReviews.length;
+        await apiCall({ action: 'updateUser', id: userId, rating: newRating, ratingCount: newRatingCount });
+        user.rating = newRating;
+        user.ratingCount = newRatingCount;
+        showToast(`⭐ Спасибо за отзыв!`);
+        cacheExpiry = 0;
+        renderApp();
+    }
+
+    function getUserRating(userId) {
+        const user = cachedUsers.find(u => u.id === userId);
+        if (!user || user.ratingCount == 0) return null;
+        return { rating: parseFloat(user.rating).toFixed(1), count: user.ratingCount };
+    }
+
+    function showReviewModal(userId, taskId) {
+        const user = cachedUsers.find(u => u.id === userId);
+        let selectedRating = 5;
+        let selectedPhoto = null;
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `<div class="reviews-modal"><div class="reviews-header"><h3>⭐ Оценить ${user?.name}</h3><button class="btn-danger" id="closeReviewModal">✕</button></div><div style="padding:20px;"><div class="stars" id="starRating">${[1,2,3,4,5].map(s => `<span class="star ${s<=5?'active':''}" data-rating="${s}">★</span>`).join('')}</div><textarea id="reviewComment" rows="3" placeholder="Напишите отзыв"></textarea><input type="file" id="reviewPhoto" accept="image/*"><div id="reviewPhotoPreview"></div><button class="btn-primary" id="submitReview" style="width:100%;">Отправить отзыв</button></div></div>`;
+        document.body.appendChild(modal);
+        const stars = modal.querySelectorAll('.star');
+        stars.forEach(star => star.addEventListener('click', () => { const rating = parseInt(star.dataset.rating); selectedRating = rating; stars.forEach(s => { if (parseInt(s.dataset.rating) <= rating) s.classList.add('active'); else s.classList.remove('active'); }); }));
+        const photoInput = modal.querySelector('#reviewPhoto');
+        const photoPreview = modal.querySelector('#reviewPhotoPreview');
+        photoInput.addEventListener('change', (e) => { if (e.target.files[0]) { selectedPhoto = e.target.files[0]; photoPreview.innerHTML = `<img src="${URL.createObjectURL(selectedPhoto)}" class="photo-preview">`; } });
+        modal.querySelector('#closeReviewModal').onclick = () => modal.remove();
+        modal.querySelector('#submitReview').onclick = () => { const comment = modal.querySelector('#reviewComment').value; addReview(userId, taskId, selectedRating, comment, selectedPhoto); modal.remove(); };
+    }
+
+    function showUserReviews(userId) {
+        const user = cachedUsers.find(u => u.id === userId);
+        const reviews = cachedReviews.filter(r => r.toUserId === userId);
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `<div class="reviews-modal"><div class="reviews-header"><h3>⭐ Отзывы о ${user?.name}</h3><button class="btn-danger" id="closeReviewsModal">✕</button></div><div style="padding:20px; max-height:60vh; overflow-y:auto;">${reviews.length === 0 ? '<p>Пока нет отзывов</p>' : reviews.map(r => { const fromUser = cachedUsers.find(u => u.id === r.fromUserId); return `<div class="review-item"><div class="stars" style="margin:0;">${'★'.repeat(parseInt(r.rating))}${'☆'.repeat(5-parseInt(r.rating))}</div><p>${r.comment || 'Без комментария'}</p>${r.photoUrl ? `<img src="${r.photoUrl}" class="photo-preview">` : ''}<small>${fromUser?.name} • ${new Date(r.createdAt).toLocaleDateString()}</small></div>`; }).join('')}</div></div>`;
+        document.body.appendChild(modal);
+        modal.querySelector('#closeReviewsModal').onclick = () => modal.remove();
+    }
+
+    async function sendMessage(taskId, message) {
+        if (!message.trim()) return;
+        if (!cachedMessages[taskId]) cachedMessages[taskId] = [];
+        cachedMessages[taskId].push({ id: Date.now().toString(), fromUserId: currentUser.id, message: message.trim(), timestamp: new Date().toISOString() });
+        await apiCall({ action: 'saveMessage', taskId: taskId, messages: JSON.stringify(cachedMessages[taskId]) }, true);
+        renderApp();
+    }
+
+    async function openChat(taskId) {
+        await syncData();
+        const saved = await apiCall({ action: 'getMessages', taskId: taskId }, true);
+        if (saved && saved.messages) cachedMessages[taskId] = JSON.parse(saved.messages);
+        else if (!cachedMessages[taskId]) cachedMessages[taskId] = [];
+        const task = cachedTasks.find(t => t.id == taskId);
+        const otherUserId = task.creatorId === currentUser.id ? task.takerId : task.creatorId;
+        const otherUser = cachedUsers.find(u => u.id === otherUserId);
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `<div class="chat-modal"><div class="chat-header"><h3>💬 Чат с ${otherUser?.name}</h3><button class="btn-danger" id="closeChat">✕</button></div><div class="chat-messages" id="chatMessages">${cachedMessages[taskId].map(m => `<div class="message ${m.fromUserId === currentUser.id ? 'message-mine' : 'message-other'}"><strong>${m.fromUserId === currentUser.id ? 'Я' : otherUser?.name}:</strong> ${m.message}<div style="font-size:0.7rem;">${new Date(m.timestamp).toLocaleTimeString()}</div></div>`).join('')}</div><div class="chat-input"><input type="text" id="chatMessageInput" placeholder="Введите сообщение..."><button class="btn-primary" id="sendMessageBtn">📤</button></div></div>`;
+        document.body.appendChild(modal);
+        const messagesDiv = modal.querySelector('#chatMessages');
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        modal.querySelector('#closeChat').onclick = () => modal.remove();
+        modal.querySelector('#sendMessageBtn').onclick = async () => { const input = modal.querySelector('#chatMessageInput'); await sendMessage(taskId, input.value); input.value = ''; const newMessages = cachedMessages[taskId] || []; messagesDiv.innerHTML = newMessages.map(m => `<div class="message ${m.fromUserId === currentUser.id ? 'message-mine' : 'message-other'}"><strong>${m.fromUserId === currentUser.id ? 'Я' : otherUser?.name}:</strong> ${m.message}<div style="font-size:0.7rem;">${new Date(m.timestamp).toLocaleTimeString()}</div></div>`).join(''); messagesDiv.scrollTop = messagesDiv.scrollHeight; };
+        modal.querySelector('#chatMessageInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') modal.querySelector('#sendMessageBtn').click(); });
+    }
+
+    function showLeaderboard() {
+        const users = cachedUsers;
+        const topByEarned = [...users].sort((a,b) => (parseFloat(b.totalEarned)||0) - (parseFloat(a.totalEarned)||0)).slice(0, 10);
+        const topByTasks = [...users].sort((a,b) => (parseInt(b.tasksCompleted)||0) - (parseInt(a.tasksCompleted)||0)).slice(0, 10);
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `<div class="leaderboard-modal"><div class="leaderboard-header"><h3>🏆 Доска лидеров</h3><button class="btn-danger" id="closeLeaderboard">✕</button></div><div style="padding:20px;"><h4>💰 По заработку</h4>${topByEarned.map((u,i) => `<div class="leaderboard-item ${i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':''}"><span>${i+1}. ${u.name}</span><span>${parseFloat(u.totalEarned||0).toFixed(0)} ₽</span></div>`).join('')}<h4 style="margin-top:20px;">✅ По выполненным заданиям</h4>${topByTasks.map((u,i) => `<div class="leaderboard-item ${i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':''}"><span>${i+1}. ${u.name}</span><span>${parseInt(u.tasksCompleted||0)} заданий</span></div>`).join('')}</div></div>`;
+        document.body.appendChild(modal);
+        modal.querySelector('#closeLeaderboard').onclick = () => modal.remove();
+    }
+
+    function exportMyData() {
+        const myTasks = cachedTasks.filter(t => t.creatorId === currentUser.id || t.takerId === currentUser.id);
+        const data = { user: currentUser, tasks: myTasks, reviews: cachedReviews.filter(r => r.toUserId === currentUser.id || r.fromUserId === currentUser.id) };
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `schooltask_export_${currentUser.name}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('📥 Данные экспортированы');
     }
 
     function getTaskStatusText(status) {
@@ -640,21 +538,12 @@
         const user = cachedUsers.find(u => u.id === userId);
         if (!user) return;
         if (user.id === currentUser?.id) { showToast('Нельзя забанить себя', true); return; }
-        
         let expires = '';
-        if (days > 0 || hours > 0) {
-            const exp = new Date();
-            exp.setDate(exp.getDate() + days);
-            exp.setHours(exp.getHours() + hours);
-            expires = exp.toISOString();
-        }
-        
+        if (days > 0 || hours > 0) { const exp = new Date(); exp.setDate(exp.getDate() + days); exp.setHours(exp.getHours() + hours); expires = exp.toISOString(); }
         user.isBanned = true;
         user.banReason = reason || 'Нарушение правил';
         user.banExpires = expires;
-        
         await apiCall({ action: 'updateUser', id: userId, isBanned: true, banReason: user.banReason, banExpires: expires });
-        
         let durationText = '';
         if (days > 0 && hours > 0) durationText = `на ${days} дн. ${hours} ч.`;
         else if (days > 0) durationText = `на ${days} дн.`;
@@ -677,29 +566,18 @@
         renderApp();
     }
 
-    function requestAdminAccess() {
-        let pwd = prompt("Введите пароль администратора:");
-        if (pwd === ADMIN_PASSWORD) { adminMode = true; showToast("Админ-панель активирована"); renderApp(); }
-        else showToast("Неверный пароль", true);
-    }
-
+    function requestAdminAccess() { let pwd = prompt("Введите пароль администратора:"); if (pwd === ADMIN_PASSWORD) { adminMode = true; showToast("Админ-панель активирована"); renderApp(); } else showToast("Неверный пароль", true); }
     function exitAdminMode() { adminMode = false; renderApp(); }
 
-    // ========== ОСНОВНОЙ РЕНДЕР ==========
     async function renderApp() {
         await syncData();
         
-        const now = new Date();
         for (let task of cachedTasks) {
             if (task.status === 'awaiting_confirmation' && task.completedAt) {
-                const completedAt = new Date(task.completedAt);
-                const hoursPassed = (now - completedAt) / (1000 * 60 * 60);
+                const hoursPassed = (new Date() - new Date(task.completedAt)) / (1000 * 60 * 60);
                 if (hoursPassed >= TASK_TIMEOUT_HOURS) {
                     const creator = cachedUsers.find(u => u.id === task.creatorId);
-                    if (creator) {
-                        creator.balance = (parseFloat(creator.balance) || 0) + parseFloat(task.price);
-                        await apiCall({ action: 'updateUser', id: creator.id, balance: creator.balance }, true);
-                    }
+                    if (creator) { creator.balance = (parseFloat(creator.balance) || 0) + parseFloat(task.price); await apiCall({ action: 'updateUser', id: creator.id, balance: creator.balance }, true); }
                     task.status = 'disputed';
                     await apiCall({ action: 'updateTask', id: task.id, status: 'disputed' }, true);
                 }
@@ -709,271 +587,119 @@
         const appDiv = document.getElementById('app');
         if (!currentUser) {
             const isLoginMode = authMode === 'login';
-            appDiv.innerHTML = `
-                <div class="header">
-                    <div class="logo"><h1>🏫 SchoolTask</h1><span>Биржа поручений</span></div>
-                    <button class="theme-toggle" id="themeToggleBtn">${isDarkTheme ? '☀️ Светлая' : '🌙 Тёмная'}</button>
-                </div>
-                <div class="card">
-                    <div class="tabs">
-                        <div class="tab ${isLoginMode ? 'active' : ''}" id="loginTabBtn">🔐 Вход</div>
-                        <div class="tab ${!isLoginMode ? 'active' : ''}" id="registerTabBtn">📝 Регистрация</div>
-                    </div>
-                    ${isLoginMode ? `
-                        <input type="text" id="loginName" placeholder="Имя">
-                        <input type="text" id="loginSchool" placeholder="Школа">
-                        <input type="text" id="loginCorp" placeholder="Корпус">
-                        <input type="password" id="loginPassword" placeholder="Пароль">
-                        <button class="btn-primary" id="loginBtn">Войти</button>
-                    ` : `
-                        <input type="text" id="regName" placeholder="Имя (уникальное)">
-                        <div id="regNameError" class="error-text"></div>
-                        <input type="text" id="regSchool" placeholder="Школа">
-                        <input type="text" id="regCorp" placeholder="Корпус">
-                        <input type="password" id="regPassword" placeholder="Пароль (мин. 3 символа)">
-                        <button class="btn-primary" id="registerBtn">Зарегистрироваться</button>
-                    `}
-                    <div style="margin-top:15px; text-align:center;">Пополнение и вывод: @leshr_ak47</div>
-                </div>
-            `;
-            
-            if (!isLoginMode) {
-                const nameInput = document.getElementById('regName');
-                const errorDiv = document.getElementById('regNameError');
-                nameInput?.addEventListener('input', () => {
-                    const name = nameInput.value;
-                    if (name.length > 0 && isUsernameTaken(name)) {
-                        errorDiv.textContent = `❌ Имя "${name}" уже занято`;
-                        errorDiv.style.display = 'block';
-                    } else {
-                        errorDiv.style.display = 'none';
-                    }
-                });
-            }
-            
+            appDiv.innerHTML = `<div class="header"><div class="logo"><h1>🏫 SchoolTask</h1><span>Биржа поручений</span></div><button class="theme-toggle" id="themeToggleBtn">${isDarkTheme ? '☀️ Светлая' : '🌙 Тёмная'}</button></div><div class="card"><div class="tabs"><div class="tab ${isLoginMode ? 'active' : ''}" id="loginTabBtn">🔐 Вход</div><div class="tab ${!isLoginMode ? 'active' : ''}" id="registerTabBtn">📝 Регистрация</div></div>${isLoginMode ? `<input type="text" id="loginName" placeholder="Имя"><input type="text" id="loginSchool" placeholder="Школа"><input type="text" id="loginCorp" placeholder="Корпус"><input type="password" id="loginPassword" placeholder="Пароль"><button class="btn-primary" id="loginBtn">Войти</button>` : `<input type="text" id="regName" placeholder="Имя (уникальное)"><div id="regNameError" class="error-text"></div><input type="text" id="regSchool" placeholder="Школа"><input type="text" id="regCorp" placeholder="Корпус"><input type="password" id="regPassword" placeholder="Пароль (мин. 3 символа)"><button class="btn-primary" id="registerBtn">Зарегистрироваться</button>`}<div style="margin-top:15px; text-align:center;">Пополнение и вывод: @leshr_ak47</div></div>`;
+            if (!isLoginMode) { const nameInput = document.getElementById('regName'); const errorDiv = document.getElementById('regNameError'); nameInput?.addEventListener('input', () => { const name = nameInput.value; if (name.length > 0 && isUsernameTaken(name)) { errorDiv.textContent = `❌ Имя "${name}" уже занято`; errorDiv.style.display = 'block'; } else { errorDiv.style.display = 'none'; } }); }
             document.getElementById('loginTabBtn')?.addEventListener('click', () => { authMode = 'login'; renderApp(); });
             document.getElementById('registerTabBtn')?.addEventListener('click', () => { authMode = 'register'; renderApp(); });
-            document.getElementById('loginBtn')?.addEventListener('click', () => {
-                loginUser(
-                    document.getElementById('loginName').value,
-                    document.getElementById('loginSchool').value,
-                    document.getElementById('loginCorp').value,
-                    document.getElementById('loginPassword').value
-                );
-            });
-            document.getElementById('registerBtn')?.addEventListener('click', () => {
-                registerUser(
-                    document.getElementById('regName').value,
-                    document.getElementById('regSchool').value,
-                    document.getElementById('regCorp').value,
-                    document.getElementById('regPassword').value
-                );
-            });
+            document.getElementById('loginBtn')?.addEventListener('click', () => { loginUser(document.getElementById('loginName').value, document.getElementById('loginSchool').value, document.getElementById('loginCorp').value, document.getElementById('loginPassword').value); });
+            document.getElementById('registerBtn')?.addEventListener('click', () => { registerUser(document.getElementById('regName').value, document.getElementById('regSchool').value, document.getElementById('regCorp').value, document.getElementById('regPassword').value); });
             document.getElementById('themeToggleBtn')?.addEventListener('click', toggleTheme);
             return;
         }
         
-        const openTasks = cachedTasks.filter(t => t.status === 'open' && t.creatorSchool === currentUser.school);
-        const myCreatedTasks = cachedTasks.filter(t => t.creatorId === currentUser.id);
-        const myTasksAsExecutor = cachedTasks.filter(t => t.takerId === currentUser.id);
+        const levelInfo = getLevel(parseFloat(currentUser.rating) || 0, parseInt(currentUser.tasksCompleted) || 0);
+        let filteredTasks = cachedTasks.filter(t => t.status === 'open' && t.creatorSchool === currentUser.school);
+        if (filters.minPrice) filteredTasks = filteredTasks.filter(t => t.price >= parseFloat(filters.minPrice));
+        if (filters.maxPrice) filteredTasks = filteredTasks.filter(t => t.price <= parseFloat(filters.maxPrice));
+        if (filters.category && filters.category !== 'all') filteredTasks = filteredTasks.filter(t => t.category === filters.category);
         
         const start = currentPage * ITEMS_PER_PAGE;
-        const end = start + ITEMS_PER_PAGE;
-        const paginatedTasks = openTasks.slice(start, end);
-        const hasMore = end < openTasks.length;
+        const paginatedTasks = filteredTasks.slice(start, start + ITEMS_PER_PAGE);
+        const hasMore = start + ITEMS_PER_PAGE < filteredTasks.length;
         
-        const tasksHtml = (tasksList, showActions = true, showPagination = false) => {
+        const tasksHtml = (tasksList, showActions = true) => {
             if (!tasksList.length) return '<div class="empty-state" style="text-align:center; padding:40px;">✨ Нет заданий</div>';
-            return `
-                <div class="tasks-grid">${tasksList.map(task => {
-                    const creator = cachedUsers.find(u => u.id === task.creatorId);
-                    const taker = cachedUsers.find(u => u.id === task.takerId);
-                    const isCreator = task.creatorId === currentUser.id;
-                    const isTaker = task.takerId === currentUser.id;
-                    const statusInfo = getTaskStatusText(task.status);
-                    const canChat = (task.status === 'in_progress' || task.status === 'awaiting_confirmation') && (isCreator || isTaker);
-                    
-                    let actionButtons = '';
-                    
-                    if (task.status === 'open' && !isCreator && showActions) {
-                        actionButtons = `<button class="btn-primary take-btn" data-taskid="${task.id}">📌 Взять задание</button>`;
-                    }
-                    
-                    if (task.status === 'in_progress' && isTaker && showActions) {
-                        actionButtons = `<button class="btn-success confirm-complete-btn" data-taskid="${task.id}">✅ Подтвердить выполнение</button>`;
-                    }
-                    
-                    if (task.status === 'awaiting_confirmation' && isCreator && showActions) {
-                        actionButtons = `
-                            <div class="action-buttons">
-                                <button class="btn-success confirm-receipt-btn" data-taskid="${task.id}">💰 Подтвердить получение</button>
-                                <button class="btn-danger cancel-receipt-btn" data-taskid="${task.id}">❌ Не получил</button>
-                            </div>
-                        `;
-                    }
-                    
-                    if (task.status === 'open' && isCreator && showActions) {
-                        actionButtons = `<button class="btn-danger delete-task-btn" data-taskid="${task.id}">❌ Удалить задание</button>`;
-                    }
-                    
-                    if (canChat && showActions) {
-                        actionButtons += `<button class="btn-info chat-btn" data-taskid="${task.id}">💬 Чат</button>`;
-                    }
-                    
-                    return `<div class="task-card">
-                        <div class="task-header">
-                            <div class="task-price">${task.price} ₽</div>
-                            <div class="task-status ${statusInfo.class}">${statusInfo.text}</div>
-                        </div>
-                        <div class="task-desc">📌 ${task.description}</div>
-                        <div class="task-meta">📍 ${task.location}</div>
-                        <div style="font-size:0.7rem; color:#6b7280;">
-                            👤 Создатель: ${creator ? creator.name : '?'} (${creator ? creator.school : ''})
-                            ${taker ? `<br>👤 Исполнитель: ${taker.name}` : ''}
-                        </div>
-                        ${actionButtons}
-                    </div>`;
-                }).join('')}</div>
-                ${showPagination && hasMore ? `<button id="loadMoreBtn" class="btn-primary" style="margin-top:20px; width:100%;">📚 Загрузить ещё (${openTasks.length - end} осталось)</button>` : ''}
-            `;
+            return `<div class="tasks-grid">${tasksList.map(task => {
+                const creator = cachedUsers.find(u => u.id === task.creatorId);
+                const taker = cachedUsers.find(u => u.id === task.takerId);
+                const isCreator = task.creatorId === currentUser.id;
+                const isTaker = task.takerId === currentUser.id;
+                const statusInfo = getTaskStatusText(task.status);
+                const canChat = (task.status === 'in_progress' || task.status === 'awaiting_confirmation') && (isCreator || isTaker);
+                let actionButtons = '';
+                if (task.status === 'open' && !isCreator && showActions) actionButtons = `<button class="btn-primary take-btn" data-taskid="${task.id}">📌 Взять задание</button>`;
+                if (task.status === 'in_progress' && isTaker && showActions) actionButtons = `<button class="btn-success confirm-complete-btn" data-taskid="${task.id}">✅ Подтвердить выполнение</button>`;
+                if (task.status === 'awaiting_confirmation' && isCreator && showActions) actionButtons = `<div class="action-buttons"><button class="btn-success confirm-receipt-btn" data-taskid="${task.id}">💰 Подтвердить получение</button><button class="btn-danger cancel-receipt-btn" data-taskid="${task.id}">❌ Не получил</button></div>`;
+                if (task.status === 'open' && isCreator && showActions) actionButtons = `<button class="btn-danger delete-task-btn" data-taskid="${task.id}">❌ Удалить задание</button>`;
+                if (canChat && showActions) actionButtons += `<button class="btn-info chat-btn" data-taskid="${task.id}">💬 Чат</button>`;
+                return `<div class="task-card"><div class="task-header"><div class="task-price">${task.price} ₽</div><div class="task-status ${statusInfo.class}">${statusInfo.text}</div></div><div class="task-desc">📌 ${task.description}</div><div class="task-meta">📍 ${task.location} ${task.category ? `| 🏷️ ${task.category}` : ''}</div>${task.photoUrl ? `<img src="${task.photoUrl}" class="photo-preview">` : ''}<div style="font-size:0.7rem; color:#6b7280;">👤 Создатель: ${creator ? creator.name : '?'} (${creator ? creator.school : ''})${taker ? `<br>👤 Исполнитель: ${taker.name}` : ''}</div>${actionButtons}</div>`;
+            }).join('')}</div>`;
         };
         
         let adminPanelHtml = '';
         const isAdmin = currentUser.name && currentUser.name.toLowerCase() === 'leshr_ak47';
         if (isAdmin && adminMode) {
             let filteredUsers = cachedUsers;
-            if (adminSearchTerm.trim()) {
-                const searchLower = adminSearchTerm.toLowerCase();
-                filteredUsers = filteredUsers.filter(u => u.name && (u.name.toLowerCase().includes(searchLower) || (u.school && u.school.toLowerCase().includes(searchLower))));
-            }
-            adminPanelHtml = `
-                <div class="admin-panel">
-                    <div class="admin-header"><h2>👑 Админ-панель</h2><button class="btn-danger" id="exitAdminBtn">Выйти</button></div>
-                    <div class="admin-header"><div class="search-box">🔍 <input type="text" id="adminSearch" placeholder="Поиск..." value="${adminSearchTerm}"></div><div><button class="refresh-btn" id="refreshUsersBtn">🔄 Обновить</button> <span class="balance-card">👥 ${cachedUsers.length}</span></div></div>
-                    <div class="users-table"><table><thead><tr><th>Имя</th><th>Школа</th><th>Баланс</th><th>Статус</th><th>Баланс</th><th>Бан</th></tr></thead>
-                    <tbody>${filteredUsers.map(user => {
-                        const isBanned = user.isBanned === 'true' || user.isBanned === true;
-                        return `<tr>
-                            <td><strong>${user.name || '?'}</strong></td>
-                            <td>${user.school || '?'}<br><small>${user.corp || '?'}</small></td>
-                            <td>${(parseFloat(user.balance) || 0).toFixed(2)} ₽</td>
-                            <td>${isBanned ? '⛔ Забанен' : '✅ Активен'}</td>
-                            <td><div class="balance-control"><input type="number" id="amount-${user.id}" value="100"><button class="topup-btn" data-userid="${user.id}">+</button><button class="withdraw-btn" data-userid="${user.id}">-</button></div></td>
-                            <td>${!isBanned ? `<div class="ban-control"><input type="number" id="days-${user.id}" placeholder="Дни" value="0"><input type="number" id="hours-${user.id}" placeholder="Часы" value="0"><input type="text" id="reason-${user.id}" placeholder="Причина"><button class="ban-btn" data-userid="${user.id}">⛔ Бан</button></div>` : `<button class="unban-btn" data-userid="${user.id}">✅ Разбанить</button>`}</td>
-                        </tr>`;
-                    }).join('')}</tbody></table></div>
-                </div>
-            `;
+            if (adminSearchTerm.trim()) filteredUsers = filteredUsers.filter(u => u.name && u.name.toLowerCase().includes(adminSearchTerm.toLowerCase()));
+            adminPanelHtml = `<div class="admin-panel"><div class="admin-header"><h2>👑 Админ-панель</h2><button class="btn-danger" id="exitAdminBtn">Выйти</button></div><div class="admin-header"><div class="search-box">🔍 <input type="text" id="adminSearch" placeholder="Поиск..." value="${adminSearchTerm}"></div><div><button class="refresh-btn" id="refreshUsersBtn">🔄 Обновить</button> <span class="balance-card">👥 ${cachedUsers.length}</span></div></div><div class="users-table"><table><thead><tr><th>Имя</th><th>Школа</th><th>Баланс</th><th>Статус</th><th>Баланс</th><th>Бан</th></tr></thead><tbody>${filteredUsers.map(user => { const isBanned = user.isBanned === 'true' || user.isBanned === true; return `<tr><td><strong>${user.name || '?'}</strong></td><td>${user.school || '?'}<br><small>${user.corp || '?'}</small></td><td>${(parseFloat(user.balance) || 0).toFixed(2)} ₽</td><td>${isBanned ? '⛔ Забанен' : '✅ Активен'}</td><td><div class="balance-control"><input type="number" id="amount-${user.id}" value="100"><button class="topup-btn" data-userid="${user.id}">+</button><button class="withdraw-btn" data-userid="${user.id}">-</button></div></td><td>${!isBanned ? `<div class="ban-control"><input type="number" id="days-${user.id}" placeholder="Дни" value="0"><input type="number" id="hours-${user.id}" placeholder="Часы" value="0"><input type="text" id="reason-${user.id}" placeholder="Причина"><button class="ban-btn" data-userid="${user.id}">⛔ Бан</button></div>` : `<button class="unban-btn" data-userid="${user.id}">✅ Разбанить</button>`}</td></tr>`; }).join('')}</tbody></table></div></div>`;
         }
         
-        const createForm = `<div class="card"><h3>📝 Создать задание</h3><textarea id="taskDesc" rows="2" placeholder="Что нужно сделать?"></textarea><input type="number" id="taskPrice" placeholder="Цена (руб)"><input type="text" id="taskLocation" placeholder="Место"><button class="btn-primary" id="createTaskBtn">Создать</button></div>`;
+        const createForm = `<div class="card"><h3>📝 Создать задание</h3><textarea id="taskDesc" rows="2" placeholder="Что нужно сделать?"></textarea><input type="number" id="taskPrice" placeholder="Цена (руб)"><input type="text" id="taskLocation" placeholder="Место"><select id="taskCategory"><option value="Еда">🍕 Еда</option><option value="Учёба">📚 Учёба</option><option value="Помощь">🤝 Помощь</option><option value="Разное">🎲 Разное</option></select><input type="file" id="taskPhoto" accept="image/*"><div id="taskPhotoPreview"></div><button class="btn-primary" id="createTaskBtn">Создать</button></div>`;
         
         let activeTab = window._activeTab || 'allTasks';
         let mainContent = '';
-        if (activeTab === 'allTasks') mainContent = `<h3>📋 Доступные задания (школа ${currentUser.school})</h3>${tasksHtml(paginatedTasks, true, true)}`;
-        else if (activeTab === 'myTasks') mainContent = `<h3>📌 Мои задания</h3>${tasksHtml(myCreatedTasks, true, false)}`;
-        else if (activeTab === 'myExecutions') mainContent = `<h3>⚡ Мои выполнения</h3>${tasksHtml(myTasksAsExecutor, true, false)}`;
+        if (activeTab === 'allTasks') mainContent = `<h3>📋 Доступные задания (школа ${currentUser.school})</h3><div class="filter-group"><input type="number" id="filterMinPrice" placeholder="Цена от" value="${filters.minPrice}"><input type="number" id="filterMaxPrice" placeholder="Цена до" value="${filters.maxPrice}"><select id="filterCategory"><option value="all">Все категории</option><option value="Еда">🍕 Еда</option><option value="Учёба">📚 Учёба</option><option value="Помощь">🤝 Помощь</option><option value="Разное">🎲 Разное</option></select><button id="applyFiltersBtn" class="btn-info">🔍 Применить</button></div>${tasksHtml(paginatedTasks, true)}${hasMore ? `<button id="loadMoreBtn" class="btn-primary" style="margin-top:20px; width:100%;">📚 Загрузить ещё</button>` : ''}`;
+        else if (activeTab === 'myTasks') mainContent = `<h3>📌 Мои задания</h3>${tasksHtml(cachedTasks.filter(t => t.creatorId === currentUser.id), true)}`;
+        else if (activeTab === 'myExecutions') mainContent = `<h3>⚡ Мои выполнения</h3>${tasksHtml(cachedTasks.filter(t => t.takerId === currentUser.id), true)}`;
+        else if (activeTab === 'profile') mainContent = `<div class="card"><h3>👤 Мой профиль</h3><p><strong>Имя:</strong> ${currentUser.name}</p><p><strong>Школа:</strong> ${currentUser.school}</p><p><strong>Корпус:</strong> ${currentUser.corp}</p><p><strong>Баланс:</strong> ${(parseFloat(currentUser.balance)||0).toFixed(2)} ₽</p><p><strong>Уровень:</strong> <span class="level-badge" style="background:${levelInfo.color}">${levelInfo.name}</span></p><p><strong>Рейтинг:</strong> ${currentUser.rating ? parseFloat(currentUser.rating).toFixed(1) : 'Нет'} ⭐ (${currentUser.ratingCount || 0} отзывов)</p><p><strong>Заработано:</strong> ${(parseFloat(currentUser.totalEarned)||0).toFixed(2)} ₽</p><p><strong>Потрачено:</strong> ${(parseFloat(currentUser.totalSpent)||0).toFixed(2)} ₽</p><p><strong>Выполнено заданий:</strong> ${parseInt(currentUser.tasksCompleted)||0}</p><p><strong>Создано заданий:</strong> ${parseInt(currentUser.tasksCreated)||0}</p><button id="exportDataBtn" class="btn-info">📥 Экспорт моих данных</button><button id="leaderboardBtn" class="btn-warning" style="margin-left:10px;">🏆 Доска лидеров</button></div>`;
         else if (activeTab === 'create') mainContent = createForm;
         
         const adminButtonHtml = isAdmin ? `<button id="adminPanelBtn" style="background:#2c3e50; color:white;">🔐 Админка</button>` : '';
         
-        appDiv.innerHTML = `
-            <div class="header">
-                <div class="logo"><h1>🏫 SchoolTask</h1></div>
-                <div class="user-info">
-                    <div>👋 ${currentUser.name} | ${currentUser.school}</div>
-                    <div class="balance-card">💰 ${(parseFloat(currentUser.balance) || 0).toFixed(2)} ₽</div>
-                    <button class="theme-toggle" id="themeToggleBtn">${isDarkTheme ? '☀️' : '🌙'}</button>
-                    <button class="btn-danger" id="logoutBtn">Выйти</button>
-                </div>
-            </div>
-            <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
-                <span>📢 Пополнение и вывод: @leshr_ak47</span>
-                <div>
-                    <button id="topupBtn" style="background:#ffd966;">➕ Пополнить</button>
-                    <button id="withdrawBtn" style="background:#f97316;">💸 Вывод</button>
-                    ${adminButtonHtml}
-                </div>
-            </div>
-            ${adminPanelHtml}
-            <div class="tabs">
-                <div class="tab ${activeTab === 'allTasks' ? 'active' : ''}" data-tab="allTasks">📋 Все задания</div>
-                <div class="tab ${activeTab === 'myTasks' ? 'active' : ''}" data-tab="myTasks">📦 Мои</div>
-                <div class="tab ${activeTab === 'myExecutions' ? 'active' : ''}" data-tab="myExecutions">⚡ Мои выполнения</div>
-                <div class="tab ${activeTab === 'create' ? 'active' : ''}" data-tab="create">➕ Создать</div>
-            </div>
-            ${mainContent}
-            <div style="margin-top:20px; text-align:center; font-size:12px;">⚠️ Комиссия 5% | ${TASK_TIMEOUT_HOURS} часов на подтверждение</div>
-        `;
+        appDiv.innerHTML = `<div class="header"><div class="logo"><h1>🏫 SchoolTask</h1></div><div class="user-info"><div>👋 ${currentUser.name} | ${currentUser.school}</div><div class="balance-card">💰 ${(parseFloat(currentUser.balance)||0).toFixed(2)} ₽</div><span class="level-badge" style="background:${levelInfo.color}">${levelInfo.name}</span><button class="theme-toggle" id="themeToggleBtn">${isDarkTheme ? '☀️' : '🌙'}</button><button class="btn-danger" id="logoutBtn">Выйти</button></div></div><div style="display:flex; justify-content:space-between; margin-bottom:15px; flex-wrap:wrap; gap:10px;"><span>📢 Пополнение и вывод: @leshr_ak47</span><div><button id="topupBtn" style="background:#ffd966;">➕ Пополнить</button><button id="withdrawBtn" style="background:#f97316;">💸 Вывод</button>${adminButtonHtml}</div></div>${adminPanelHtml}<div class="tabs"><div class="tab ${activeTab === 'allTasks' ? 'active' : ''}" data-tab="allTasks">📋 Все задания</div><div class="tab ${activeTab === 'myTasks' ? 'active' : ''}" data-tab="myTasks">📦 Мои</div><div class="tab ${activeTab === 'myExecutions' ? 'active' : ''}" data-tab="myExecutions">⚡ Мои выполнения</div><div class="tab ${activeTab === 'profile' ? 'active' : ''}" data-tab="profile">👤 Профиль</div><div class="tab ${activeTab === 'create' ? 'active' : ''}" data-tab="create">➕ Создать</div></div>${mainContent}<div style="margin-top:20px; text-align:center; font-size:12px;">⚠️ Комиссия 5% | ${TASK_TIMEOUT_HOURS} часов на подтверждение</div>`;
         
-        document.querySelectorAll('.tab').forEach(el => el.addEventListener('click', () => { 
-            window._activeTab = el.dataset.tab; 
-            currentPage = 0;
-            renderApp(); 
-        }));
+        document.querySelectorAll('.tab').forEach(el => el.addEventListener('click', () => { window._activeTab = el.dataset.tab; currentPage = 0; renderApp(); }));
         document.getElementById('logoutBtn')?.addEventListener('click', logout);
         document.getElementById('topupBtn')?.addEventListener('click', () => showToast('Напишите @leshr_ak47'));
         document.getElementById('withdrawBtn')?.addEventListener('click', () => showToast('Вывод через @leshr_ak47'));
         document.getElementById('themeToggleBtn')?.addEventListener('click', toggleTheme);
+        document.getElementById('leaderboardBtn')?.addEventListener('click', showLeaderboard);
+        document.getElementById('exportDataBtn')?.addEventListener('click', exportMyData);
         
         if (isAdmin) {
             document.getElementById('adminPanelBtn')?.addEventListener('click', () => { if (adminMode) exitAdminMode(); else requestAdminAccess(); });
             document.getElementById('exitAdminBtn')?.addEventListener('click', exitAdminMode);
             document.getElementById('refreshUsersBtn')?.addEventListener('click', async () => { await forceSync(); renderApp(); showToast('Обновлено'); });
-            
             const searchInput = document.getElementById('adminSearch');
-            if (searchInput) {
-                const debouncedSearch = debounce((value) => {
-                    adminSearchTerm = value;
-                    renderApp();
-                }, 300);
-                searchInput.addEventListener('input', (e) => debouncedSearch(e.target.value));
-            }
+            if (searchInput) { const debouncedSearch = debounce((value) => { adminSearchTerm = value; renderApp(); }, 300); searchInput.addEventListener('input', (e) => debouncedSearch(e.target.value)); }
         }
         
         document.getElementById('createTaskBtn')?.addEventListener('click', () => {
             const desc = document.getElementById('taskDesc')?.value;
             const price = document.getElementById('taskPrice')?.value;
             const loc = document.getElementById('taskLocation')?.value;
-            if (desc && price && loc) createTask(desc, price, loc);
+            const category = document.getElementById('taskCategory')?.value;
+            const photo = document.getElementById('taskPhoto')?.files[0];
+            if (desc && price && loc) createTask(desc, price, loc, category, photo);
             else showToast('Заполните все поля', true);
         });
         
-        document.getElementById('loadMoreBtn')?.addEventListener('click', () => {
-            currentPage++;
+        document.getElementById('applyFiltersBtn')?.addEventListener('click', () => {
+            filters.minPrice = document.getElementById('filterMinPrice')?.value || '';
+            filters.maxPrice = document.getElementById('filterMaxPrice')?.value || '';
+            filters.category = document.getElementById('filterCategory')?.value || 'all';
+            currentPage = 0;
             renderApp();
         });
         
+        document.getElementById('loadMoreBtn')?.addEventListener('click', () => { currentPage++; renderApp(); });
+        
         document.querySelectorAll('.take-btn').forEach(btn => btn.addEventListener('click', () => takeTask(btn.dataset.taskid)));
         document.querySelectorAll('.delete-task-btn').forEach(btn => btn.addEventListener('click', () => forceCancelTask(btn.dataset.taskid)));
-        document.querySelectorAll('.confirm-complete-btn').forEach(btn => btn.addEventListener('click', () => confirmCompletion(btn.dataset.taskid)));
+        document.querySelectorAll('.confirm-complete-btn').forEach(btn => btn.addEventListener('click', () => { const photo = document.getElementById('completionPhoto')?.files[0]; confirmCompletion(btn.dataset.taskid, photo); }));
         document.querySelectorAll('.confirm-receipt-btn').forEach(btn => btn.addEventListener('click', () => confirmReceipt(btn.dataset.taskid)));
         document.querySelectorAll('.cancel-receipt-btn').forEach(btn => btn.addEventListener('click', () => markAsNotReceived(btn.dataset.taskid)));
+        document.querySelectorAll('.chat-btn').forEach(btn => btn.addEventListener('click', () => openChat(btn.dataset.taskid)));
         
         if (isAdmin && adminMode) {
-            document.querySelectorAll('.topup-btn').forEach(btn => btn.addEventListener('click', () => {
-                const userId = btn.dataset.userid;
-                const amount = parseFloat(document.getElementById(`amount-${userId}`)?.value);
-                if (amount > 0) adminChangeBalance(userId, amount);
-                else showToast('Введите сумму', true);
-            }));
-            document.querySelectorAll('.withdraw-btn').forEach(btn => btn.addEventListener('click', () => {
-                const userId = btn.dataset.userid;
-                const amount = parseFloat(document.getElementById(`amount-${userId}`)?.value);
-                if (amount > 0) adminChangeBalance(userId, -amount);
-                else showToast('Введите сумму', true);
-            }));
-            document.querySelectorAll('.ban-btn').forEach(btn => btn.addEventListener('click', () => {
-                const userId = btn.dataset.userid;
-                const days = parseInt(document.getElementById(`days-${userId}`)?.value) || 0;
-                const hours = parseInt(document.getElementById(`hours-${userId}`)?.value) || 0;
-                const reason = document.getElementById(`reason-${userId}`)?.value || '';
-                banUserWithDuration(userId, days, hours, reason);
-            }));
+            document.querySelectorAll('.topup-btn').forEach(btn => btn.addEventListener('click', () => { const userId = btn.dataset.userid; const amount = parseFloat(document.getElementById(`amount-${userId}`)?.value); if (amount > 0) adminChangeBalance(userId, amount); else showToast('Введите сумму', true); }));
+            document.querySelectorAll('.withdraw-btn').forEach(btn => btn.addEventListener('click', () => { const userId = btn.dataset.userid; const amount = parseFloat(document.getElementById(`amount-${userId}`)?.value); if (amount > 0) adminChangeBalance(userId, -amount); else showToast('Введите сумму', true); }));
+            document.querySelectorAll('.ban-btn').forEach(btn => btn.addEventListener('click', () => { const userId = btn.dataset.userid; const days = parseInt(document.getElementById(`days-${userId}`)?.value) || 0; const hours = parseInt(document.getElementById(`hours-${userId}`)?.value) || 0; const reason = document.getElementById(`reason-${userId}`)?.value || ''; banUserWithDuration(userId, days, hours, reason); }));
             document.querySelectorAll('.unban-btn').forEach(btn => btn.addEventListener('click', () => unbanUser(btn.dataset.userid)));
         }
     }
 
+    if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js').then(() => console.log('SW registered')).catch(err => console.log('SW error:', err)); }
     restoreSession().then(() => renderApp());
 </script>
 </body>
