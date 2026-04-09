@@ -16,7 +16,8 @@
         body.dark-theme .card,
         body.dark-theme .admin-panel,
         body.dark-theme .task-card,
-        body.dark-theme .announcement {
+        body.dark-theme .announcement,
+        body.dark-theme .help-box {
             background: #1e293b;
             color: #e2e8f0;
         }
@@ -33,7 +34,7 @@
         .logo h1 { background: linear-gradient(135deg, #1e2b3c, #2c4c6e); -webkit-background-clip: text; background-clip: text; color: transparent; font-size: 1.6rem; }
         .user-info { display: flex; align-items: center; gap: 20px; background: #f8fafc; padding: 8px 20px; border-radius: 60px; flex-wrap: wrap; }
         .balance-card { background: #eef2ff; padding: 6px 16px; border-radius: 40px; font-weight: bold; }
-        .bonus-card { background: linear-gradient(135deg, #fef3c7, #fde68a); color: #92400e; padding: 6px 16px; border-radius: 40px; font-weight: bold; }
+        .bonus-card { background: linear-gradient(135deg, #fef3c7, #fde68a); color: #92400e; padding: 6px 16px; border-radius: 40px; font-weight: bold; cursor: pointer; }
         button { cursor: pointer; border: none; border-radius: 40px; padding: 10px 20px; font-weight: bold; transition: 0.2s; }
         .btn-primary { background: #2c6e4f; color: white; }
         .btn-success { background: #10b981; color: white; }
@@ -72,6 +73,21 @@
         .copy-link { background: #6b7280; color: white; }
         .share-btn:hover { transform: translateY(-2px); opacity: 0.9; }
         
+        /* Блок помощи */
+        .help-box {
+            background: #e0f2fe;
+            border-radius: 20px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+            border-left: 5px solid #0284c7;
+        }
+        .help-box h4 { color: #0284c7; margin-bottom: 8px; }
+        .help-box p { font-size: 0.9rem; color: #075985; }
+        body.dark-theme .help-box { background: #0c4a6e; border-left-color: #38bdf8; }
+        body.dark-theme .help-box h4 { color: #38bdf8; }
+        body.dark-theme .help-box p { color: #bae6fd; }
+        
         .referral-box { background: #f0fdf4; border-radius: 20px; padding: 15px; margin-top: 15px; text-align: center; }
         .referral-code { background: #e2e8f0; padding: 10px; border-radius: 40px; font-family: monospace; font-size: 1.2rem; display: inline-block; margin: 10px 0; cursor: pointer; }
         body.dark-theme .referral-box { background: #064e3b; }
@@ -101,6 +117,9 @@
         @keyframes fadein { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .loading { text-align: center; padding: 40px; color: #6b7280; }
         .error-text { color: #dc2626; font-size: 0.8rem; margin-top: -8px; margin-bottom: 12px; display: none; }
+        
+        .bonus-modal { max-width: 400px; }
+        .bonus-info { background: #fef3c7; padding: 12px; border-radius: 20px; margin: 10px 0; }
         
         @media (max-width: 700px) {
             .announcement h2 { font-size: 1.3rem; }
@@ -233,6 +252,43 @@
         const link = getReferralLink();
         const text = encodeURIComponent('🔥 SchoolTask - Биржа поручений! +10₽ на бонусный счёт за друга! ' + link);
         window.open(`https://wa.me/?text=${text}`, '_blank');
+    }
+
+    // ========== БОНУС ПОМОЩЬ ==========
+    function showBonusHelp() {
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="reviews-modal bonus-modal">
+                <div class="reviews-header">
+                    <h3>🎁 Что такое бонусный счёт?</h3>
+                    <button class="btn-danger" id="closeModal" style="padding: 5px 15px;">✕</button>
+                </div>
+                <div style="padding: 20px;">
+                    <div class="bonus-info">
+                        <p><strong>🎁 Бонусный счёт — это специальные деньги, которые НЕЛЬЗЯ вывести, но можно тратить на создание заданий!</strong></p>
+                    </div>
+                    <p><strong>✨ Как получить бонусы:</strong></p>
+                    <ul style="margin: 10px 0 10px 20px;">
+                        <li>👥 +10₽ за каждого приглашённого друга (по вашей реферальной ссылке)</li>
+                        <li>✅ +10₽ за каждое выполненное задание</li>
+                        <li>⭐ +20₽ за получение отзыва 5 звёзд</li>
+                        <li>📅 +3₽ ежедневный бонус за вход</li>
+                    </ul>
+                    <p><strong>💰 Как тратить:</strong></p>
+                    <ul style="margin: 10px 0 10px 20px;">
+                        <li>При создании задания выберите "Оплатить с бонусного счёта"</li>
+                        <li>Бонусные деньги нельзя вывести на карту</li>
+                    </ul>
+                    <button class="btn-primary" id="closeBtn" style="width:100%; margin-top:10px;">Понятно!</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        
+        const closeModal = () => modal.remove();
+        modal.querySelector('#closeModal').onclick = closeModal;
+        modal.querySelector('#closeBtn').onclick = closeModal;
     }
 
     // ========== ОСНОВНЫЕ ФУНКЦИИ ==========
@@ -489,7 +545,6 @@
             executor.balance = (parseFloat(executor.balance) || 0) + executorGain;
             await apiCall({ action: 'updateUser', id: executor.id, balance: executor.balance });
             
-            // Начисляем бонус за выполнение
             executor.bonus_balance = (parseFloat(executor.bonus_balance) || 0) + 10;
             await apiCall({ action: 'updateUser', id: executor.id, bonus_balance: executor.bonus_balance });
             showToast(`🎁 Бонус +10₽ зачислен на бонусный счёт!`);
@@ -654,13 +709,11 @@
                 </div>
             `;
             
-            // Обработчики для вкладок
             const loginTab = document.getElementById('loginTabBtn');
             const registerTab = document.getElementById('registerTabBtn');
             if (loginTab) loginTab.onclick = () => { authMode = 'login'; renderApp(); };
             if (registerTab) registerTab.onclick = () => { authMode = 'register'; renderApp(); };
             
-            // Обработчик кнопки входа
             const loginBtn = document.getElementById('loginBtn');
             if (loginBtn) {
                 loginBtn.onclick = () => {
@@ -672,7 +725,6 @@
                 };
             }
             
-            // Обработчик кнопки регистрации
             const registerBtn = document.getElementById('registerBtn');
             if (registerBtn) {
                 registerBtn.onclick = () => {
@@ -685,7 +737,6 @@
                 };
             }
             
-            // Проверка уникальности имени при регистрации
             const nameInput = document.getElementById('regName');
             const errorDiv = document.getElementById('regNameError');
             if (nameInput) {
@@ -744,11 +795,21 @@
             adminPanelHtml = `<div class="admin-panel"><div class="admin-header"><h2>👑 Админ-панель</h2><button class="btn-danger" id="exitAdminBtn">Выйти</button></div><div class="admin-header"><div class="search-box">🔍 <input type="text" id="adminSearch" placeholder="Поиск..." value="${adminSearchTerm}"></div><div><button class="refresh-btn" id="refreshUsersBtn">🔄 Обновить</button> <span class="balance-card">👥 ${cachedUsers.length}</span></div></div><div class="users-table"><table><thead><tr><th>Имя</th><th>Школа</th><th>Баланс</th><th>Бонусы</th><th>Статус</th><th>Действия</th></tr></thead><tbody>${filteredUsers.map(user => { const isBanned = user.isBanned === 'true' || user.isBanned === true; return `<tr><td><strong>${user.name || '?'}</strong></td><td>${user.school || '?'}<br><small>${user.corp || '?'}</small></td><td>${(parseFloat(user.balance) || 0).toFixed(2)} ₽</td><td style="color:#eab308;">${(parseFloat(user.bonus_balance) || 0).toFixed(2)} ₽</td><td>${isBanned ? '⛔ Забанен' : '✅ Активен'}</td><td><button class="btn-danger ban-btn" data-userid="${user.id}">Бан</button></td></tr>`; }).join('')}</tbody>}</div></div>`;
         }
         
+        // Блок помощи на главной странице заданий
+        const helpBlock = `
+            <div class="help-box">
+                <h4>🎁 Что такое бонусный счёт?</h4>
+                <p>Бонусный счёт — это специальные деньги, которые НЕЛЬЗЯ вывести, но можно тратить на создание заданий!<br>
+                ✨ Как получить: +10₽ за друга, +10₽ за выполнение, +20₽ за отзыв 5⭐, +3₽ ежедневно!<br>
+                💡 Нажмите на <strong>🎁 Бонусный счёт</strong> в шапке профиля для подробной информации.</p>
+            </div>
+        `;
+        
         const createForm = `<div class="card"><h3>📝 Создать задание</h3><textarea id="taskDesc" rows="2" placeholder="Что нужно сделать?"></textarea><input type="number" id="taskPrice" placeholder="Цена (руб)"><input type="text" id="taskLocation" placeholder="Место"><select id="paymentType"><option value="main">💰 Оплатить с основного счёта</option><option value="bonus">🎁 Оплатить с бонусного счёта</option></select><button class="btn-primary" id="createTaskBtn">Создать</button></div>`;
         
         let activeTab = window._activeTab || 'allTasks';
         let mainContent = '';
-        if (activeTab === 'allTasks') mainContent = `<h3>📋 Доступные задания (школа ${currentUser.school})</h3><div class="filter-group" style="display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap;"><input type="number" id="filterMinPrice" placeholder="Цена от" style="flex:1;"><input type="number" id="filterMaxPrice" placeholder="Цена до" style="flex:1;"><select id="filterCategory" style="flex:1;"><option value="all">Все категории</option><option value="Еда">🍕 Еда</option><option value="Учёба">📚 Учёба</option><option value="Помощь">🤝 Помощь</option><option value="Разное">🎲 Разное</option></select><button id="applyFiltersBtn" class="btn-info">🔍 Применить</button></div>${tasksHtml(paginatedTasks, true)}${hasMore ? `<button id="loadMoreBtn" class="btn-primary" style="margin-top:20px;">📚 Загрузить ещё</button>` : ''}`;
+        if (activeTab === 'allTasks') mainContent = `<h3>📋 Доступные задания (школа ${currentUser.school})</h3>${helpBlock}<div class="filter-group" style="display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap;"><input type="number" id="filterMinPrice" placeholder="Цена от" style="flex:1;"><input type="number" id="filterMaxPrice" placeholder="Цена до" style="flex:1;"><select id="filterCategory" style="flex:1;"><option value="all">Все категории</option><option value="Еда">🍕 Еда</option><option value="Учёба">📚 Учёба</option><option value="Помощь">🤝 Помощь</option><option value="Разное">🎲 Разное</option></select><button id="applyFiltersBtn" class="btn-info">🔍 Применить</button></div>${tasksHtml(paginatedTasks, true)}${hasMore ? `<button id="loadMoreBtn" class="btn-primary" style="margin-top:20px;">📚 Загрузить ещё</button>` : ''}`;
         else if (activeTab === 'myTasks') mainContent = `<h3>📌 Мои задания</h3>${tasksHtml(myCreatedTasks, true)}`;
         else if (activeTab === 'myExecutions') mainContent = `<h3>⚡ Мои выполнения</h3>${tasksHtml(myTasksAsExecutor, true)}`;
         else if (activeTab === 'profile') mainContent = `<div class="card"><h3>👤 Мой профиль</h3><p><strong>Имя:</strong> ${currentUser.name}</p><p><strong>Школа:</strong> ${currentUser.school}</p><p><strong>Корпус:</strong> ${currentUser.corp}</p><p><strong>💰 Основной баланс:</strong> ${(parseFloat(currentUser.balance)||0).toFixed(2)} ₽</p><p><strong>🎁 Бонусный счёт:</strong> ${(parseFloat(currentUser.bonus_balance)||0).toFixed(2)} ₽</p><p><strong>👥 Приглашено друзей:</strong> ${parseInt(currentUser.referral_count)||0}</p><div class="referral-box"><p>🎁 Ваша реферальная ссылка:</p><div class="referral-code" onclick="copyReferralLink()">${getReferralLink()}</div><p style="font-size:12px; margin-top:10px;">➕ За каждого друга, который зарегистрируется по вашей ссылке, вы получите +10₽ на бонусный счёт!</p></div></div>`;
@@ -762,7 +823,7 @@
                 <div class="user-info">
                     <div>👋 ${currentUser.name} | ${currentUser.school}</div>
                     <div class="balance-card">💰 ${(parseFloat(currentUser.balance)||0).toFixed(2)} ₽</div>
-                    <div class="bonus-card">🎁 ${(parseFloat(currentUser.bonus_balance)||0).toFixed(2)} ₽</div>
+                    <div class="bonus-card" onclick="showBonusHelp()">🎁 ${(parseFloat(currentUser.bonus_balance)||0).toFixed(2)} ₽</div>
                     <button class="theme-toggle" id="themeToggleBtn">${isDarkTheme ? '☀️' : '🌙'}</button>
                     <button class="btn-danger" id="logoutBtn">Выйти</button>
                 </div>
@@ -783,7 +844,6 @@
             <div style="margin-top:20px; text-align:center; font-size:12px;">⚠️ Комиссия 5% | ${TASK_TIMEOUT_HOURS} часов на подтверждение</div>
         `;
         
-        // Обработчики вкладок
         document.querySelectorAll('.tab').forEach(el => {
             el.onclick = () => {
                 window._activeTab = el.dataset.tab;
