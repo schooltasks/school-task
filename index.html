@@ -41,6 +41,7 @@
         .btn-danger { background: #dc2626; color: white; }
         .btn-warning { background: #f59e0b; color: white; }
         .btn-info { background: #3b82f6; color: white; }
+        .btn-edit { background: #8b5cf6; color: white; }
         .theme-toggle { background: #334155; color: white; padding: 8px 16px; border-radius: 60px; font-size: 0.9rem; }
         input, textarea, select { width: 100%; padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 28px; margin-bottom: 12px; font-size: 1rem; }
         .tabs { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
@@ -73,7 +74,6 @@
         .copy-link { background: #6b7280; color: white; }
         .share-btn:hover { transform: translateY(-2px); opacity: 0.9; }
         
-        /* Блок помощи */
         .help-box {
             background: #e0f2fe;
             border-radius: 20px;
@@ -121,6 +121,8 @@
         .bonus-modal { max-width: 400px; }
         .bonus-info { background: #fef3c7; padding: 12px; border-radius: 20px; margin: 10px 0; }
         
+        .edit-modal { max-width: 500px; }
+        
         @media (max-width: 700px) {
             .announcement h2 { font-size: 1.3rem; }
             .share-buttons { flex-direction: column; align-items: center; }
@@ -132,7 +134,7 @@
 
 <script>
     // ========== НАСТРОЙКИ ==========
-    const API_URL = 'https://script.google.com/macros/s/AKfycbylBuRxCiDnzIERDfh9js37tBqwaFxn5u6JKLeyLGlK2vvt6F99OQz8kz88tAOy61qX8A/exec';
+    const API_URL = 'https://script.google.com/macros/s/AKfycbzR88ovcU1AkWt8nhMYVBuzWiv2TvFysvU3wUOQTXF9tygfnyFEuaRPQh4LRYd2kcmS8g/exec';
     const ADMIN_PASSWORD = 'dsl382dAZX';
     const TASK_TIMEOUT_HOURS = 5;
     
@@ -149,7 +151,7 @@
     let isDarkTheme = localStorage.getItem('darkTheme') === 'true';
     let currentPage = 0;
     const ITEMS_PER_PAGE = 10;
-    let filters = { minPrice: '', maxPrice: '', category: '' };
+    let filters = { minPrice: '', maxPrice: '', category: '', scope: 'school' };
     let cacheExpiry = 0;
     const CACHE_DURATION = 30000;
     
@@ -210,6 +212,16 @@
         if (isError) toast.style.background = '#b91c1c';
         document.body.appendChild(toast);
         setTimeout(() => toast.remove(), 3000);
+    }
+
+    // Валидация школы (только цифры)
+    function validateSchool(school) {
+        const schoolStr = school.toString().trim();
+        if (!/^\d+$/.test(schoolStr)) {
+            showToast('❌ Номер школы должен содержать только цифры! Пример: 1000 или 530', true);
+            return false;
+        }
+        return true;
     }
 
     // ========== РЕФЕРАЛЬНАЯ СИСТЕМА ==========
@@ -291,6 +303,73 @@
         modal.querySelector('#closeBtn').onclick = closeModal;
     }
 
+    // ========== РЕДАКТИРОВАНИЕ ЗАДАНИЯ ==========
+    function showEditTaskModal(task) {
+        const modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = `
+            <div class="reviews-modal edit-modal">
+                <div class="reviews-header">
+                    <h3>✏️ Редактировать задание</h3>
+                    <button class="btn-danger" id="closeModal" style="padding: 5px 15px;">✕</button>
+                </div>
+                <div style="padding: 20px;">
+                    <textarea id="editDesc" rows="3" placeholder="Описание">${task.description}</textarea>
+                    <input type="number" id="editPrice" value="${task.price}" placeholder="Цена">
+                    <input type="text" id="editLocation" value="${task.location}" placeholder="Место">
+                    <select id="editScope">
+                        <option value="school" ${task.scope === 'school' ? 'selected' : ''}>🏫 Только моя школа</option>
+                        <option value="all" ${task.scope === 'all' ? 'selected' : ''}>🌍 Для всех участников сайта</option>
+                    </select>
+                    <div style="display: flex; gap: 10px; margin-top: 15px;">
+                        <button class="btn-primary" id="saveEditBtn">💾 Сохранить</button>
+                        <button class="btn-danger" id="cancelEditBtn">Отмена</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        
+        modal.querySelector('#closeModal').onclick = () => modal.remove();
+        modal.querySelector('#cancelEditBtn').onclick = () => modal.remove();
+        modal.querySelector('#saveEditBtn').onclick = async () => {
+            const newDesc = modal.querySelector('#editDesc').value;
+            const newPrice = parseFloat(modal.querySelector('#editPrice').value);
+            const newLocation = modal.querySelector('#editLocation').value;
+            const newScope = modal.querySelector('#editScope').value;
+            
+            if (!newDesc || !newPrice || !newLocation) {
+                showToast('Заполните все поля', true);
+                return;
+            }
+            
+            if (newPrice <= 0) {
+                showToast('Цена должна быть положительной', true);
+                return;
+            }
+            
+            // Обновляем задание
+            task.description = newDesc;
+            task.price = newPrice;
+            task.location = newLocation;
+            task.scope = newScope;
+            
+            await apiCall({ 
+                action: 'updateTask', 
+                id: task.id, 
+                description: newDesc, 
+                price: newPrice, 
+                location: newLocation,
+                scope: newScope
+            });
+            
+            cacheExpiry = 0;
+            showToast('✅ Задание обновлено!');
+            modal.remove();
+            renderApp();
+        };
+    }
+
     // ========== ОСНОВНЫЕ ФУНКЦИИ ==========
     function saveSession() {
         if (currentUser) {
@@ -330,6 +409,7 @@
 
     async function registerUser(name, school, corp, password, referralCode) {
         if (!name.trim() || !school.trim() || !corp.trim()) { showToast('Заполните все поля', true); return false; }
+        if (!validateSchool(school)) return false;
         if (!password || password.length < 3) { showToast('Пароль не менее 3 символов', true); return false; }
         await syncData();
         if (isUsernameTaken(name)) { showToast(`❌ Имя "${name}" уже занято!`, true); return false; }
@@ -437,7 +517,7 @@
         renderApp(); 
     }
 
-    async function createTask(description, price, locationDetails, paymentType) {
+    async function createTask(description, price, locationDetails, paymentType, scope) {
         if (!currentUser) return;
         if (isCreatingTask) { showToast('Подождите...', true); return; }
         let priceNum = parseFloat(price);
@@ -478,6 +558,7 @@
             location: locationDetails.trim(),
             payment_type: paymentType,
             category: 'Разное',
+            scope: scope,
             status: 'open', 
             takerId: null, 
             takenAt: null, 
@@ -689,14 +770,15 @@
                     </div>
                     ${isLoginMode ? `
                         <input type="text" id="loginName" placeholder="Имя">
-                        <input type="text" id="loginSchool" placeholder="Школа">
+                        <input type="text" id="loginSchool" placeholder="Школа (только цифры)">
                         <input type="text" id="loginCorp" placeholder="Корпус">
                         <input type="password" id="loginPassword" placeholder="Пароль">
                         <button class="btn-primary" id="loginBtn">Войти</button>
                     ` : `
                         <input type="text" id="regName" placeholder="Имя (уникальное)">
                         <div id="regNameError" class="error-text"></div>
-                        <input type="text" id="regSchool" placeholder="Школа">
+                        <input type="text" id="regSchool" placeholder="Школа (только цифры, например: 1000)">
+                        <div id="regSchoolError" class="error-text"></div>
                         <input type="text" id="regCorp" placeholder="Корпус">
                         <input type="password" id="regPassword" placeholder="Пароль (мин. 3 символа)">
                         ${refCode ? `<input type="hidden" id="refCode" value="${refCode}"><div style="background:#e2e8f0; padding:10px; border-radius:20px; margin-bottom:12px; text-align:center;">🔗 Вы перешли по реферальной ссылке! Пригласивший получит +10₽ на бонусный счёт.</div>` : ''}
@@ -708,6 +790,21 @@
                     </div>
                 </div>
             `;
+            
+            // Валидация школы при регистрации
+            const regSchoolInput = document.getElementById('regSchool');
+            const regSchoolError = document.getElementById('regSchoolError');
+            if (regSchoolInput) {
+                regSchoolInput.oninput = () => {
+                    const val = regSchoolInput.value;
+                    if (val.length > 0 && !/^\d+$/.test(val)) {
+                        regSchoolError.textContent = '❌ Номер школы должен содержать только цифры!';
+                        regSchoolError.style.display = 'block';
+                    } else {
+                        regSchoolError.style.display = 'none';
+                    }
+                };
+            }
             
             const loginTab = document.getElementById('loginTabBtn');
             const registerTab = document.getElementById('registerTabBtn');
@@ -733,6 +830,10 @@
                     const corp = document.getElementById('regCorp').value;
                     const password = document.getElementById('regPassword').value;
                     const refCode = document.getElementById('refCode')?.value || '';
+                    if (school && !/^\d+$/.test(school)) {
+                        showToast('❌ Номер школы должен содержать только цифры!', true);
+                        return;
+                    }
                     registerUser(name, school, corp, password, refCode);
                 };
             }
@@ -757,7 +858,15 @@
         }
         
         // ===== ИНТЕРФЕЙС ДЛЯ АВТОРИЗОВАННЫХ ПОЛЬЗОВАТЕЛЕЙ =====
-        const openTasks = cachedTasks.filter(t => t.status === 'open' && t.creatorSchool === currentUser.school);
+        let openTasks = [];
+        if (filters.scope === 'all') {
+            // Для всех участников сайта
+            openTasks = cachedTasks.filter(t => t.status === 'open' && t.scope === 'all');
+        } else {
+            // Только своя школа
+            openTasks = cachedTasks.filter(t => t.status === 'open' && t.creatorSchool === currentUser.school);
+        }
+        
         const myCreatedTasks = cachedTasks.filter(t => t.creatorId === currentUser.id);
         const myTasksAsExecutor = cachedTasks.filter(t => t.takerId === currentUser.id);
         
@@ -770,7 +879,7 @@
         const paginatedTasks = filteredTasks.slice(start, start + ITEMS_PER_PAGE);
         const hasMore = start + ITEMS_PER_PAGE < filteredTasks.length;
         
-        const tasksHtml = (tasksList, showActions = true) => {
+        const tasksHtml = (tasksList, showActions = true, showEditDelete = true) => {
             if (!tasksList.length) return '<div class="empty-state" style="text-align:center; padding:40px;">✨ Нет заданий</div>';
             return `<div class="tasks-grid">${tasksList.map(task => {
                 const creator = cachedUsers.find(u => u.id === task.creatorId);
@@ -779,11 +888,49 @@
                 const isTaker = task.takerId === currentUser.id;
                 const statusInfo = getTaskStatusText(task.status);
                 let actionButtons = '';
-                if (task.status === 'open' && !isCreator && showActions) actionButtons = `<button class="btn-primary take-btn" data-taskid="${task.id}">📌 Взять задание</button>`;
-                if (task.status === 'in_progress' && isTaker && showActions) actionButtons = `<button class="btn-success confirm-complete-btn" data-taskid="${task.id}">✅ Подтвердить выполнение</button>`;
-                if (task.status === 'awaiting_confirmation' && isCreator && showActions) actionButtons = `<div class="action-buttons"><button class="btn-success confirm-receipt-btn" data-taskid="${task.id}">💰 Подтвердить получение</button><button class="btn-danger cancel-receipt-btn" data-taskid="${task.id}">❌ Не получил</button></div>`;
-                if (task.status === 'open' && isCreator && showActions) actionButtons = `<button class="btn-danger delete-task-btn" data-taskid="${task.id}">❌ Удалить задание</button>`;
-                return `<div class="task-card"><div class="task-header"><div class="task-price">${task.price} ₽</div><div class="task-status ${statusInfo.class}">${statusInfo.text}</div></div><div class="task-desc">📌 ${task.description}</div><div class="task-meta">📍 ${task.location}</div><div style="font-size:0.7rem; color:#6b7280;">👤 Создатель: ${creator ? creator.name : '?'} (${creator ? creator.school : ''})${taker ? `<br>👤 Исполнитель: ${taker.name}` : ''}</div>${actionButtons}</div>`;
+                
+                if (task.status === 'open' && !isCreator && showActions) {
+                    actionButtons = `<button class="btn-primary take-btn" data-taskid="${task.id}">📌 Взять задание</button>`;
+                }
+                
+                if (task.status === 'in_progress' && isTaker && showActions) {
+                    actionButtons = `<button class="btn-success confirm-complete-btn" data-taskid="${task.id}">✅ Подтвердить выполнение</button>`;
+                }
+                
+                if (task.status === 'awaiting_confirmation' && isCreator && showActions) {
+                    actionButtons = `
+                        <div class="action-buttons">
+                            <button class="btn-success confirm-receipt-btn" data-taskid="${task.id}">💰 Подтвердить получение</button>
+                            <button class="btn-danger cancel-receipt-btn" data-taskid="${task.id}">❌ Не получил</button>
+                        </div>
+                    `;
+                }
+                
+                if (showEditDelete && isCreator && (task.status === 'open' || task.status === 'completed')) {
+                    actionButtons += `
+                        <div class="action-buttons">
+                            <button class="btn-edit edit-task-btn" data-taskid="${task.id}">✏️ Редактировать</button>
+                            <button class="btn-danger delete-task-btn" data-taskid="${task.id}">🗑️ Удалить</button>
+                        </div>
+                    `;
+                }
+                
+                const scopeIcon = task.scope === 'all' ? '🌍' : '🏫';
+                const scopeText = task.scope === 'all' ? 'Для всех' : 'Только моя школа';
+                
+                return `<div class="task-card">
+                    <div class="task-header">
+                        <div class="task-price">${task.price} ₽</div>
+                        <div class="task-status ${statusInfo.class}">${statusInfo.text}</div>
+                    </div>
+                    <div class="task-desc">📌 ${task.description}</div>
+                    <div class="task-meta">📍 ${task.location} | ${scopeIcon} ${scopeText}</div>
+                    <div style="font-size:0.7rem; color:#6b7280;">
+                        👤 Создатель: ${creator ? creator.name : '?'} (${creator ? creator.school : ''})
+                        ${taker ? `<br>👤 Исполнитель: ${taker.name}` : ''}
+                    </div>
+                    ${actionButtons}
+                </div>`;
             }).join('')}</div>`;
         };
         
@@ -795,7 +942,6 @@
             adminPanelHtml = `<div class="admin-panel"><div class="admin-header"><h2>👑 Админ-панель</h2><button class="btn-danger" id="exitAdminBtn">Выйти</button></div><div class="admin-header"><div class="search-box">🔍 <input type="text" id="adminSearch" placeholder="Поиск..." value="${adminSearchTerm}"></div><div><button class="refresh-btn" id="refreshUsersBtn">🔄 Обновить</button> <span class="balance-card">👥 ${cachedUsers.length}</span></div></div><div class="users-table"><table><thead><tr><th>Имя</th><th>Школа</th><th>Баланс</th><th>Бонусы</th><th>Статус</th><th>Действия</th></tr></thead><tbody>${filteredUsers.map(user => { const isBanned = user.isBanned === 'true' || user.isBanned === true; return `<tr><td><strong>${user.name || '?'}</strong></td><td>${user.school || '?'}<br><small>${user.corp || '?'}</small></td><td>${(parseFloat(user.balance) || 0).toFixed(2)} ₽</td><td style="color:#eab308;">${(parseFloat(user.bonus_balance) || 0).toFixed(2)} ₽</td><td>${isBanned ? '⛔ Забанен' : '✅ Активен'}</td><td><button class="btn-danger ban-btn" data-userid="${user.id}">Бан</button></td></tr>`; }).join('')}</tbody>}</div></div>`;
         }
         
-        // Блок помощи на главной странице заданий
         const helpBlock = `
             <div class="help-box">
                 <h4>🎁 Что такое бонусный счёт?</h4>
@@ -805,13 +951,13 @@
             </div>
         `;
         
-        const createForm = `<div class="card"><h3>📝 Создать задание</h3><textarea id="taskDesc" rows="2" placeholder="Что нужно сделать?"></textarea><input type="number" id="taskPrice" placeholder="Цена (руб)"><input type="text" id="taskLocation" placeholder="Место"><select id="paymentType"><option value="main">💰 Оплатить с основного счёта</option><option value="bonus">🎁 Оплатить с бонусного счёта</option></select><button class="btn-primary" id="createTaskBtn">Создать</button></div>`;
+        const createForm = `<div class="card"><h3>📝 Создать задание</h3><textarea id="taskDesc" rows="2" placeholder="Что нужно сделать?"></textarea><input type="number" id="taskPrice" placeholder="Цена (руб)"><input type="text" id="taskLocation" placeholder="Место"><select id="paymentType"><option value="main">💰 Оплатить с основного счёта</option><option value="bonus">🎁 Оплатить с бонусного счёта</option></select><select id="taskScope"><option value="school">🏫 Только моя школа</option><option value="all">🌍 Для всех участников сайта</option></select><button class="btn-primary" id="createTaskBtn">Создать</button></div>`;
         
         let activeTab = window._activeTab || 'allTasks';
         let mainContent = '';
-        if (activeTab === 'allTasks') mainContent = `<h3>📋 Доступные задания (школа ${currentUser.school})</h3>${helpBlock}<div class="filter-group" style="display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap;"><input type="number" id="filterMinPrice" placeholder="Цена от" style="flex:1;"><input type="number" id="filterMaxPrice" placeholder="Цена до" style="flex:1;"><select id="filterCategory" style="flex:1;"><option value="all">Все категории</option><option value="Еда">🍕 Еда</option><option value="Учёба">📚 Учёба</option><option value="Помощь">🤝 Помощь</option><option value="Разное">🎲 Разное</option></select><button id="applyFiltersBtn" class="btn-info">🔍 Применить</button></div>${tasksHtml(paginatedTasks, true)}${hasMore ? `<button id="loadMoreBtn" class="btn-primary" style="margin-top:20px;">📚 Загрузить ещё</button>` : ''}`;
-        else if (activeTab === 'myTasks') mainContent = `<h3>📌 Мои задания</h3>${tasksHtml(myCreatedTasks, true)}`;
-        else if (activeTab === 'myExecutions') mainContent = `<h3>⚡ Мои выполнения</h3>${tasksHtml(myTasksAsExecutor, true)}`;
+        if (activeTab === 'allTasks') mainContent = `<h3>📋 Доступные задания ${filters.scope === 'all' ? '(для всех участников)' : `(школа ${currentUser.school})`}</h3>${helpBlock}<div class="filter-group" style="display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap;"><select id="filterScope" style="flex:1;"><option value="school" ${filters.scope === 'school' ? 'selected' : ''}>🏫 Только моя школа</option><option value="all" ${filters.scope === 'all' ? 'selected' : ''}>🌍 Для всех участников</option></select><input type="number" id="filterMinPrice" placeholder="Цена от" style="flex:1;" value="${filters.minPrice}"><input type="number" id="filterMaxPrice" placeholder="Цена до" style="flex:1;" value="${filters.maxPrice}"><select id="filterCategory" style="flex:1;"><option value="all">Все категории</option><option value="Еда">🍕 Еда</option><option value="Учёба">📚 Учёба</option><option value="Помощь">🤝 Помощь</option><option value="Разное">🎲 Разное</option></select><button id="applyFiltersBtn" class="btn-info">🔍 Применить</button></div>${tasksHtml(paginatedTasks, true, false)}${hasMore ? `<button id="loadMoreBtn" class="btn-primary" style="margin-top:20px;">📚 Загрузить ещё</button>` : ''}`;
+        else if (activeTab === 'myTasks') mainContent = `<h3>📌 Мои задания</h3>${tasksHtml(myCreatedTasks, true, true)}`;
+        else if (activeTab === 'myExecutions') mainContent = `<h3>⚡ Мои выполнения</h3>${tasksHtml(myTasksAsExecutor, true, false)}`;
         else if (activeTab === 'profile') mainContent = `<div class="card"><h3>👤 Мой профиль</h3><p><strong>Имя:</strong> ${currentUser.name}</p><p><strong>Школа:</strong> ${currentUser.school}</p><p><strong>Корпус:</strong> ${currentUser.corp}</p><p><strong>💰 Основной баланс:</strong> ${(parseFloat(currentUser.balance)||0).toFixed(2)} ₽</p><p><strong>🎁 Бонусный счёт:</strong> ${(parseFloat(currentUser.bonus_balance)||0).toFixed(2)} ₽</p><p><strong>👥 Приглашено друзей:</strong> ${parseInt(currentUser.referral_count)||0}</p><div class="referral-box"><p>🎁 Ваша реферальная ссылка:</p><div class="referral-code" onclick="copyReferralLink()">${getReferralLink()}</div><p style="font-size:12px; margin-top:10px;">➕ За каждого друга, который зарегистрируется по вашей ссылке, вы получите +10₽ на бонусный счёт!</p></div></div>`;
         else if (activeTab === 'create') mainContent = createForm;
         
@@ -886,7 +1032,8 @@
                 const price = document.getElementById('taskPrice')?.value;
                 const loc = document.getElementById('taskLocation')?.value;
                 const paymentType = document.getElementById('paymentType')?.value;
-                if (desc && price && loc) createTask(desc, price, loc, paymentType);
+                const scope = document.getElementById('taskScope')?.value;
+                if (desc && price && loc) createTask(desc, price, loc, paymentType, scope);
                 else showToast('Заполните все поля', true);
             };
         }
@@ -897,6 +1044,7 @@
                 filters.minPrice = document.getElementById('filterMinPrice')?.value || '';
                 filters.maxPrice = document.getElementById('filterMaxPrice')?.value || '';
                 filters.category = document.getElementById('filterCategory')?.value || 'all';
+                filters.scope = document.getElementById('filterScope')?.value || 'school';
                 currentPage = 0;
                 renderApp();
             };
@@ -907,6 +1055,11 @@
         
         document.querySelectorAll('.take-btn').forEach(btn => btn.onclick = () => takeTask(btn.dataset.taskid));
         document.querySelectorAll('.delete-task-btn').forEach(btn => btn.onclick = () => forceCancelTask(btn.dataset.taskid));
+        document.querySelectorAll('.edit-task-btn').forEach(btn => {
+            const taskId = btn.dataset.taskid;
+            const task = cachedTasks.find(t => t.id == taskId);
+            if (task) btn.onclick = () => showEditTaskModal(task);
+        });
         document.querySelectorAll('.confirm-complete-btn').forEach(btn => btn.onclick = () => confirmCompletion(btn.dataset.taskid));
         document.querySelectorAll('.confirm-receipt-btn').forEach(btn => btn.onclick = () => confirmReceipt(btn.dataset.taskid));
         document.querySelectorAll('.cancel-receipt-btn').forEach(btn => btn.onclick = () => markAsNotReceived(btn.dataset.taskid));
