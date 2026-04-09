@@ -26,7 +26,6 @@
         body.dark-theme input, body.dark-theme textarea, body.dark-theme select {
             background: #334155; border-color: #475569; color: #e2e8f0;
         }
-        body.dark-theme .search-box { background: #334155; }
         
         .container { max-width: 1300px; margin: 0 auto; }
         .header, .card, .admin-panel, .task-card { background: white; border-radius: 32px; padding: 20px; margin-bottom: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
@@ -34,6 +33,7 @@
         .logo h1 { background: linear-gradient(135deg, #1e2b3c, #2c4c6e); -webkit-background-clip: text; background-clip: text; color: transparent; font-size: 1.6rem; }
         .user-info { display: flex; align-items: center; gap: 20px; background: #f8fafc; padding: 8px 20px; border-radius: 60px; flex-wrap: wrap; }
         .balance-card { background: #eef2ff; padding: 6px 16px; border-radius: 40px; font-weight: bold; }
+        .bonus-card { background: linear-gradient(135deg, #fef3c7, #fde68a); color: #92400e; padding: 6px 16px; border-radius: 40px; font-weight: bold; }
         button { cursor: pointer; border: none; border-radius: 40px; padding: 10px 20px; font-weight: bold; transition: 0.2s; }
         .btn-primary { background: #2c6e4f; color: white; }
         .btn-success { background: #10b981; color: white; }
@@ -47,7 +47,6 @@
         .tab.active { background: #1e4a6e; color: white; }
         .tasks-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px; }
         
-        /* ===== ОБЪЯВЛЕНИЕ ===== */
         .announcement {
             background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
             border-radius: 32px;
@@ -62,69 +61,49 @@
             50% { transform: scale(1.02); }
             100% { transform: scale(1); }
         }
-        .announcement h2 {
-            font-size: 1.8rem;
-            margin-bottom: 10px;
-            color: #1e293b;
-        }
-        .announcement p {
-            font-size: 1.1rem;
-            margin-bottom: 15px;
-            color: #1e293b;
-        }
-        .announcement button {
-            background: #dc2626;
-            color: white;
-            font-size: 1.1rem;
-            padding: 12px 30px;
-        }
-        .announcement button:hover {
-            background: #b91c1c;
-            transform: scale(1.05);
-        }
-        .share-buttons {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            margin-top: 15px;
-            flex-wrap: wrap;
-        }
-        .share-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 20px;
-            border-radius: 40px;
-            text-decoration: none;
-            font-weight: bold;
-            transition: 0.2s;
-        }
+        .announcement h2 { font-size: 1.8rem; margin-bottom: 10px; color: #1e293b; }
+        .announcement p { font-size: 1.1rem; margin-bottom: 15px; color: #1e293b; }
+        .announcement .bonus-highlight { background: #dc2626; color: white; display: inline-block; padding: 5px 15px; border-radius: 40px; font-weight: bold; margin: 10px 0; }
+        .share-buttons { display: flex; gap: 15px; justify-content: center; margin-top: 15px; flex-wrap: wrap; }
+        .share-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 40px; text-decoration: none; font-weight: bold; transition: 0.2s; cursor: pointer; }
         .share-tg { background: #0088cc; color: white; }
         .share-vk { background: #0077ff; color: white; }
         .share-wa { background: #25d366; color: white; }
-        .copy-link { background: #6b7280; color: white; cursor: pointer; }
+        .copy-link { background: #6b7280; color: white; }
         .share-btn:hover { transform: translateY(-2px); opacity: 0.9; }
         
-        .disabled-warning {
-            background: #fee2e2;
-            color: #dc2626;
-            padding: 10px 20px;
-            border-radius: 40px;
-            font-weight: bold;
-            font-size: 0.85rem;
-        }
-        body.dark-theme .disabled-warning {
-            background: #7f1d1d;
-            color: #fecaca;
-        }
+        .referral-box { background: #f0fdf4; border-radius: 20px; padding: 15px; margin-top: 15px; text-align: center; }
+        .referral-code { background: #e2e8f0; padding: 10px; border-radius: 40px; font-family: monospace; font-size: 1.2rem; display: inline-block; margin: 10px 0; cursor: pointer; }
+        body.dark-theme .referral-box { background: #064e3b; }
+        body.dark-theme .referral-code { background: #334155; }
         
+        .disabled-warning { background: #fee2e2; color: #dc2626; padding: 10px 20px; border-radius: 40px; font-weight: bold; font-size: 0.85rem; display: inline-block; }
+        body.dark-theme .disabled-warning { background: #7f1d1d; color: #fecaca; }
+        
+        .task-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+        .task-price { font-size: 1.6rem; font-weight: 800; color: #2b6e4f; }
+        .task-status { padding: 4px 12px; border-radius: 30px; font-size: 0.75rem; font-weight: bold; }
+        .status-open { background: #e2e8f0; color: #1e4a6e; }
+        .status-progress { background: #fef3c7; color: #d97706; }
+        .status-awaiting { background: #e0f2fe; color: #0284c7; }
+        .status-completed { background: #d1fae5; color: #10b981; }
+        .status-disputed { background: #fee2e2; color: #dc2626; }
+        .action-buttons { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+        .admin-panel { border: 2px solid #ffd966; }
+        .admin-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+        .search-box { display: flex; align-items: center; gap: 8px; background: #f1f5f9; padding: 5px 15px; border-radius: 40px; }
+        .search-box input { margin: 0; padding: 8px; background: transparent; border: none; width: 200px; outline: none; }
+        .refresh-btn { background: #3b82f6; color: white; padding: 8px 16px; border-radius: 40px; }
+        .users-table { overflow-x: auto; margin-top: 15px; }
+        .users-table table { width: 100%; border-collapse: collapse; }
+        .users-table th, .users-table td { padding: 12px 8px; text-align: left; border-bottom: 1px solid #e2e8f0; }
         .toast { position: fixed; bottom: 30px; right: 30px; background: #1f2f3e; color: white; padding: 12px 24px; border-radius: 60px; z-index: 1000; animation: fadein 0.3s; }
         @keyframes fadein { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .loading { text-align: center; padding: 40px; color: #6b7280; }
+        .error-text { color: #dc2626; font-size: 0.8rem; margin-top: -8px; margin-bottom: 12px; display: none; }
         
         @media (max-width: 700px) {
             .announcement h2 { font-size: 1.3rem; }
-            .announcement p { font-size: 0.9rem; }
             .share-buttons { flex-direction: column; align-items: center; }
         }
     </style>
@@ -134,7 +113,7 @@
 
 <script>
     // ========== НАСТРОЙКИ ==========
-    const API_URL = 'https://script.google.com/macros/s/AKfycbzJtuaoS9R0hom6adMX6r3b3E7N1vVVqgYpJlJ3oz9DXyvbGtx1LJ_ulAUJxxMdNSls/exec';
+    const API_URL = 'https://script.google.com/macros/s/AKfycbylBuRxCiDnzIERDfh9js37tBqwaFxn5u6JKLeyLGlK2vvt6F99OQz8kz88tAOy61qX8A/exec';
     const ADMIN_PASSWORD = 'dsl382dAZX';
     const TASK_TIMEOUT_HOURS = 5;
     
@@ -214,29 +193,49 @@
         setTimeout(() => toast.remove(), 3000);
     }
 
-    function copyShareLink() {
-        const url = window.location.href;
-        navigator.clipboard.writeText(url);
-        showToast('✅ Ссылка скопирована! Поделитесь с друзьями');
+    // ========== РЕФЕРАЛЬНАЯ СИСТЕМА ==========
+    function generateReferralCode() {
+        return 'REF' + Math.random().toString(36).substring(2, 10).toUpperCase();
+    }
+
+    function getReferralLink() {
+        if (!currentUser) return '';
+        const code = currentUser.referral_code || generateReferralCode();
+        if (!currentUser.referral_code) {
+            currentUser.referral_code = code;
+            apiCall({ action: 'updateUser', id: currentUser.id, referral_code: code }, true);
+        }
+        return `${window.location.origin}${window.location.pathname}?ref=${code}`;
+    }
+
+    function copyReferralLink() {
+        if (!currentUser) { showToast('Войдите в аккаунт', true); return; }
+        const link = getReferralLink();
+        navigator.clipboard.writeText(link);
+        showToast('✅ Реферальная ссылка скопирована! +10₽ на бонусный счёт за каждого друга');
     }
 
     function shareTelegram() {
-        const url = window.location.href;
-        const text = encodeURIComponent('🔥 SchoolTask - Биржа поручений для школьников! Зарабатывай и помогай друзьям! Присоединяйся:');
-        window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${text}`, '_blank');
+        if (!currentUser) { showToast('Войдите в аккаунт', true); return; }
+        const link = getReferralLink();
+        const text = encodeURIComponent('🔥 SchoolTask - Биржа поручений для школьников! Зарабатывай и помогай друзьям! +10₽ на бонусный счёт за каждого приглашённого друга! Присоединяйся:');
+        window.open(`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${text}`, '_blank');
     }
 
     function shareVK() {
-        const url = window.location.href;
-        window.open(`https://vk.com/share.php?url=${encodeURIComponent(url)}&title=SchoolTask&description=Биржа поручений для школьников!`, '_blank');
+        if (!currentUser) { showToast('Войдите в аккаунт', true); return; }
+        const link = getReferralLink();
+        window.open(`https://vk.com/share.php?url=${encodeURIComponent(link)}&title=SchoolTask&description=Биржа поручений для школьников! +10₽ на бонусный счёт за друга!`, '_blank');
     }
 
     function shareWhatsApp() {
-        const url = window.location.href;
-        const text = encodeURIComponent('🔥 SchoolTask - Биржа поручений для школьников! Присоединяйся: ' + url);
+        if (!currentUser) { showToast('Войдите в аккаунт', true); return; }
+        const link = getReferralLink();
+        const text = encodeURIComponent('🔥 SchoolTask - Биржа поручений! +10₽ на бонусный счёт за друга! ' + link);
         window.open(`https://wa.me/?text=${text}`, '_blank');
     }
 
+    // ========== ОСНОВНЫЕ ФУНКЦИИ ==========
     function saveSession() {
         if (currentUser) {
             localStorage.setItem('schoolTasks_session', JSON.stringify({
@@ -273,16 +272,58 @@
         return cachedUsers.some(u => u.name && u.name.toLowerCase() === name.trim().toLowerCase());
     }
 
-    async function registerUser(name, school, corp, password) {
+    async function registerUser(name, school, corp, password, referralCode) {
         if (!name.trim() || !school.trim() || !corp.trim()) { showToast('Заполните все поля', true); return false; }
         if (!password || password.length < 3) { showToast('Пароль не менее 3 символов', true); return false; }
         await syncData();
         if (isUsernameTaken(name)) { showToast(`❌ Имя "${name}" уже занято!`, true); return false; }
+        
         const nextId = 'u' + Date.now();
-        const newUser = { id: nextId, name: name.trim(), school: school.trim(), corp: corp.trim(), balance: 0, password: password.trim(), isBanned: false, banReason: '', banExpires: null, rating: 0, ratingCount: 0, registeredAt: new Date().toISOString() };
-        const result = await apiCall({ action: 'registerUser', id: newUser.id, name: newUser.name, school: newUser.school, corp: newUser.corp, balance: newUser.balance, password: newUser.password, isBanned: false, banReason: '', banExpires: '', registeredAt: newUser.registeredAt });
-        if (result && result.success) { cachedUsers.push(newUser); currentUser = newUser; saveSession(); showToast(`✅ Добро пожаловать, ${newUser.name}!`); renderApp(); return true; }
-        else { showToast('Ошибка регистрации', true); return false; }
+        const userReferralCode = generateReferralCode();
+        
+        const result = await apiCall({ 
+            action: 'registerUser', 
+            id: nextId, 
+            name: name.trim(), 
+            school: school.trim(), 
+            corp: corp.trim(), 
+            balance: 0,
+            bonus_balance: 0,
+            password: password.trim(), 
+            isBanned: false, 
+            banReason: '', 
+            banExpires: '', 
+            registeredAt: new Date().toISOString(),
+            referral_code: userReferralCode,
+            referred_by: referralCode || ''
+        });
+        
+        if (result && result.success) {
+            const newUser = {
+                id: nextId,
+                name: name.trim(),
+                school: school.trim(),
+                corp: corp.trim(),
+                balance: 0,
+                bonus_balance: 0,
+                referral_code: userReferralCode,
+                referred_by: referralCode || '',
+                referral_count: 0
+            };
+            cachedUsers.push(newUser);
+            currentUser = newUser;
+            saveSession();
+            if (result.referrerBonusAdded) {
+                showToast(`✅ Добро пожаловать, ${newUser.name}! Пригласивший получил +10₽ на бонусный счёт!`);
+            } else {
+                showToast(`✅ Добро пожаловать, ${newUser.name}!`);
+            }
+            renderApp();
+            return true;
+        } else { 
+            showToast('Ошибка регистрации', true); 
+            return false; 
+        }
     }
 
     async function loginUser(name, school, corp, password) {
@@ -290,34 +331,117 @@
         const cleanSchool = school ? school.toString().trim() : '';
         const cleanCorp = corp ? corp.toString().trim() : '';
         const cleanPassword = password ? password.toString().trim() : '';
-        if (!cleanName || !cleanSchool || !cleanCorp) { showToast('Заполните все поля', true); return false; }
-        if (!cleanPassword) { showToast('Введите пароль', true); return false; }
+        
+        if (!cleanName || !cleanSchool || !cleanCorp) { 
+            showToast('Заполните все поля', true); 
+            return false; 
+        }
+        if (!cleanPassword) { 
+            showToast('Введите пароль', true); 
+            return false; 
+        }
+        
         await syncData();
-        const user = cachedUsers.find(u => (u.name || '').trim() === cleanName && (u.school || '').trim() === cleanSchool && (u.corp || '').trim() === cleanCorp);
-        if (!user) { showToast('❌ Пользователь не найден', true); return false; }
-        if ((user.password || '').trim() !== cleanPassword) { showToast('❌ Неверный пароль', true); return false; }
-        if (user.isBanned === 'true' || user.isBanned === true) { showToast('⛔ Аккаунт заблокирован', true); return false; }
-        currentUser = user; saveSession(); showToast(`✅ С возвращением, ${currentUser.name}!`); renderApp(); return true;
+        
+        const user = cachedUsers.find(u => {
+            const userName = u.name ? u.name.toString().trim() : '';
+            const userSchool = u.school ? u.school.toString().trim() : '';
+            const userCorp = u.corp ? u.corp.toString().trim() : '';
+            return userName === cleanName && userSchool === cleanSchool && userCorp === cleanCorp;
+        });
+        
+        if (!user) { 
+            showToast('❌ Пользователь не найден', true); 
+            return false; 
+        }
+        
+        const userPassword = user.password ? user.password.toString().trim() : '';
+        if (userPassword !== cleanPassword) { 
+            showToast('❌ Неверный пароль', true); 
+            return false; 
+        }
+        
+        if (user.isBanned === 'true' || user.isBanned === true) { 
+            showToast('⛔ Аккаунт заблокирован', true); 
+            return false; 
+        }
+        
+        currentUser = user;
+        saveSession();
+        showToast(`✅ С возвращением, ${currentUser.name}!`);
+        renderApp();
+        return true;
     }
 
-    function logout() { currentUser = null; adminMode = false; authMode = 'login'; localStorage.removeItem('schoolTasks_session'); renderApp(); }
+    function logout() { 
+        currentUser = null; 
+        adminMode = false; 
+        authMode = 'login'; 
+        localStorage.removeItem('schoolTasks_session'); 
+        renderApp(); 
+    }
 
-    async function createTask(description, price, locationDetails) {
+    async function createTask(description, price, locationDetails, paymentType) {
         if (!currentUser) return;
         if (isCreatingTask) { showToast('Подождите...', true); return; }
         let priceNum = parseFloat(price);
         if (isNaN(priceNum) || priceNum <= 0) { showToast('Цена должна быть положительной', true); return; }
+        
+        let availableBalance = 0;
+        if (paymentType === 'bonus') {
+            availableBalance = parseFloat(currentUser.bonus_balance) || 0;
+        } else {
+            availableBalance = parseFloat(currentUser.balance) || 0;
+        }
+        
+        if (availableBalance < priceNum) { 
+            showToast(`Недостаточно средств на ${paymentType === 'bonus' ? 'бонусном счёте' : 'основном балансе'}. Доступно: ${availableBalance}₽`, true); 
+            return; 
+        }
+        
         isCreatingTask = true;
         await syncData();
         const userIdx = cachedUsers.findIndex(u => u.id === currentUser.id);
-        if ((cachedUsers[userIdx].balance || 0) < priceNum) { showToast(`Недостаточно средств. Баланс: ${cachedUsers[userIdx].balance}₽`, true); isCreatingTask = false; return; }
-        cachedUsers[userIdx].balance -= priceNum;
-        currentUser.balance = cachedUsers[userIdx].balance;
-        const newTask = { id: Date.now().toString(), creatorId: currentUser.id, creatorSchool: currentUser.school, description: description.trim(), price: priceNum, location: locationDetails.trim(), status: 'open', takerId: null, takenAt: null, completedAt: null, createdAt: new Date().toISOString() };
-        await apiCall({ action: 'updateUser', id: currentUser.id, balance: currentUser.balance });
+        
+        if (paymentType === 'bonus') {
+            currentUser.bonus_balance = (parseFloat(currentUser.bonus_balance) || 0) - priceNum;
+            cachedUsers[userIdx].bonus_balance = currentUser.bonus_balance;
+            await apiCall({ action: 'updateUser', id: currentUser.id, bonus_balance: currentUser.bonus_balance });
+        } else {
+            currentUser.balance = (parseFloat(currentUser.balance) || 0) - priceNum;
+            cachedUsers[userIdx].balance = currentUser.balance;
+            await apiCall({ action: 'updateUser', id: currentUser.id, balance: currentUser.balance });
+        }
+        
+        const newTask = { 
+            id: Date.now().toString(), 
+            creatorId: currentUser.id, 
+            creatorSchool: currentUser.school, 
+            description: description.trim(), 
+            price: priceNum, 
+            location: locationDetails.trim(),
+            payment_type: paymentType,
+            category: 'Разное',
+            status: 'open', 
+            takerId: null, 
+            takenAt: null, 
+            completedAt: null, 
+            createdAt: new Date().toISOString() 
+        };
+        
         const result = await apiCall({ action: 'createTask', ...newTask, takerId: '' });
-        if (result && result.success) { cachedTasks.push(newTask); cacheExpiry = 0; showToast(`Задание создано! -${priceNum}₽`); }
-        else { cachedUsers[userIdx].balance += priceNum; currentUser.balance = cachedUsers[userIdx].balance; showToast('Ошибка создания задания', true); }
+        if (result && result.success) { 
+            cachedTasks.push(newTask); 
+            cacheExpiry = 0; 
+            showToast(`Задание создано! -${priceNum}₽ с ${paymentType === 'bonus' ? 'бонусного счёта' : 'основного баланса'}`);
+        } else { 
+            if (paymentType === 'bonus') {
+                currentUser.bonus_balance = (parseFloat(currentUser.bonus_balance) || 0) + priceNum;
+            } else {
+                currentUser.balance = (parseFloat(currentUser.balance) || 0) + priceNum;
+            }
+            showToast('Ошибка создания задания', true); 
+        }
         isCreatingTask = false;
         renderApp();
     }
@@ -332,7 +456,7 @@
         task.takerId = currentUser.id;
         task.takenAt = new Date().toISOString();
         await apiCall({ action: 'updateTask', id: task.id, status: 'in_progress', takerId: currentUser.id, takenAt: task.takenAt });
-        showToast(`📢 Вы взяли задание!`);
+        showToast(`📢 Вы взяли задание! После выполнения нажмите "Подтвердить выполнение"`);
         cacheExpiry = 0;
         renderApp();
     }
@@ -346,7 +470,7 @@
         task.status = 'awaiting_confirmation';
         task.completedAt = new Date().toISOString();
         await apiCall({ action: 'updateTask', id: task.id, status: 'awaiting_confirmation', completedAt: task.completedAt });
-        showToast(`✅ Вы отметили задание как выполненное.`);
+        showToast(`✅ Вы отметили задание как выполненное. Ожидайте подтверждения от создателя.`);
         cacheExpiry = 0;
         renderApp();
     }
@@ -364,10 +488,15 @@
         if (executor) {
             executor.balance = (parseFloat(executor.balance) || 0) + executorGain;
             await apiCall({ action: 'updateUser', id: executor.id, balance: executor.balance });
+            
+            // Начисляем бонус за выполнение
+            executor.bonus_balance = (parseFloat(executor.bonus_balance) || 0) + 10;
+            await apiCall({ action: 'updateUser', id: executor.id, bonus_balance: executor.bonus_balance });
+            showToast(`🎁 Бонус +10₽ зачислен на бонусный счёт!`);
         }
         task.status = 'completed';
         await apiCall({ action: 'updateTask', id: task.id, status: 'completed' });
-        showToast(`💰 Подтверждено! +${executorGain.toFixed(2)}₽ исполнителю`);
+        showToast(`💰 Подтверждено! +${executorGain.toFixed(2)}₽ исполнителю. Комиссия 5% (${commission.toFixed(2)}₽)`);
         cacheExpiry = 0;
         renderApp();
     }
@@ -380,13 +509,21 @@
         if (task.creatorId !== currentUser.id) { showToast('Только создатель может отметить', true); return; }
         const creator = cachedUsers.find(u => u.id === task.creatorId);
         if (creator) {
-            creator.balance = (parseFloat(creator.balance) || 0) + parseFloat(task.price);
-            await apiCall({ action: 'updateUser', id: creator.id, balance: creator.balance });
-            if (currentUser.id === creator.id) currentUser.balance = creator.balance;
+            if (task.payment_type === 'bonus') {
+                creator.bonus_balance = (parseFloat(creator.bonus_balance) || 0) + parseFloat(task.price);
+                await apiCall({ action: 'updateUser', id: creator.id, bonus_balance: creator.bonus_balance });
+            } else {
+                creator.balance = (parseFloat(creator.balance) || 0) + parseFloat(task.price);
+                await apiCall({ action: 'updateUser', id: creator.id, balance: creator.balance });
+            }
+            if (currentUser.id === creator.id) {
+                if (task.payment_type === 'bonus') currentUser.bonus_balance = creator.bonus_balance;
+                else currentUser.balance = creator.balance;
+            }
         }
         task.status = 'disputed';
         await apiCall({ action: 'updateTask', id: task.id, status: 'disputed' });
-        showToast(`⚠️ Деньги возвращены на баланс`);
+        showToast(`⚠️ Вы отметили, что не получили услугу. Деньги возвращены.`);
         cacheExpiry = 0;
         renderApp();
     }
@@ -400,9 +537,17 @@
         if (task.status !== 'open') { showToast('Нельзя удалить задание в работе', true); return; }
         const creator = cachedUsers.find(u => u.id === task.creatorId);
         if (creator) {
-            creator.balance = (parseFloat(creator.balance) || 0) + parseFloat(task.price);
-            await apiCall({ action: 'updateUser', id: creator.id, balance: creator.balance });
-            if (currentUser.id === creator.id) currentUser.balance = creator.balance;
+            if (task.payment_type === 'bonus') {
+                creator.bonus_balance = (parseFloat(creator.bonus_balance) || 0) + parseFloat(task.price);
+                await apiCall({ action: 'updateUser', id: creator.id, bonus_balance: creator.bonus_balance });
+            } else {
+                creator.balance = (parseFloat(creator.balance) || 0) + parseFloat(task.price);
+                await apiCall({ action: 'updateUser', id: creator.id, balance: creator.balance });
+            }
+            if (currentUser.id === creator.id) {
+                if (task.payment_type === 'bonus') currentUser.bonus_balance = creator.bonus_balance;
+                else currentUser.balance = creator.balance;
+            }
         }
         await apiCall({ action: 'deleteTask', id: task.id });
         cachedTasks = cachedTasks.filter(t => t.id != taskId);
@@ -423,51 +568,38 @@
     }
 
     async function adminChangeBalance(userId, amount) {
-        if (amount === 0) return;
         const user = cachedUsers.find(u => u.id === userId);
         if (!user) return;
         user.balance = (parseFloat(user.balance) || 0) + amount;
         await apiCall({ action: 'updateUser', id: userId, balance: user.balance });
         if (currentUser && currentUser.id === userId) currentUser.balance = user.balance;
         showToast(`${amount > 0 ? 'Пополнение' : 'Списание'} для ${user.name}: ${amount > 0 ? `+${amount}` : amount}₽`);
-        cacheExpiry = 0;
         renderApp();
     }
 
     async function banUserWithDuration(userId, days, hours, reason) {
         const user = cachedUsers.find(u => u.id === userId);
         if (!user) return;
-        if (user.id === currentUser?.id) { showToast('Нельзя забанить себя', true); return; }
-        let expires = '';
-        if (days > 0 || hours > 0) { const exp = new Date(); exp.setDate(exp.getDate() + days); exp.setHours(exp.getHours() + hours); expires = exp.toISOString(); }
         user.isBanned = true;
         user.banReason = reason || 'Нарушение правил';
-        user.banExpires = expires;
-        await apiCall({ action: 'updateUser', id: userId, isBanned: true, banReason: user.banReason, banExpires: expires });
-        let durationText = '';
-        if (days > 0 && hours > 0) durationText = `на ${days} дн. ${hours} ч.`;
-        else if (days > 0) durationText = `на ${days} дн.`;
-        else if (hours > 0) durationText = `на ${hours} ч.`;
-        else durationText = 'навсегда';
-        showToast(`⛔ ${user.name} заблокирован ${durationText}`);
-        cacheExpiry = 0;
+        await apiCall({ action: 'updateUser', id: userId, isBanned: true, banReason: user.banReason });
+        showToast(`⛔ ${user.name} заблокирован`);
         renderApp();
     }
 
-    async function unbanUser(userId) {
-        const user = cachedUsers.find(u => u.id === userId);
-        if (!user) return;
-        user.isBanned = false;
-        user.banReason = '';
-        user.banExpires = null;
-        await apiCall({ action: 'updateUser', id: userId, isBanned: false, banReason: '', banExpires: '' });
-        showToast(`✅ ${user.name} разблокирован`);
-        cacheExpiry = 0;
-        renderApp();
+    function requestAdminAccess() { 
+        let pwd = prompt("Введите пароль администратора:"); 
+        if (pwd === ADMIN_PASSWORD) { 
+            adminMode = true; 
+            showToast("Админ-панель активирована"); 
+            renderApp(); 
+        } else showToast("Неверный пароль", true); 
     }
-
-    function requestAdminAccess() { let pwd = prompt("Введите пароль администратора:"); if (pwd === ADMIN_PASSWORD) { adminMode = true; showToast("Админ-панель активирована"); renderApp(); } else showToast("Неверный пароль", true); }
-    function exitAdminMode() { adminMode = false; renderApp(); }
+    
+    function exitAdminMode() { 
+        adminMode = false; 
+        renderApp(); 
+    }
 
     // ========== ОСНОВНОЙ РЕНДЕР ==========
     async function renderApp() {
@@ -476,24 +608,23 @@
         const appDiv = document.getElementById('app');
         if (!currentUser) {
             const isLoginMode = authMode === 'login';
+            const urlParams = new URLSearchParams(window.location.search);
+            const refCode = urlParams.get('ref');
+            
             appDiv.innerHTML = `
                 <div class="header">
                     <div class="logo"><h1>🏫 SchoolTask</h1><span>Биржа поручений</span></div>
                     <button class="theme-toggle" id="themeToggleBtn">${isDarkTheme ? '☀️ Светлая' : '🌙 Тёмная'}</button>
                 </div>
-                <!-- ОБЪЯВЛЕНИЕ НА ГЛАВНОЙ -->
                 <div class="announcement">
                     <h2>🔥 НУЖНА ВАША ПОМОЩЬ! 🔥</h2>
-                    <p>📢 SchoolTask — это проект, который создаётся для вас!<br>
-                    Чтобы сайт стал ещё лучше и появилось больше заданий — <strong>нужно расфорсить сайт</strong>!<br>
-                    🤝 Поделитесь ссылкой с друзьями, одноклассниками и в школьных чатах!<br>
-                    ⭐ Чем больше пользователей, тем больше интересных заданий и возможностей заработать!</p>
-                    <button onclick="shareTelegram()">📢 Расфорсить в Telegram</button>
+                    <p>📢 SchoolTask — это проект, который создаётся для вас!<br>Чтобы сайт стал ещё лучше — <strong>нужно расфорсить сайт</strong>!<br>🤝 Поделитесь ссылкой с друзьями, одноклассниками и в школьных чатах!<br>⭐ Чем больше пользователей, тем больше интересных заданий!</p>
+                    <div class="bonus-highlight">🎁 +10₽ на бонусный счёт за каждого приглашённого друга! 🎁</div>
                     <div class="share-buttons">
-                        <a href="#" class="share-btn share-tg" onclick="shareTelegram(); return false;">📱 Telegram</a>
-                        <a href="#" class="share-btn share-vk" onclick="shareVK(); return false;">📱 ВКонтакте</a>
-                        <a href="#" class="share-btn share-wa" onclick="shareWhatsApp(); return false;">📱 WhatsApp</a>
-                        <a href="#" class="share-btn copy-link" onclick="copyShareLink(); return false;">🔗 Скопировать ссылку</a>
+                        <div class="share-btn share-tg" onclick="shareTelegram()">📱 Telegram</div>
+                        <div class="share-btn share-vk" onclick="shareVK()">📱 ВКонтакте</div>
+                        <div class="share-btn share-wa" onclick="shareWhatsApp()">📱 WhatsApp</div>
+                        <div class="share-btn copy-link" onclick="copyReferralLink()">🔗 Скопировать ссылку</div>
                     </div>
                 </div>
                 <div class="card">
@@ -513,19 +644,52 @@
                         <input type="text" id="regSchool" placeholder="Школа">
                         <input type="text" id="regCorp" placeholder="Корпус">
                         <input type="password" id="regPassword" placeholder="Пароль (мин. 3 символа)">
+                        ${refCode ? `<input type="hidden" id="refCode" value="${refCode}"><div style="background:#e2e8f0; padding:10px; border-radius:20px; margin-bottom:12px; text-align:center;">🔗 Вы перешли по реферальной ссылке! Пригласивший получит +10₽ на бонусный счёт.</div>` : ''}
                         <button class="btn-primary" id="registerBtn">Зарегистрироваться</button>
                     `}
                     <div style="margin-top:15px; text-align:center;">
                         <span class="disabled-warning">⚠️ Пополнение и вывод временно недоступны ⚠️</span>
-                        <div style="margin-top:10px; font-size:12px; color:#6b7280;">Ведутся технические работы. Следите за обновлениями!</div>
+                        <div style="margin-top:10px; font-size:12px; color:#6b7280;">Ведутся технические работы. Используйте бонусный счёт!</div>
                     </div>
                 </div>
             `;
             
-            if (!isLoginMode) {
-                const nameInput = document.getElementById('regName');
-                const errorDiv = document.getElementById('regNameError');
-                nameInput?.addEventListener('input', () => {
+            // Обработчики для вкладок
+            const loginTab = document.getElementById('loginTabBtn');
+            const registerTab = document.getElementById('registerTabBtn');
+            if (loginTab) loginTab.onclick = () => { authMode = 'login'; renderApp(); };
+            if (registerTab) registerTab.onclick = () => { authMode = 'register'; renderApp(); };
+            
+            // Обработчик кнопки входа
+            const loginBtn = document.getElementById('loginBtn');
+            if (loginBtn) {
+                loginBtn.onclick = () => {
+                    const name = document.getElementById('loginName').value;
+                    const school = document.getElementById('loginSchool').value;
+                    const corp = document.getElementById('loginCorp').value;
+                    const password = document.getElementById('loginPassword').value;
+                    loginUser(name, school, corp, password);
+                };
+            }
+            
+            // Обработчик кнопки регистрации
+            const registerBtn = document.getElementById('registerBtn');
+            if (registerBtn) {
+                registerBtn.onclick = () => {
+                    const name = document.getElementById('regName').value;
+                    const school = document.getElementById('regSchool').value;
+                    const corp = document.getElementById('regCorp').value;
+                    const password = document.getElementById('regPassword').value;
+                    const refCode = document.getElementById('refCode')?.value || '';
+                    registerUser(name, school, corp, password, refCode);
+                };
+            }
+            
+            // Проверка уникальности имени при регистрации
+            const nameInput = document.getElementById('regName');
+            const errorDiv = document.getElementById('regNameError');
+            if (nameInput) {
+                nameInput.oninput = () => {
                     const name = nameInput.value;
                     if (name.length > 0 && isUsernameTaken(name)) {
                         errorDiv.textContent = `❌ Имя "${name}" уже занято`;
@@ -533,32 +697,15 @@
                     } else {
                         errorDiv.style.display = 'none';
                     }
-                });
+                };
             }
             
-            document.getElementById('loginTabBtn')?.addEventListener('click', () => { authMode = 'login'; renderApp(); });
-            document.getElementById('registerTabBtn')?.addEventListener('click', () => { authMode = 'register'; renderApp(); });
-            document.getElementById('loginBtn')?.addEventListener('click', () => {
-                loginUser(
-                    document.getElementById('loginName').value,
-                    document.getElementById('loginSchool').value,
-                    document.getElementById('loginCorp').value,
-                    document.getElementById('loginPassword').value
-                );
-            });
-            document.getElementById('registerBtn')?.addEventListener('click', () => {
-                registerUser(
-                    document.getElementById('regName').value,
-                    document.getElementById('regSchool').value,
-                    document.getElementById('regCorp').value,
-                    document.getElementById('regPassword').value
-                );
-            });
-            document.getElementById('themeToggleBtn')?.addEventListener('click', toggleTheme);
+            const themeBtn = document.getElementById('themeToggleBtn');
+            if (themeBtn) themeBtn.onclick = toggleTheme;
             return;
         }
         
-        // ===== ДАЛЬШЕ ИДЁТ ОСНОВНОЙ ИНТЕРФЕЙС ДЛЯ АВТОРИЗОВАННЫХ ПОЛЬЗОВАТЕЛЕЙ =====
+        // ===== ИНТЕРФЕЙС ДЛЯ АВТОРИЗОВАННЫХ ПОЛЬЗОВАТЕЛЕЙ =====
         const openTasks = cachedTasks.filter(t => t.status === 'open' && t.creatorSchool === currentUser.school);
         const myCreatedTasks = cachedTasks.filter(t => t.creatorId === currentUser.id);
         const myTasksAsExecutor = cachedTasks.filter(t => t.takerId === currentUser.id);
@@ -580,14 +727,12 @@
                 const isCreator = task.creatorId === currentUser.id;
                 const isTaker = task.takerId === currentUser.id;
                 const statusInfo = getTaskStatusText(task.status);
-                const canChat = (task.status === 'in_progress' || task.status === 'awaiting_confirmation') && (isCreator || isTaker);
                 let actionButtons = '';
                 if (task.status === 'open' && !isCreator && showActions) actionButtons = `<button class="btn-primary take-btn" data-taskid="${task.id}">📌 Взять задание</button>`;
                 if (task.status === 'in_progress' && isTaker && showActions) actionButtons = `<button class="btn-success confirm-complete-btn" data-taskid="${task.id}">✅ Подтвердить выполнение</button>`;
                 if (task.status === 'awaiting_confirmation' && isCreator && showActions) actionButtons = `<div class="action-buttons"><button class="btn-success confirm-receipt-btn" data-taskid="${task.id}">💰 Подтвердить получение</button><button class="btn-danger cancel-receipt-btn" data-taskid="${task.id}">❌ Не получил</button></div>`;
                 if (task.status === 'open' && isCreator && showActions) actionButtons = `<button class="btn-danger delete-task-btn" data-taskid="${task.id}">❌ Удалить задание</button>`;
-                if (canChat && showActions) actionButtons += `<button class="btn-info chat-btn" data-taskid="${task.id}">💬 Чат</button>`;
-                return `<div class="task-card"><div class="task-header"><div class="task-price">${task.price} ₽</div><div class="task-status ${statusInfo.class}">${statusInfo.text}</div></div><div class="task-desc">📌 ${task.description}</div><div class="task-meta">📍 ${task.location}${task.category ? ` | 🏷️ ${task.category}` : ''}</div><div style="font-size:0.7rem; color:#6b7280;">👤 Создатель: ${creator ? creator.name : '?'} (${creator ? creator.school : ''})${taker ? `<br>👤 Исполнитель: ${taker.name}` : ''}</div>${actionButtons}</div>`;
+                return `<div class="task-card"><div class="task-header"><div class="task-price">${task.price} ₽</div><div class="task-status ${statusInfo.class}">${statusInfo.text}</div></div><div class="task-desc">📌 ${task.description}</div><div class="task-meta">📍 ${task.location}</div><div style="font-size:0.7rem; color:#6b7280;">👤 Создатель: ${creator ? creator.name : '?'} (${creator ? creator.school : ''})${taker ? `<br>👤 Исполнитель: ${taker.name}` : ''}</div>${actionButtons}</div>`;
             }).join('')}</div>`;
         };
         
@@ -596,17 +741,17 @@
         if (isAdmin && adminMode) {
             let filteredUsers = cachedUsers;
             if (adminSearchTerm.trim()) filteredUsers = filteredUsers.filter(u => u.name && u.name.toLowerCase().includes(adminSearchTerm.toLowerCase()));
-            adminPanelHtml = `<div class="admin-panel"><div class="admin-header"><h2>👑 Админ-панель</h2><button class="btn-danger" id="exitAdminBtn">Выйти</button></div><div class="admin-header"><div class="search-box">🔍 <input type="text" id="adminSearch" placeholder="Поиск..." value="${adminSearchTerm}"></div><div><button class="refresh-btn" id="refreshUsersBtn">🔄 Обновить</button> <span class="balance-card">👥 ${cachedUsers.length}</span></div></div><div class="users-table"><table><thead><tr><th>Имя</th><th>Школа</th><th>Баланс</th><th>Статус</th><th>Баланс</th><th>Бан</th></tr></thead><tbody>${filteredUsers.map(user => { const isBanned = user.isBanned === 'true' || user.isBanned === true; return `<tr><td><strong>${user.name || '?'}</strong></td><td>${user.school || '?'}<br><small>${user.corp || '?'}</small></td><td>${(parseFloat(user.balance) || 0).toFixed(2)} ₽</td><td>${isBanned ? '⛔ Забанен' : '✅ Активен'}</td><td><div class="balance-control"><input type="number" id="amount-${user.id}" value="100"><button class="topup-btn" data-userid="${user.id}">+</button><button class="withdraw-btn" data-userid="${user.id}">-</button></div></td><td>${!isBanned ? `<div class="ban-control"><input type="number" id="days-${user.id}" placeholder="Дни" value="0"><input type="number" id="hours-${user.id}" placeholder="Часы" value="0"><input type="text" id="reason-${user.id}" placeholder="Причина"><button class="ban-btn" data-userid="${user.id}">⛔ Бан</button></div>` : `<button class="unban-btn" data-userid="${user.id}">✅ Разбанить</button>`}</td></tr>`; }).join('')}</tbody></table></div></div>`;
+            adminPanelHtml = `<div class="admin-panel"><div class="admin-header"><h2>👑 Админ-панель</h2><button class="btn-danger" id="exitAdminBtn">Выйти</button></div><div class="admin-header"><div class="search-box">🔍 <input type="text" id="adminSearch" placeholder="Поиск..." value="${adminSearchTerm}"></div><div><button class="refresh-btn" id="refreshUsersBtn">🔄 Обновить</button> <span class="balance-card">👥 ${cachedUsers.length}</span></div></div><div class="users-table"><table><thead><tr><th>Имя</th><th>Школа</th><th>Баланс</th><th>Бонусы</th><th>Статус</th><th>Действия</th></tr></thead><tbody>${filteredUsers.map(user => { const isBanned = user.isBanned === 'true' || user.isBanned === true; return `<tr><td><strong>${user.name || '?'}</strong></td><td>${user.school || '?'}<br><small>${user.corp || '?'}</small></td><td>${(parseFloat(user.balance) || 0).toFixed(2)} ₽</td><td style="color:#eab308;">${(parseFloat(user.bonus_balance) || 0).toFixed(2)} ₽</td><td>${isBanned ? '⛔ Забанен' : '✅ Активен'}</td><td><button class="btn-danger ban-btn" data-userid="${user.id}">Бан</button></td></tr>`; }).join('')}</tbody>}</div></div>`;
         }
         
-        const createForm = `<div class="card"><h3>📝 Создать задание</h3><textarea id="taskDesc" rows="2" placeholder="Что нужно сделать?"></textarea><input type="number" id="taskPrice" placeholder="Цена (руб)"><input type="text" id="taskLocation" placeholder="Место"><select id="taskCategory"><option value="Еда">🍕 Еда</option><option value="Учёба">📚 Учёба</option><option value="Помощь">🤝 Помощь</option><option value="Разное">🎲 Разное</option></select><button class="btn-primary" id="createTaskBtn">Создать</button></div>`;
+        const createForm = `<div class="card"><h3>📝 Создать задание</h3><textarea id="taskDesc" rows="2" placeholder="Что нужно сделать?"></textarea><input type="number" id="taskPrice" placeholder="Цена (руб)"><input type="text" id="taskLocation" placeholder="Место"><select id="paymentType"><option value="main">💰 Оплатить с основного счёта</option><option value="bonus">🎁 Оплатить с бонусного счёта</option></select><button class="btn-primary" id="createTaskBtn">Создать</button></div>`;
         
         let activeTab = window._activeTab || 'allTasks';
         let mainContent = '';
-        if (activeTab === 'allTasks') mainContent = `<h3>📋 Доступные задания (школа ${currentUser.school})</h3><div class="filter-group" style="display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap;"><input type="number" id="filterMinPrice" placeholder="Цена от" value="${filters.minPrice}" style="width:auto; flex:1;"><input type="number" id="filterMaxPrice" placeholder="Цена до" value="${filters.maxPrice}" style="width:auto; flex:1;"><select id="filterCategory" style="width:auto; flex:1;"><option value="all">Все категории</option><option value="Еда">🍕 Еда</option><option value="Учёба">📚 Учёба</option><option value="Помощь">🤝 Помощь</option><option value="Разное">🎲 Разное</option></select><button id="applyFiltersBtn" class="btn-info">🔍 Применить</button></div>${tasksHtml(paginatedTasks, true)}${hasMore ? `<button id="loadMoreBtn" class="btn-primary" style="margin-top:20px; width:100%;">📚 Загрузить ещё</button>` : ''}`;
+        if (activeTab === 'allTasks') mainContent = `<h3>📋 Доступные задания (школа ${currentUser.school})</h3><div class="filter-group" style="display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap;"><input type="number" id="filterMinPrice" placeholder="Цена от" style="flex:1;"><input type="number" id="filterMaxPrice" placeholder="Цена до" style="flex:1;"><select id="filterCategory" style="flex:1;"><option value="all">Все категории</option><option value="Еда">🍕 Еда</option><option value="Учёба">📚 Учёба</option><option value="Помощь">🤝 Помощь</option><option value="Разное">🎲 Разное</option></select><button id="applyFiltersBtn" class="btn-info">🔍 Применить</button></div>${tasksHtml(paginatedTasks, true)}${hasMore ? `<button id="loadMoreBtn" class="btn-primary" style="margin-top:20px;">📚 Загрузить ещё</button>` : ''}`;
         else if (activeTab === 'myTasks') mainContent = `<h3>📌 Мои задания</h3>${tasksHtml(myCreatedTasks, true)}`;
         else if (activeTab === 'myExecutions') mainContent = `<h3>⚡ Мои выполнения</h3>${tasksHtml(myTasksAsExecutor, true)}`;
-        else if (activeTab === 'profile') mainContent = `<div class="card"><h3>👤 Мой профиль</h3><p><strong>Имя:</strong> ${currentUser.name}</p><p><strong>Школа:</strong> ${currentUser.school}</p><p><strong>Корпус:</strong> ${currentUser.corp}</p><p><strong>Баланс:</strong> ${(parseFloat(currentUser.balance)||0).toFixed(2)} ₽</p><p><strong>Рейтинг:</strong> ${currentUser.rating ? parseFloat(currentUser.rating).toFixed(1) : 'Нет'} ⭐</p><p><strong>Выполнено заданий:</strong> ${parseInt(currentUser.tasksCompleted)||0}</p><p><strong>Создано заданий:</strong> ${parseInt(currentUser.tasksCreated)||0}</p></div>`;
+        else if (activeTab === 'profile') mainContent = `<div class="card"><h3>👤 Мой профиль</h3><p><strong>Имя:</strong> ${currentUser.name}</p><p><strong>Школа:</strong> ${currentUser.school}</p><p><strong>Корпус:</strong> ${currentUser.corp}</p><p><strong>💰 Основной баланс:</strong> ${(parseFloat(currentUser.balance)||0).toFixed(2)} ₽</p><p><strong>🎁 Бонусный счёт:</strong> ${(parseFloat(currentUser.bonus_balance)||0).toFixed(2)} ₽</p><p><strong>👥 Приглашено друзей:</strong> ${parseInt(currentUser.referral_count)||0}</p><div class="referral-box"><p>🎁 Ваша реферальная ссылка:</p><div class="referral-code" onclick="copyReferralLink()">${getReferralLink()}</div><p style="font-size:12px; margin-top:10px;">➕ За каждого друга, который зарегистрируется по вашей ссылке, вы получите +10₽ на бонусный счёт!</p></div></div>`;
         else if (activeTab === 'create') mainContent = createForm;
         
         const adminButtonHtml = isAdmin ? `<button id="adminPanelBtn" style="background:#2c3e50; color:white;">🔐 Админка</button>` : '';
@@ -617,13 +762,14 @@
                 <div class="user-info">
                     <div>👋 ${currentUser.name} | ${currentUser.school}</div>
                     <div class="balance-card">💰 ${(parseFloat(currentUser.balance)||0).toFixed(2)} ₽</div>
+                    <div class="bonus-card">🎁 ${(parseFloat(currentUser.bonus_balance)||0).toFixed(2)} ₽</div>
                     <button class="theme-toggle" id="themeToggleBtn">${isDarkTheme ? '☀️' : '🌙'}</button>
                     <button class="btn-danger" id="logoutBtn">Выйти</button>
                 </div>
             </div>
             <div style="display:flex; justify-content:space-between; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
                 <span class="disabled-warning">⚠️ Пополнение и вывод временно недоступны ⚠️</span>
-                <div>${adminButtonHtml}</div>
+                ${adminButtonHtml}
             </div>
             ${adminPanelHtml}
             <div class="tabs">
@@ -637,52 +783,73 @@
             <div style="margin-top:20px; text-align:center; font-size:12px;">⚠️ Комиссия 5% | ${TASK_TIMEOUT_HOURS} часов на подтверждение</div>
         `;
         
-        document.querySelectorAll('.tab').forEach(el => el.addEventListener('click', () => { window._activeTab = el.dataset.tab; currentPage = 0; renderApp(); }));
-        document.getElementById('logoutBtn')?.addEventListener('click', logout);
-        document.getElementById('themeToggleBtn')?.addEventListener('click', toggleTheme);
+        // Обработчики вкладок
+        document.querySelectorAll('.tab').forEach(el => {
+            el.onclick = () => {
+                window._activeTab = el.dataset.tab;
+                currentPage = 0;
+                renderApp();
+            };
+        });
+        
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) logoutBtn.onclick = logout;
+        
+        const themeBtn = document.getElementById('themeToggleBtn');
+        if (themeBtn) themeBtn.onclick = toggleTheme;
         
         if (isAdmin) {
-            document.getElementById('adminPanelBtn')?.addEventListener('click', () => { if (adminMode) exitAdminMode(); else requestAdminAccess(); });
-            document.getElementById('exitAdminBtn')?.addEventListener('click', exitAdminMode);
-            document.getElementById('refreshUsersBtn')?.addEventListener('click', async () => { await syncData(true); renderApp(); showToast('Обновлено'); });
+            const adminBtn = document.getElementById('adminPanelBtn');
+            if (adminBtn) adminBtn.onclick = () => { if (adminMode) exitAdminMode(); else requestAdminAccess(); };
+            
+            const exitBtn = document.getElementById('exitAdminBtn');
+            if (exitBtn) exitBtn.onclick = exitAdminMode;
+            
+            const refreshBtn = document.getElementById('refreshUsersBtn');
+            if (refreshBtn) refreshBtn.onclick = async () => { await syncData(true); renderApp(); showToast('Обновлено'); };
+            
             const searchInput = document.getElementById('adminSearch');
             if (searchInput) {
                 let timeout;
-                searchInput.addEventListener('input', (e) => { clearTimeout(timeout); timeout = setTimeout(() => { adminSearchTerm = e.target.value; renderApp(); }, 300); });
+                searchInput.oninput = (e) => { clearTimeout(timeout); timeout = setTimeout(() => { adminSearchTerm = e.target.value; renderApp(); }, 300); };
             }
+            
+            document.querySelectorAll('.ban-btn').forEach(btn => {
+                btn.onclick = () => banUserWithDuration(btn.dataset.userid, 0, 0, 'Нарушение');
+            });
         }
         
-        document.getElementById('createTaskBtn')?.addEventListener('click', () => {
-            const desc = document.getElementById('taskDesc')?.value;
-            const price = document.getElementById('taskPrice')?.value;
-            const loc = document.getElementById('taskLocation')?.value;
-            if (desc && price && loc) createTask(desc, price, loc);
-            else showToast('Заполните все поля', true);
-        });
-        
-        document.getElementById('applyFiltersBtn')?.addEventListener('click', () => {
-            filters.minPrice = document.getElementById('filterMinPrice')?.value || '';
-            filters.maxPrice = document.getElementById('filterMaxPrice')?.value || '';
-            filters.category = document.getElementById('filterCategory')?.value || 'all';
-            currentPage = 0;
-            renderApp();
-        });
-        
-        document.getElementById('loadMoreBtn')?.addEventListener('click', () => { currentPage++; renderApp(); });
-        
-        document.querySelectorAll('.take-btn').forEach(btn => btn.addEventListener('click', () => takeTask(btn.dataset.taskid)));
-        document.querySelectorAll('.delete-task-btn').forEach(btn => btn.addEventListener('click', () => forceCancelTask(btn.dataset.taskid)));
-        document.querySelectorAll('.confirm-complete-btn').forEach(btn => btn.addEventListener('click', () => confirmCompletion(btn.dataset.taskid)));
-        document.querySelectorAll('.confirm-receipt-btn').forEach(btn => btn.addEventListener('click', () => confirmReceipt(btn.dataset.taskid)));
-        document.querySelectorAll('.cancel-receipt-btn').forEach(btn => btn.addEventListener('click', () => markAsNotReceived(btn.dataset.taskid)));
-        document.querySelectorAll('.chat-btn').forEach(btn => btn.addEventListener('click', () => alert('Чат в разработке')));
-        
-        if (isAdmin && adminMode) {
-            document.querySelectorAll('.topup-btn').forEach(btn => btn.addEventListener('click', () => { const userId = btn.dataset.userid; const amount = parseFloat(document.getElementById(`amount-${userId}`)?.value); if (amount > 0) adminChangeBalance(userId, amount); else showToast('Введите сумму', true); }));
-            document.querySelectorAll('.withdraw-btn').forEach(btn => btn.addEventListener('click', () => { const userId = btn.dataset.userid; const amount = parseFloat(document.getElementById(`amount-${userId}`)?.value); if (amount > 0) adminChangeBalance(userId, -amount); else showToast('Введите сумму', true); }));
-            document.querySelectorAll('.ban-btn').forEach(btn => btn.addEventListener('click', () => { const userId = btn.dataset.userid; const days = parseInt(document.getElementById(`days-${userId}`)?.value) || 0; const hours = parseInt(document.getElementById(`hours-${userId}`)?.value) || 0; const reason = document.getElementById(`reason-${userId}`)?.value || ''; banUserWithDuration(userId, days, hours, reason); }));
-            document.querySelectorAll('.unban-btn').forEach(btn => btn.addEventListener('click', () => unbanUser(btn.dataset.userid)));
+        const createBtn = document.getElementById('createTaskBtn');
+        if (createBtn) {
+            createBtn.onclick = () => {
+                const desc = document.getElementById('taskDesc')?.value;
+                const price = document.getElementById('taskPrice')?.value;
+                const loc = document.getElementById('taskLocation')?.value;
+                const paymentType = document.getElementById('paymentType')?.value;
+                if (desc && price && loc) createTask(desc, price, loc, paymentType);
+                else showToast('Заполните все поля', true);
+            };
         }
+        
+        const applyFiltersBtn = document.getElementById('applyFiltersBtn');
+        if (applyFiltersBtn) {
+            applyFiltersBtn.onclick = () => {
+                filters.minPrice = document.getElementById('filterMinPrice')?.value || '';
+                filters.maxPrice = document.getElementById('filterMaxPrice')?.value || '';
+                filters.category = document.getElementById('filterCategory')?.value || 'all';
+                currentPage = 0;
+                renderApp();
+            };
+        }
+        
+        const loadMoreBtn = document.getElementById('loadMoreBtn');
+        if (loadMoreBtn) loadMoreBtn.onclick = () => { currentPage++; renderApp(); };
+        
+        document.querySelectorAll('.take-btn').forEach(btn => btn.onclick = () => takeTask(btn.dataset.taskid));
+        document.querySelectorAll('.delete-task-btn').forEach(btn => btn.onclick = () => forceCancelTask(btn.dataset.taskid));
+        document.querySelectorAll('.confirm-complete-btn').forEach(btn => btn.onclick = () => confirmCompletion(btn.dataset.taskid));
+        document.querySelectorAll('.confirm-receipt-btn').forEach(btn => btn.onclick = () => confirmReceipt(btn.dataset.taskid));
+        document.querySelectorAll('.cancel-receipt-btn').forEach(btn => btn.onclick = () => markAsNotReceived(btn.dataset.taskid));
     }
 
     restoreSession().then(() => renderApp());
