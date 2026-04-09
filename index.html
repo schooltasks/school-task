@@ -90,8 +90,9 @@
 <div id="app"><div class="loading">⏳ Загрузка...</div></div>
 
 <script>
-    // ========== ВСТАВЬТЕ ВАШ URL ОТ GOOGLE APPS SCRIPT ==========
-    const API_URL = 'https://script.google.com/macros/s/AKfycbxdWxqNdrXaerzGo4Q0M0dlpoJ2EHoC7vFHMjSSu-yEe-Vsi0dYbMqlOQAcw7Mj28IcHw/exec';
+(function() {
+    // ========== ВСТАВЬТЕ ВАШ ПРАВИЛЬНЫЙ URL ОТ GOOGLE APPS SCRIPT ==========
+    const API_URL = 'https://script.google.com/macros/s/AKfycbznzhK39RQQLK9UL6FlHruCsNOBHnNU2pf04htZ9E7ADNJ8lAx4h2a_9X3-0Zn0jL0OHA/exec';
     const ADMIN_PASSWORD = 'dsl382dAZX';
     
     let currentUser = null;
@@ -105,6 +106,14 @@
     let isLoading = false;
     
     if (isDarkTheme) document.body.classList.add('dark-theme');
+    
+    function toggleTheme() { 
+        isDarkTheme = !isDarkTheme; 
+        localStorage.setItem('darkTheme', isDarkTheme); 
+        if (isDarkTheme) document.body.classList.add('dark-theme'); 
+        else document.body.classList.remove('dark-theme'); 
+        renderApp(); 
+    }
     
     async function apiCall(params, timeout = 10000) {
         const controller = new AbortController();
@@ -133,15 +142,18 @@
             ]);
             if (users && Array.isArray(users)) cachedUsers = users;
             if (tasks && Array.isArray(tasks)) cachedTasks = tasks;
+            console.log('Загружено пользователей:', cachedUsers.length);
         } catch(e) { console.error('Sync error:', e); }
         isLoading = false;
     }
     
-    function showToast(msg, isError = false) {
-        const toast = document.createElement('div'); toast.className = 'toast'; toast.innerText = msg;
+    function showToast(msg, isError) {
+        var toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.innerText = msg;
         if (isError) toast.style.background = '#b91c1c';
         document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 3000);
+        setTimeout(function() { toast.remove(); }, 3000);
     }
     
     function saveSession() { 
@@ -150,12 +162,12 @@
     }
     
     async function restoreSession() {
-        const saved = localStorage.getItem('schooltask_session');
+        var saved = localStorage.getItem('schooltask_session');
         if (!saved) return false;
         try {
-            const session = JSON.parse(saved);
+            var session = JSON.parse(saved);
             await syncData();
-            const user = cachedUsers.find(u => u.id === session.id);
+            var user = cachedUsers.find(function(u) { return u.id === session.id; });
             if (user && user.isBanned !== 'true') { 
                 currentUser = user; 
                 return true; 
@@ -165,16 +177,34 @@
         return false;
     }
     
-    function getReferralLink() { return window.location.href.split('?')[0] + (currentUser?.referral_code ? `?ref=${currentUser.referral_code}` : ''); }
-    function copyReferralLink() { navigator.clipboard.writeText(getReferralLink()); showToast('✅ Ссылка скопирована! +5₽ за каждого друга'); }
-    function shareTelegram() { window.open(`https://t.me/share/url?url=${encodeURIComponent(getReferralLink())}&text=${encodeURIComponent('SchoolTask - биржа поручений! +5₽ на бонусный счёт за друга!')}`, '_blank'); }
-    function shareVK() { window.open(`https://vk.com/share.php?url=${encodeURIComponent(getReferralLink())}`, '_blank'); }
+    function getReferralLink() { 
+        var url = window.location.href.split('?')[0];
+        if (currentUser && currentUser.referral_code) return url + '?ref=' + currentUser.referral_code;
+        return url;
+    }
+    
+    function copyReferralLink() { 
+        navigator.clipboard.writeText(getReferralLink()); 
+        showToast('✅ Ссылка скопирована! +5₽ за каждого друга', false); 
+    }
+    
+    function shareTelegram() { 
+        var link = getReferralLink();
+        var text = encodeURIComponent('SchoolTask - биржа поручений! +5₽ на бонусный счёт за друга!');
+        window.open('https://t.me/share/url?url=' + encodeURIComponent(link) + '&text=' + text, '_blank'); 
+    }
+    
+    function shareVK() { 
+        var link = getReferralLink();
+        window.open('https://vk.com/share.php?url=' + encodeURIComponent(link), '_blank'); 
+    }
     
     function showBonusHelp() {
-        const modal = document.createElement('div'); modal.className = 'modal-overlay';
-        modal.innerHTML = `<div class="bonus-modal"><h3>🎁 Бонусный счёт</h3><div style="background:#fef3c7; padding:12px; border-radius:20px; margin:10px 0;"><p><strong>Бонусы НЕЛЬЗЯ вывести, только тратить на создание заданий!</strong></p></div><p><strong>✨ Как получить бонусы:</strong></p><ul style="margin:10px 0 10px 20px;"><li>👥 +5₽ за каждого приглашённого друга</li><li>✅ +10₽ за каждое выполненное задание</li><li>⭐ +20₽ за получение отзыва 5 звёзд</li><li>📅 +3₽ ежедневный бонус за вход</li></ul><p><strong>💰 Как тратить:</strong> при создании задания выберите "Оплатить с бонусного счёта"</p><button class="btn-primary" id="closeBonus" style="width:100%; margin-top:15px;">Понятно</button></div>`;
+        var modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = '<div class="bonus-modal"><h3>🎁 Бонусный счёт</h3><div style="background:#fef3c7; padding:12px; border-radius:20px; margin:10px 0;"><p><strong>Бонусы НЕЛЬЗЯ вывести, только тратить на создание заданий!</strong></p></div><p><strong>✨ Как получить бонусы:</strong></p><ul style="margin:10px 0 10px 20px;"><li>👥 +5₽ за каждого приглашённого друга</li><li>✅ +10₽ за каждое выполненное задание</li><li>⭐ +20₽ за получение отзыва 5 звёзд</li><li>📅 +3₽ ежедневный бонус за вход</li></ul><p><strong>💰 Как тратить:</strong> при создании задания выберите "Оплатить с бонусного счёта"</p><button class="btn-primary" id="closeBonus" style="width:100%; margin-top:15px;">Понятно</button></div>';
         document.body.appendChild(modal);
-        modal.querySelector('#closeBonus').onclick = () => modal.remove();
+        document.getElementById('closeBonus').onclick = function() { modal.remove(); };
     }
     
     async function registerUser(name, school, corp, password, refCode) {
@@ -182,19 +212,19 @@
         if (!/^\d+$/.test(school)) { showToast('❌ Школа только цифры!', true); return false; }
         if (password.length < 3) { showToast('Пароль не менее 3 символов', true); return false; }
         await syncData();
-        if (cachedUsers.some(u => u.name === name)) { showToast('❌ Имя уже занято', true); return false; }
-        const id = 'u' + Date.now();
-        const referralCode = 'REF' + Math.random().toString(36).substring(2, 8).toUpperCase();
-        const res = await apiCall({ 
+        if (cachedUsers.some(function(u) { return u.name === name; })) { showToast('❌ Имя уже занято', true); return false; }
+        var id = 'u' + Date.now();
+        var referralCode = 'REF' + Math.random().toString(36).substring(2, 8).toUpperCase();
+        var res = await apiCall({ 
             action: 'registerUser', 
-            id, name: name.trim(), school: school.trim(), corp: corp.trim(), 
-            balance: 0, bonus_balance: 0, password, referral_code: referralCode, referred_by: refCode || '' 
+            id: id, name: name.trim(), school: school.trim(), corp: corp.trim(), 
+            balance: 0, bonus_balance: 0, password: password, referral_code: referralCode, referred_by: refCode || '' 
         });
-        if (res?.success) { 
+        if (res && res.success) { 
             await syncData();
-            currentUser = cachedUsers.find(u => u.id === id);
+            currentUser = cachedUsers.find(function(u) { return u.id === id; });
             saveSession(); 
-            showToast(`✅ Добро пожаловать, ${currentUser.name}!`); 
+            showToast('✅ Добро пожаловать, ' + currentUser.name + '!', false); 
             renderApp(); 
             return true; 
         }
@@ -202,14 +232,53 @@
     }
     
     async function loginUser(name, school, corp, password) {
+        var cleanName = name ? name.toString().trim() : '';
+        var cleanSchool = school ? school.toString().trim() : '';
+        var cleanCorp = corp ? corp.toString().trim() : '';
+        var cleanPassword = password ? password.toString().trim() : '';
+        
+        if (!cleanName || !cleanSchool || !cleanCorp) { 
+            showToast('Заполните все поля', true); 
+            return false; 
+        }
+        if (!cleanPassword) { 
+            showToast('Введите пароль', true); 
+            return false; 
+        }
+        
         await syncData();
-        const user = cachedUsers.find(u => u.name === name && u.school === school && u.corp === corp);
-        if (!user) { showToast('❌ Пользователь не найден', true); return false; }
-        if (user.password !== password) { showToast('❌ Неверный пароль', true); return false; }
-        if (user.isBanned === 'true') { showToast(`⛔ Аккаунт заблокирован. Причина: ${user.banReason || 'Не указана'}`, true); return false; }
+        
+        var user = null;
+        for (var i = 0; i < cachedUsers.length; i++) {
+            var u = cachedUsers[i];
+            var userName = u.name ? u.name.toString().trim() : '';
+            var userSchool = u.school ? u.school.toString().trim() : '';
+            var userCorp = u.corp ? u.corp.toString().trim() : '';
+            if (userName === cleanName && userSchool === cleanSchool && userCorp === cleanCorp) {
+                user = u;
+                break;
+            }
+        }
+        
+        if (!user) { 
+            showToast('❌ Пользователь не найден.\nПроверьте имя, школу и корпус', true); 
+            return false; 
+        }
+        
+        var userPassword = user.password ? user.password.toString().trim() : '';
+        if (userPassword !== cleanPassword) { 
+            showToast('❌ Неверный пароль для пользователя ' + user.name, true); 
+            return false; 
+        }
+        
+        if (user.isBanned === 'true' || user.isBanned === true) { 
+            showToast('⛔ Аккаунт заблокирован. Причина: ' + (user.banReason || 'Не указана'), true); 
+            return false; 
+        }
+        
         currentUser = user;
         saveSession();
-        showToast(`✅ С возвращением, ${currentUser.name}!`);
+        showToast('✅ С возвращением, ' + currentUser.name + '!', false);
         renderApp();
         return true;
     }
@@ -223,10 +292,10 @@
     
     async function createTask(desc, price, loc, paymentType, scope) {
         if (!currentUser) return;
-        let priceNum = parseFloat(price);
+        var priceNum = parseFloat(price);
         if (isNaN(priceNum) || priceNum <= 0) { showToast('Цена должна быть положительной', true); return; }
-        let balance = paymentType === 'bonus' ? (parseFloat(currentUser.bonus_balance)||0) : (parseFloat(currentUser.balance)||0);
-        if (balance < priceNum) { showToast(`Недостаточно средств`, true); return; }
+        var balance = paymentType === 'bonus' ? (parseFloat(currentUser.bonus_balance)||0) : (parseFloat(currentUser.balance)||0);
+        if (balance < priceNum) { showToast('Недостаточно средств', true); return; }
         if (paymentType === 'bonus') { 
             currentUser.bonus_balance -= priceNum; 
             await apiCall({ action: 'updateUser', id: currentUser.id, bonus_balance: currentUser.bonus_balance }); 
@@ -234,7 +303,7 @@
             currentUser.balance -= priceNum; 
             await apiCall({ action: 'updateUser', id: currentUser.id, balance: currentUser.balance }); 
         }
-        const newTask = { 
+        var newTask = { 
             id: Date.now().toString(), 
             creatorId: currentUser.id, 
             creatorSchool: currentUser.school, 
@@ -251,13 +320,16 @@
         };
         await apiCall({ action: 'createTask', ...newTask });
         await syncData(); 
-        showToast(`✅ Задание создано!`); 
+        showToast('✅ Задание создано!', false); 
         renderApp(); 
     }
     
     async function deleteTask(taskId) {
         if (!confirm('Удалить задание?')) return;
-        const task = cachedTasks.find(t => t.id == taskId);
+        var task = null;
+        for (var i = 0; i < cachedTasks.length; i++) {
+            if (cachedTasks[i].id == taskId) { task = cachedTasks[i]; break; }
+        }
         if (task && task.status === 'open' && task.creatorId === currentUser.id) {
             if (task.payment_type === 'bonus') { 
                 currentUser.bonus_balance = (parseFloat(currentUser.bonus_balance)||0) + parseFloat(task.price); 
@@ -269,30 +341,34 @@
         }
         await apiCall({ action: 'deleteTask', id: taskId });
         await syncData(); 
-        showToast('🗑️ Задание удалено'); 
+        showToast('🗑️ Задание удалено', false); 
         renderApp(); 
     }
     
     function showEditModal(task) {
-        const modal = document.createElement('div'); modal.className = 'modal-overlay';
-        modal.innerHTML = `<div class="edit-modal"><h3>✏️ Редактировать</h3><textarea id="editDesc" rows="3">${task.description}</textarea><input type="number" id="editPrice" value="${task.price}"><input type="text" id="editLocation" value="${task.location}"><select id="editScope"><option value="school" ${task.scope === 'school' ? 'selected' : ''}>🏫 Только моя школа</option><option value="all" ${task.scope === 'all' ? 'selected' : ''}>🌍 Для всех</option></select><div style="display:flex; gap:10px; margin-top:15px;"><button class="btn-primary" id="saveEdit">💾 Сохранить</button><button class="btn-danger" id="cancelEdit">Отмена</button></div></div>`;
+        var modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = '<div class="edit-modal"><h3>✏️ Редактировать</h3><textarea id="editDesc" rows="3">' + task.description + '</textarea><input type="number" id="editPrice" value="' + task.price + '"><input type="text" id="editLocation" value="' + task.location + '"><select id="editScope"><option value="school"' + (task.scope === 'school' ? ' selected' : '') + '>🏫 Только моя школа</option><option value="all"' + (task.scope === 'all' ? ' selected' : '') + '>🌍 Для всех</option></select><div style="display:flex; gap:10px; margin-top:15px;"><button class="btn-primary" id="saveEdit">💾 Сохранить</button><button class="btn-danger" id="cancelEdit">Отмена</button></div></div>';
         document.body.appendChild(modal);
-        modal.querySelector('#cancelEdit').onclick = () => modal.remove();
-        modal.querySelector('#saveEdit').onclick = async () => {
-            task.description = modal.querySelector('#editDesc').value;
-            task.price = parseFloat(modal.querySelector('#editPrice').value);
-            task.location = modal.querySelector('#editLocation').value;
-            task.scope = modal.querySelector('#editScope').value;
+        document.getElementById('cancelEdit').onclick = function() { modal.remove(); };
+        document.getElementById('saveEdit').onclick = async function() {
+            task.description = document.getElementById('editDesc').value;
+            task.price = parseFloat(document.getElementById('editPrice').value);
+            task.location = document.getElementById('editLocation').value;
+            task.scope = document.getElementById('editScope').value;
             await apiCall({ action: 'updateTask', id: task.id, description: task.description, price: task.price, location: task.location, scope: task.scope });
             await syncData(); 
-            showToast('✅ Задание обновлено'); 
+            showToast('✅ Задание обновлено', false); 
             modal.remove(); 
             renderApp(); 
         };
     }
     
     async function takeTask(taskId) {
-        const task = cachedTasks.find(t => t.id == taskId);
+        var task = null;
+        for (var i = 0; i < cachedTasks.length; i++) {
+            if (cachedTasks[i].id == taskId) { task = cachedTasks[i]; break; }
+        }
         if (!task || task.status !== 'open') return;
         if (task.creatorId === currentUser.id) { showToast('Нельзя взять своё задание', true); return; }
         task.status = 'in_progress'; 
@@ -300,28 +376,39 @@
         task.takenAt = new Date().toISOString();
         await apiCall({ action: 'updateTask', id: task.id, status: 'in_progress', takerId: currentUser.id, takenAt: task.takenAt });
         await syncData(); 
-        showToast('📢 Вы взяли задание!'); 
+        showToast('📢 Вы взяли задание!', false); 
         renderApp(); 
     }
     
     async function confirmCompletion(taskId) {
-        const task = cachedTasks.find(t => t.id == taskId);
+        var task = null;
+        for (var i = 0; i < cachedTasks.length; i++) {
+            if (cachedTasks[i].id == taskId) { task = cachedTasks[i]; break; }
+        }
         if (!task || task.status !== 'in_progress') return;
         if (task.takerId !== currentUser.id) return;
         task.status = 'awaiting_confirmation'; 
         task.completedAt = new Date().toISOString();
         await apiCall({ action: 'updateTask', id: task.id, status: 'awaiting_confirmation', completedAt: task.completedAt });
         await syncData(); 
-        showToast('✅ Задание выполнено! Ожидайте подтверждения'); 
+        showToast('✅ Задание выполнено! Ожидайте подтверждения', false); 
         renderApp(); 
     }
     
     async function confirmReceipt(taskId) {
-        const task = cachedTasks.find(t => t.id == taskId);
+        var task = null;
+        for (var i = 0; i < cachedTasks.length; i++) {
+            if (cachedTasks[i].id == taskId) { task = cachedTasks[i]; break; }
+        }
         if (!task || task.status !== 'awaiting_confirmation') return;
         if (task.creatorId !== currentUser.id) return;
-        const executor = cachedUsers.find(u => u.id === task.takerId);
-        const total = parseFloat(task.price), commission = total * 0.05, gain = total - commission;
+        var executor = null;
+        for (var j = 0; j < cachedUsers.length; j++) {
+            if (cachedUsers[j].id === task.takerId) { executor = cachedUsers[j]; break; }
+        }
+        var total = parseFloat(task.price);
+        var commission = total * 0.05;
+        var gain = total - commission;
         if (executor) { 
             executor.balance = (parseFloat(executor.balance)||0) + gain;
             executor.bonus_balance = (parseFloat(executor.bonus_balance)||0) + 10;
@@ -330,12 +417,15 @@
         task.status = 'completed';
         await apiCall({ action: 'updateTask', id: task.id, status: 'completed' });
         await syncData(); 
-        showToast(`💰 Подтверждено! +${gain.toFixed(2)}₽ исполнителю`); 
+        showToast('💰 Подтверждено! +' + gain.toFixed(2) + '₽ исполнителю', false); 
         renderApp(); 
     }
     
     async function rejectReceipt(taskId) {
-        const task = cachedTasks.find(t => t.id == taskId);
+        var task = null;
+        for (var i = 0; i < cachedTasks.length; i++) {
+            if (cachedTasks[i].id == taskId) { task = cachedTasks[i]; break; }
+        }
         if (!task || task.status !== 'awaiting_confirmation') return;
         if (task.creatorId !== currentUser.id) return;
         if (task.payment_type === 'bonus') { 
@@ -348,73 +438,84 @@
         task.status = 'disputed';
         await apiCall({ action: 'updateTask', id: task.id, status: 'disputed' });
         await syncData(); 
-        showToast('⚠️ Деньги возвращены'); 
+        showToast('⚠️ Деньги возвращены', false); 
         renderApp(); 
     }
     
-    async function adminChangeBalance(userId, amount, isBonus = false) {
-        const user = cachedUsers.find(u => u.id === userId);
+    async function adminChangeBalance(userId, amount, isBonus) {
+        var user = null;
+        for (var i = 0; i < cachedUsers.length; i++) {
+            if (cachedUsers[i].id === userId) { user = cachedUsers[i]; break; }
+        }
         if (!user) return;
         if (isBonus) {
             user.bonus_balance = (parseFloat(user.bonus_balance) || 0) + amount;
-            if (currentUser?.id === userId) currentUser.bonus_balance = user.bonus_balance;
-            showToast(`${amount > 0 ? '+' : ''}${amount}₽ на бонусный счёт для ${user.name}`);
+            if (currentUser && currentUser.id === userId) currentUser.bonus_balance = user.bonus_balance;
+            showToast((amount > 0 ? '+' : '') + amount + '₽ на бонусный счёт для ' + user.name, false);
         } else {
             user.balance = (parseFloat(user.balance) || 0) + amount;
-            if (currentUser?.id === userId) currentUser.balance = user.balance;
-            showToast(`${amount > 0 ? '+' : ''}${amount}₽ на основной баланс для ${user.name}`);
+            if (currentUser && currentUser.id === userId) currentUser.balance = user.balance;
+            showToast((amount > 0 ? '+' : '') + amount + '₽ на основной баланс для ' + user.name, false);
         }
         await apiCall({ action: 'updateUser', id: userId, balance: user.balance, bonus_balance: user.bonus_balance });
         renderApp(); 
     }
     
     function showBanModal(userId) {
-        const user = cachedUsers.find(u => u.id === userId);
+        var user = null;
+        for (var i = 0; i < cachedUsers.length; i++) {
+            if (cachedUsers[i].id === userId) { user = cachedUsers[i]; break; }
+        }
         if (!user) return;
-        const modal = document.createElement('div'); modal.className = 'modal-overlay';
-        modal.innerHTML = `<div class="ban-modal"><h3>⛔ Блокировка пользователя ${user.name}</h3><input type="text" id="banReason" placeholder="Причина блокировки" style="margin: 15px 0;"><div style="display: flex; gap: 10px;"><button class="btn-danger" id="confirmBan">Заблокировать</button><button class="btn-primary" id="cancelBan">Отмена</button></div></div>`;
+        var modal = document.createElement('div');
+        modal.className = 'modal-overlay';
+        modal.innerHTML = '<div class="ban-modal"><h3>⛔ Блокировка пользователя ' + user.name + '</h3><input type="text" id="banReason" placeholder="Причина блокировки" style="margin: 15px 0;"><div style="display: flex; gap: 10px;"><button class="btn-danger" id="confirmBan">Заблокировать</button><button class="btn-primary" id="cancelBan">Отмена</button></div></div>';
         document.body.appendChild(modal);
-        modal.querySelector('#cancelBan').onclick = () => modal.remove();
-        modal.querySelector('#confirmBan').onclick = async () => {
-            const reason = modal.querySelector('#banReason').value || 'Нарушение правил';
+        document.getElementById('cancelBan').onclick = function() { modal.remove(); };
+        document.getElementById('confirmBan').onclick = async function() {
+            var reason = document.getElementById('banReason').value || 'Нарушение правил';
             user.isBanned = 'true';
             user.banReason = reason;
             await apiCall({ action: 'updateUser', id: userId, isBanned: 'true', banReason: reason });
             if (currentUser.id === userId) logout();
-            else showToast(`⛔ ${user.name} заблокирован. Причина: ${reason}`);
+            else showToast('⛔ ' + user.name + ' заблокирован. Причина: ' + reason, false);
             modal.remove();
             renderApp();
         };
     }
     
     async function unbanUser(userId) {
-        const user = cachedUsers.find(u => u.id === userId);
+        var user = null;
+        for (var i = 0; i < cachedUsers.length; i++) {
+            if (cachedUsers[i].id === userId) { user = cachedUsers[i]; break; }
+        }
         if (!user) return;
         user.isBanned = 'false';
         user.banReason = '';
         await apiCall({ action: 'updateUser', id: userId, isBanned: 'false', banReason: '' });
-        showToast(`✅ ${user.name} разблокирован`);
+        showToast('✅ ' + user.name + ' разблокирован', false);
         renderApp(); 
     }
     
     function requestAdminAccess() { 
-        let pwd = prompt("Пароль администратора:"); 
+        var pwd = prompt("Пароль администратора:"); 
         if (pwd === ADMIN_PASSWORD) { 
             adminMode = true; 
-            showToast("Админ-панель активирована"); 
+            showToast("Админ-панель активирована", false); 
             renderApp(); 
         } else showToast("Неверный пароль", true); 
     }
+    
     function exitAdminMode() { adminMode = false; renderApp(); }
     
     function deleteAllTasks() {
         if (confirm('Удалить ВСЕ задания?')) {
-            (async () => {
-                for (const task of cachedTasks) {
-                    await apiCall({ action: 'deleteTask', id: task.id });
+            (async function() {
+                for (var i = 0; i < cachedTasks.length; i++) {
+                    await apiCall({ action: 'deleteTask', id: cachedTasks[i].id });
                 }
                 await syncData();
-                showToast('✅ Все задания удалены');
+                showToast('✅ Все задания удалены', false);
                 renderApp();
             })();
         }
@@ -430,186 +531,301 @@
         }
     }
     
-    async function renderApp() {
-        await syncData();
-        const appDiv = document.getElementById('app');
+    function renderApp() {
+        var appDiv = document.getElementById('app');
+        if (!appDiv) return;
         
         if (!currentUser) {
-            const isLogin = authMode === 'login';
-            const urlParams = new URLSearchParams(window.location.search);
-            const refCode = urlParams.get('ref');
-            appDiv.innerHTML = `
-                <div class="container">
-                    <div class="header"><div class="logo"><h1>🏫 SchoolTask</h1><span>Биржа поручений</span></div><button class="theme-toggle" id="themeToggleBtn">${isDarkTheme ? '☀️' : '🌙'}</button></div>
-                    <div class="announcement">
-                        <h2>🔥 НУЖНА ВАША ПОМОЩЬ! 🔥</h2>
-                        <p>SchoolTask — это проект, который создаётся для вас! Поделитесь ссылкой с друзьями!</p>
-                        <div class="bonus-highlight">🎁 +5₽ на бонусный счёт за каждого приглашённого друга! 🎁</div>
-                        <div class="share-buttons">
-                            <div class="share-btn share-tg" onclick="shareTelegram()">📱 Telegram</div>
-                            <div class="share-btn share-vk" onclick="shareVK()">📱 ВКонтакте</div>
-                            <div class="share-btn copy-link" onclick="copyReferralLink()">🔗 Скопировать ссылку</div>
-                        </div>
-                    </div>
-                    <div class="help-box">
-                        <h4>🎁 Что такое бонусный счёт?</h4>
-                        <p>Бонусный счёт — это специальные деньги, которые НЕЛЬЗЯ вывести, но можно тратить на создание заданий!<br>
-                        ✨ Как получить: +5₽ за каждого приглашённого друга, +10₽ за выполнение задания, +20₽ за отзыв 5⭐, +3₽ ежедневно!<br>
-                        💡 Нажмите на <strong>🎁 Бонусный счёт</strong> в профиле для подробной информации.</p>
-                    </div>
-                    <div class="card"><div class="tabs"><div class="tab ${isLogin ? 'active' : ''}" id="loginTab">🔐 Вход</div><div class="tab ${!isLogin ? 'active' : ''}" id="registerTab">📝 Регистрация</div></div>
-                    ${isLogin ? `
-                        <input type="text" id="loginName" placeholder="Имя">
-                        <input type="text" id="loginSchool" placeholder="Школа (только цифры)">
-                        <input type="text" id="loginCorp" placeholder="Корпус">
-                        <input type="password" id="loginPassword" placeholder="Пароль">
-                        <button class="btn-primary" id="loginBtn">Войти</button>
-                    ` : `
-                        <input type="text" id="regName" placeholder="Имя (уникальное)">
-                        <div id="regNameError" class="error-text"></div>
-                        <input type="text" id="regSchool" placeholder="Школа (только цифры)">
-                        <div id="regSchoolError" class="error-text"></div>
-                        <input type="text" id="regCorp" placeholder="Корпус">
-                        <input type="password" id="regPassword" placeholder="Пароль (мин. 3 символа)">
-                        ${refCode ? `<input type="hidden" id="refCode" value="${refCode}"><div style="background:#e2e8f0; padding:10px; border-radius:20px; margin:10px 0; text-align:center;">🔗 Вы перешли по реферальной ссылке! Пригласивший получит +5₽ на бонусный счёт.</div>` : ''}
-                        <button class="btn-primary" id="registerBtn">Зарегистрироваться</button>
-                    `}
-                    <div style="margin-top:15px; text-align:center;"><span class="disabled-warning">⚠️ Пополнение и вывод временно недоступны</span><div style="margin-top:10px; font-size:12px;">Ведутся технические работы. Используйте бонусный счёт!</div></div></div>
-                </div>
-            `;
-            document.getElementById('loginTab')?.addEventListener('click', () => { authMode = 'login'; renderApp(); });
-            document.getElementById('registerTab')?.addEventListener('click', () => { authMode = 'register'; renderApp(); });
-            document.getElementById('loginBtn')?.addEventListener('click', () => loginUser(document.getElementById('loginName').value, document.getElementById('loginSchool').value, document.getElementById('loginCorp').value, document.getElementById('loginPassword').value));
-            document.getElementById('registerBtn')?.addEventListener('click', () => { const school = document.getElementById('regSchool').value; if (!/^\d+$/.test(school)) { showToast('❌ Школа только цифры!', true); return; } registerUser(document.getElementById('regName').value, school, document.getElementById('regCorp').value, document.getElementById('regPassword').value, document.getElementById('refCode')?.value || ''); });
-            document.getElementById('regSchool')?.addEventListener('input', function() { const err = document.getElementById('regSchoolError'); if (this.value && !/^\d+$/.test(this.value)) { err.innerText = '❌ Только цифры!'; err.style.display = 'block'; } else err.style.display = 'none'; });
-            document.getElementById('regName')?.addEventListener('input', async function() { const err = document.getElementById('regNameError'); await syncData(); if (cachedUsers.some(u => u.name === this.value)) { err.innerText = '❌ Имя занято'; err.style.display = 'block'; } else err.style.display = 'none'; });
-            document.getElementById('themeToggleBtn')?.addEventListener('click', toggleTheme);
+            var isLogin = authMode === 'login';
+            var urlParams = new URLSearchParams(window.location.search);
+            var refCode = urlParams.get('ref');
+            appDiv.innerHTML = '<div class="container"><div class="header"><div class="logo"><h1>🏫 SchoolTask</h1><span>Биржа поручений</span></div><button class="theme-toggle" id="themeToggleBtn">' + (isDarkTheme ? '☀️' : '🌙') + '</button></div><div class="announcement"><h2>🔥 НУЖНА ВАША ПОМОЩЬ! 🔥</h2><p>SchoolTask — это проект, который создаётся для вас! Поделитесь ссылкой с друзьями!</p><div class="bonus-highlight">🎁 +5₽ на бонусный счёт за каждого приглашённого друга! 🎁</div><div class="share-buttons"><div class="share-btn share-tg" onclick="shareTelegram()">📱 Telegram</div><div class="share-btn share-vk" onclick="shareVK()">📱 ВКонтакте</div><div class="share-btn copy-link" onclick="copyReferralLink()">🔗 Скопировать ссылку</div></div></div><div class="help-box"><h4>🎁 Что такое бонусный счёт?</h4><p>Бонусный счёт — это специальные деньги, которые НЕЛЬЗЯ вывести, но можно тратить на создание заданий!<br>✨ Как получить: +5₽ за каждого приглашённого друга, +10₽ за выполнение задания, +20₽ за отзыв 5⭐, +3₽ ежедневно!<br>💡 Нажмите на <strong>🎁 Бонусный счёт</strong> в профиле для подробной информации.</p></div><div class="card"><div class="tabs"><div class="tab ' + (isLogin ? 'active' : '') + '" id="loginTab">🔐 Вход</div><div class="tab ' + (!isLogin ? 'active' : '') + '" id="registerTab">📝 Регистрация</div></div>' + (isLogin ? '<input type="text" id="loginName" placeholder="Имя"><input type="text" id="loginSchool" placeholder="Школа (только цифры)"><input type="text" id="loginCorp" placeholder="Корпус"><input type="password" id="loginPassword" placeholder="Пароль"><button class="btn-primary" id="loginBtn">Войти</button>' : '<input type="text" id="regName" placeholder="Имя (уникальное)"><div id="regNameError" class="error-text"></div><input type="text" id="regSchool" placeholder="Школа (только цифры)"><div id="regSchoolError" class="error-text"></div><input type="text" id="regCorp" placeholder="Корпус"><input type="password" id="regPassword" placeholder="Пароль (мин. 3 символа)">' + (refCode ? '<input type="hidden" id="refCode" value="' + refCode + '"><div style="background:#e2e8f0; padding:10px; border-radius:20px; margin:10px 0; text-align:center;">🔗 Вы перешли по реферальной ссылке! Пригласивший получит +5₽ на бонусный счёт.</div>' : '') + '<button class="btn-primary" id="registerBtn">Зарегистрироваться</button>') + '<div style="margin-top:15px; text-align:center;"><span class="disabled-warning">⚠️ Пополнение и вывод временно недоступны</span><div style="margin-top:10px; font-size:12px;">Ведутся технические работы. Используйте бонусный счёт!</div></div></div></div>';
+            
+            var loginTab = document.getElementById('loginTab');
+            var registerTab = document.getElementById('registerTab');
+            var loginBtn = document.getElementById('loginBtn');
+            var registerBtn = document.getElementById('registerBtn');
+            var themeToggleBtn = document.getElementById('themeToggleBtn');
+            
+            if (loginTab) loginTab.onclick = function() { authMode = 'login'; renderApp(); };
+            if (registerTab) registerTab.onclick = function() { authMode = 'register'; renderApp(); };
+            if (loginBtn) loginBtn.onclick = function() { loginUser(document.getElementById('loginName').value, document.getElementById('loginSchool').value, document.getElementById('loginCorp').value, document.getElementById('loginPassword').value); };
+            if (registerBtn) registerBtn.onclick = function() { var school = document.getElementById('regSchool').value; if (!/^\d+$/.test(school)) { showToast('❌ Школа только цифры!', true); return; } registerUser(document.getElementById('regName').value, school, document.getElementById('regCorp').value, document.getElementById('regPassword').value, document.getElementById('refCode') ? document.getElementById('refCode').value : ''); };
+            
+            var regSchool = document.getElementById('regSchool');
+            if (regSchool) {
+                regSchool.oninput = function() {
+                    var err = document.getElementById('regSchoolError');
+                    if (err) {
+                        if (this.value && !/^\d+$/.test(this.value)) {
+                            err.innerText = '❌ Только цифры!';
+                            err.style.display = 'block';
+                        } else {
+                            err.style.display = 'none';
+                        }
+                    }
+                };
+            }
+            
+            var regName = document.getElementById('regName');
+            if (regName) {
+                regName.oninput = function() {
+                    var err = document.getElementById('regNameError');
+                    if (err) {
+                        var taken = false;
+                        for (var i = 0; i < cachedUsers.length; i++) {
+                            if (cachedUsers[i].name === this.value) { taken = true; break; }
+                        }
+                        if (taken) {
+                            err.innerText = '❌ Имя занято';
+                            err.style.display = 'block';
+                        } else {
+                            err.style.display = 'none';
+                        }
+                    }
+                };
+            }
+            
+            if (themeToggleBtn) themeToggleBtn.onclick = toggleTheme;
             return;
         }
         
-        const isAdmin = currentUser.name?.toLowerCase() === 'leshr_ak47';
+        var isAdmin = currentUser.name && currentUser.name.toLowerCase() === 'leshr_ak47';
         
-        let adminPanelHtml = '';
+        var adminPanelHtml = '';
         if (isAdmin && adminMode) {
-            let filteredUsers = cachedUsers;
-            if (adminSearchTerm.trim()) filteredUsers = filteredUsers.filter(u => u.name?.toLowerCase().includes(adminSearchTerm.toLowerCase()));
-            adminPanelHtml = `
-                <div class="admin-panel">
-                    <div class="admin-header"><h2>👑 Админ-панель</h2><button class="btn-danger" id="exitAdminBtn">Выйти</button></div>
-                    <div class="admin-header"><div class="search-box">🔍 <input type="text" id="adminSearch" placeholder="Поиск..." value="${adminSearchTerm}"></div><button class="refresh-btn" id="refreshUsersBtn" style="background:#3b82f6; color:white;">🔄 Обновить</button><button id="clearTasksBtn" style="background:#dc2626; color:white; margin-left:10px;">🗑️ Удалить все задания</button></div>
-                    <div class="users-table"><table><thead><tr><th>Имя</th><th>Школа</th><th>Основной баланс</th><th>Бонусный счёт</th><th>Статус</th><th>Управление балансом</th><th>Управление бонусами</th><th>Действия</th></tr></thead>
-                    <tbody>${filteredUsers.map(user => {
-                        const isBanned = user.isBanned === 'true';
-                        return `<tr>
-                            <td><strong>${user.name}</strong><br><small>${user.corp}</small></td>
-                            <td>${user.school}</td>
-                            <td>${(parseFloat(user.balance)||0).toFixed(2)} ₽</td>
-                            <td style="color:#eab308;">${(parseFloat(user.bonus_balance)||0).toFixed(2)} ₽</td>
-                            <td>${isBanned ? '⛔ Забанен' : '✅ Активен'}<br>${isBanned ? `<small>${user.banReason || ''}</small>` : ''}</td>
-                            <td><div class="balance-control"><input type="number" id="amount-${user.id}" value="100"><button class="topup-btn" data-userid="${user.id}" data-bonus="false">💰 +</button><button class="withdraw-btn" data-userid="${user.id}" data-bonus="false">💸 -</button></div></td>
-                            <td><div class="balance-control"><input type="number" id="bonus-${user.id}" value="100"><button class="topup-btn" data-userid="${user.id}" data-bonus="true">🎁 +</button><button class="withdraw-btn" data-userid="${user.id}" data-bonus="true">🎁 -</button></div></td>
-                            <td>${!isBanned ? `<button class="ban-btn" data-userid="${user.id}">⛔ Бан</button>` : `<button class="unban-btn" data-userid="${user.id}">✅ Разбан</button>`}</td>
-                        </tr>`;
-                    }).join('')}</tbody>}</div>
-                </div>
-            `;
+            var filteredUsers = [];
+            for (var i = 0; i < cachedUsers.length; i++) {
+                if (adminSearchTerm.trim() === '' || cachedUsers[i].name.toLowerCase().includes(adminSearchTerm.toLowerCase())) {
+                    filteredUsers.push(cachedUsers[i]);
+                }
+            }
+            var usersTableRows = '';
+            for (var i = 0; i < filteredUsers.length; i++) {
+                var user = filteredUsers[i];
+                var isBanned = user.isBanned === 'true';
+                usersTableRows += '<tr>
+                    <td><strong>' + (user.name || '?') + '</strong><br><small>' + (user.corp || '') + '</small></td>
+                    <td>' + (user.school || '') + '</td>
+                    <td>' + (parseFloat(user.balance)||0).toFixed(2) + ' ₽</td>
+                    <td style="color:#eab308;">' + (parseFloat(user.bonus_balance)||0).toFixed(2) + ' ₽</td>
+                    <td>' + (isBanned ? '⛔ Забанен' : '✅ Активен') + (isBanned && user.banReason ? '<br><small>' + user.banReason + '</small>' : '') + '</td>
+                    <td><div class="balance-control"><input type="number" id="amount-' + user.id + '" value="100"><button class="topup-btn" data-userid="' + user.id + '" data-bonus="false">💰 +</button><button class="withdraw-btn" data-userid="' + user.id + '" data-bonus="false">💸 -</button></div></td>
+                    <td><div class="balance-control"><input type="number" id="bonus-' + user.id + '" value="100"><button class="topup-btn" data-userid="' + user.id + '" data-bonus="true">🎁 +</button><button class="withdraw-btn" data-userid="' + user.id + '" data-bonus="true">🎁 -</button></div></td>
+                    <td>' + (!isBanned ? '<button class="ban-btn" data-userid="' + user.id + '">⛔ Бан</button>' : '<button class="unban-btn" data-userid="' + user.id + '">✅ Разбан</button>') + '</td>
+                </tr>';
+            }
+            adminPanelHtml = '<div class="admin-panel"><div class="admin-header"><h2>👑 Админ-панель</h2><button class="btn-danger" id="exitAdminBtn">Выйти</button></div><div class="admin-header"><div class="search-box">🔍 <input type="text" id="adminSearch" placeholder="Поиск..." value="' + adminSearchTerm + '"></div><button class="refresh-btn" id="refreshUsersBtn" style="background:#3b82f6; color:white;">🔄 Обновить</button><button id="clearTasksBtn" style="background:#dc2626; color:white; margin-left:10px;">🗑️ Удалить все задания</button></div><div class="users-table"><table><thead><tr><th>Имя</th><th>Школа</th><th>Основной баланс</th><th>Бонусный счёт</th><th>Статус</th><th>Управление балансом</th><th>Управление бонусами</th><th>Действия</th></tr></thead><tbody>' + usersTableRows + '</tbody>}</div></div>';
         }
         
-        const adminEntryBtn = isAdmin ? `<button id="adminPanelBtn" style="background:#2c3e50; color:white;">🔐 Админка</button>` : '';
+        var adminEntryBtn = isAdmin ? '<button id="adminPanelBtn" style="background:#2c3e50; color:white;">🔐 Админка</button>' : '';
         
-        let openTasks = filters.scope === 'all' ? cachedTasks.filter(t => t.status === 'open' && t.scope === 'all') : cachedTasks.filter(t => t.status === 'open' && t.creatorSchool === currentUser.school);
-        if (filters.minPrice) openTasks = openTasks.filter(t => t.price >= parseFloat(filters.minPrice));
-        if (filters.maxPrice) openTasks = openTasks.filter(t => t.price <= parseFloat(filters.maxPrice));
+        var openTasks = [];
+        for (var i = 0; i < cachedTasks.length; i++) {
+            var t = cachedTasks[i];
+            if (t.status !== 'open') continue;
+            if (filters.scope === 'all') {
+                if (t.scope === 'all') openTasks.push(t);
+            } else {
+                if (t.creatorSchool === currentUser.school) openTasks.push(t);
+            }
+        }
+        if (filters.minPrice) {
+            var minPrice = parseFloat(filters.minPrice);
+            openTasks = openTasks.filter(function(t) { return t.price >= minPrice; });
+        }
+        if (filters.maxPrice) {
+            var maxPrice = parseFloat(filters.maxPrice);
+            openTasks = openTasks.filter(function(t) { return t.price <= maxPrice; });
+        }
         
-        const myCreatedTasks = cachedTasks.filter(t => t.creatorId === currentUser.id);
-        const myExecTasks = cachedTasks.filter(t => t.takerId === currentUser.id);
+        var myCreatedTasks = [];
+        var myExecTasks = [];
+        for (var i = 0; i < cachedTasks.length; i++) {
+            if (cachedTasks[i].creatorId === currentUser.id) myCreatedTasks.push(cachedTasks[i]);
+            if (cachedTasks[i].takerId === currentUser.id) myExecTasks.push(cachedTasks[i]);
+        }
         
-        const helpBlock = `<div class="help-box"><h4>🎁 Бонусный счёт</h4><p>Бонусы НЕ вывести, только тратить на задания. +5₽ за друга, +10₽ за выполнение, +20₽ за отзыв 5⭐, +3₽ ежедневно. Нажмите <strong>🎁 Бонусный счёт</strong> в шапке для подробной информации.</p></div>`;
+        var helpBlock = '<div class="help-box"><h4>🎁 Бонусный счёт</h4><p>Бонусы НЕ вывести, только тратить на задания. +5₽ за друга, +10₽ за выполнение, +20₽ за отзыв 5⭐, +3₽ ежедневно. Нажмите <strong>🎁 Бонусный счёт</strong> в шапке для подробной информации.</p></div>';
         
-        const taskCard = (task, showTakeBtn = true, showEditDelete = false) => {
-            const creator = cachedUsers.find(u => u.id === task.creatorId);
-            const status = getStatusText(task.status);
-            let btns = '';
-            if (showTakeBtn && task.status === 'open' && task.creatorId !== currentUser.id) btns = `<button class="btn-primary take-btn" data-id="${task.id}">📌 Взять задание</button>`;
-            if (task.status === 'in_progress' && task.takerId === currentUser.id) btns = `<button class="btn-success complete-btn" data-id="${task.id}">✅ Подтвердить выполнение</button>`;
-            if (task.status === 'awaiting_confirmation' && task.creatorId === currentUser.id) btns = `<div class="action-buttons"><button class="btn-success confirm-btn" data-id="${task.id}">💰 Подтвердить получение</button><button class="btn-danger reject-btn" data-id="${task.id}">❌ Не получил</button></div>`;
-            if (showEditDelete && task.creatorId === currentUser.id && task.status === 'open') btns += `<div class="action-buttons"><button class="btn-edit edit-btn" data-id="${task.id}">✏️ Редактировать</button><button class="btn-danger delete-btn" data-id="${task.id}">🗑️ Удалить</button></div>`;
-            const scopeIcon = task.scope === 'all' ? '🌍' : '🏫';
-            const scopeText = task.scope === 'all' ? 'Для всех участников' : 'Только моя школа';
-            return `<div class="task-card"><div class="task-header"><div class="task-price">${task.price} ₽</div><div class="task-status ${status.class}">${status.text}</div></div><div class="task-desc">📌 ${task.description}</div><div class="task-meta">📍 ${task.location} | ${scopeIcon} ${scopeText}</div><div style="font-size:0.7rem; color:#6b7280;">👤 Создатель: ${creator?.name || '?'} (${creator?.school || ''})${task.takerId ? `<br>👤 Исполнитель: ${cachedUsers.find(u => u.id === task.takerId)?.name}` : ''}</div>${btns}</div>`;
-        };
+        function taskCard(task, showTakeBtn, showEditDelete) {
+            var creator = null;
+            for (var i = 0; i < cachedUsers.length; i++) {
+                if (cachedUsers[i].id === task.creatorId) { creator = cachedUsers[i]; break; }
+            }
+            var status = getStatusText(task.status);
+            var btns = '';
+            if (showTakeBtn && task.status === 'open' && task.creatorId !== currentUser.id) btns = '<button class="btn-primary take-btn" data-id="' + task.id + '">📌 Взять задание</button>';
+            if (task.status === 'in_progress' && task.takerId === currentUser.id) btns = '<button class="btn-success complete-btn" data-id="' + task.id + '">✅ Подтвердить выполнение</button>';
+            if (task.status === 'awaiting_confirmation' && task.creatorId === currentUser.id) btns = '<div class="action-buttons"><button class="btn-success confirm-btn" data-id="' + task.id + '">💰 Подтвердить получение</button><button class="btn-danger reject-btn" data-id="' + task.id + '">❌ Не получил</button></div>';
+            if (showEditDelete && task.creatorId === currentUser.id && task.status === 'open') btns += '<div class="action-buttons"><button class="btn-edit edit-btn" data-id="' + task.id + '">✏️ Редактировать</button><button class="btn-danger delete-btn" data-id="' + task.id + '">🗑️ Удалить</button></div>';
+            var scopeIcon = task.scope === 'all' ? '🌍' : '🏫';
+            var scopeText = task.scope === 'all' ? 'Для всех участников' : 'Только моя школа';
+            return '<div class="task-card"><div class="task-header"><div class="task-price">' + task.price + ' ₽</div><div class="task-status ' + status.class + '">' + status.text + '</div></div><div class="task-desc">📌 ' + task.description + '</div><div class="task-meta">📍 ' + task.location + ' | ' + scopeIcon + ' ' + scopeText + '</div><div style="font-size:0.7rem; color:#6b7280;">👤 Создатель: ' + (creator ? creator.name : '?') + ' (' + (creator ? creator.school : '') + ')' + (task.takerId ? '<br>👤 Исполнитель: ' + (function() { for (var j = 0; j < cachedUsers.length; j++) { if (cachedUsers[j].id === task.takerId) return cachedUsers[j].name; } return '?'; })() : '') + '</div>' + btns + '</div>';
+        }
         
-        const createForm = `<div class="card"><h3>📝 Создать задание</h3><textarea id="taskDesc" rows="2" placeholder="Что нужно сделать? (например: принеси булочку в 40 кабинет)"></textarea><input type="number" id="taskPrice" placeholder="Цена (руб)"><input type="text" id="taskLocation" placeholder="Место (кабинет, этаж)"><select id="paymentType"><option value="main">💰 Оплатить с основного счёта</option><option value="bonus">🎁 Оплатить с бонусного счёта</option></select><select id="taskScope"><option value="school">🏫 Только моя школа</option><option value="all">🌍 Для всех участников сайта</option></select><button class="btn-primary" id="createBtn">Создать</button></div>`;
+        var tasksGridHtml = '';
+        for (var i = 0; i < openTasks.length; i++) {
+            tasksGridHtml += taskCard(openTasks[i], true, false);
+        }
+        if (tasksGridHtml === '') tasksGridHtml = '<div style="text-align:center; padding:40px;">✨ Нет заданий</div>';
         
-        const activeTab = window._activeTab || 'allTasks';
-        let content = '';
-        if (activeTab === 'allTasks') content = `<h3>📋 Доступные задания ${filters.scope === 'all' ? '(для всех участников)' : `(школа ${currentUser.school})`}</h3>${helpBlock}<div class="filter-group"><select id="filterScope"><option value="school" ${filters.scope === 'school' ? 'selected' : ''}>🏫 Только моя школа</option><option value="all" ${filters.scope === 'all' ? 'selected' : ''}>🌍 Для всех участников</option></select><input type="number" id="filterMinPrice" placeholder="Цена от" value="${filters.minPrice}"><input type="number" id="filterMaxPrice" placeholder="Цена до" value="${filters.maxPrice}"><button id="applyFilters" class="btn-info">🔍 Применить</button></div><div class="tasks-grid">${openTasks.map(t => taskCard(t, true, false)).join('') || '<div style="text-align:center; padding:40px;">✨ Нет заданий</div>'}</div>`;
-        else if (activeTab === 'myTasks') content = `<h3>📌 Мои задания (созданные мной)</h3><div class="tasks-grid">${myCreatedTasks.map(t => taskCard(t, true, true)).join('') || '<div style="text-align:center; padding:40px;">✨ У вас пока нет созданных заданий</div>'}</div>`;
-        else if (activeTab === 'myExecutions') content = `<h3>⚡ Мои выполнения</h3><div class="tasks-grid">${myExecTasks.map(t => taskCard(t, true, false)).join('') || '<div style="text-align:center; padding:40px;">✨ Вы пока не взяли ни одного задания</div>'}</div>`;
-        else if (activeTab === 'profile') content = `<div class="card"><h3>👤 Мой профиль</h3><p><strong>Имя:</strong> ${currentUser.name}</p><p><strong>Школа:</strong> ${currentUser.school}</p><p><strong>Корпус:</strong> ${currentUser.corp}</p><p><strong>💰 Основной баланс:</strong> ${(parseFloat(currentUser.balance)||0).toFixed(2)} ₽</p><p><strong>🎁 Бонусный счёт:</strong> ${(parseFloat(currentUser.bonus_balance)||0).toFixed(2)} ₽</p><p><strong>👥 Приглашено друзей:</strong> ${parseInt(currentUser.referral_count)||0}</p><div class="referral-code" onclick="copyReferralLink()">🔗 ${getReferralLink()}</div><p style="font-size:12px; margin-top:10px;">➕ За каждого друга, который зарегистрируется по вашей ссылке, вы получите +5₽ на бонусный счёт!</p></div>`;
+        var myTasksGridHtml = '';
+        for (var i = 0; i < myCreatedTasks.length; i++) {
+            myTasksGridHtml += taskCard(myCreatedTasks[i], true, true);
+        }
+        if (myTasksGridHtml === '') myTasksGridHtml = '<div style="text-align:center; padding:40px;">✨ У вас пока нет созданных заданий</div>';
+        
+        var myExecGridHtml = '';
+        for (var i = 0; i < myExecTasks.length; i++) {
+            myExecGridHtml += taskCard(myExecTasks[i], true, false);
+        }
+        if (myExecGridHtml === '') myExecGridHtml = '<div style="text-align:center; padding:40px;">✨ Вы пока не взяли ни одного задания</div>';
+        
+        var createForm = '<div class="card"><h3>📝 Создать задание</h3><textarea id="taskDesc" rows="2" placeholder="Что нужно сделать? (например: принеси булочку в 40 кабинет)"></textarea><input type="number" id="taskPrice" placeholder="Цена (руб)"><input type="text" id="taskLocation" placeholder="Место (кабинет, этаж)"><select id="paymentType"><option value="main">💰 Оплатить с основного счёта</option><option value="bonus">🎁 Оплатить с бонусного счёта</option></select><select id="taskScope"><option value="school">🏫 Только моя школа</option><option value="all">🌍 Для всех участников сайта</option></select><button class="btn-primary" id="createBtn">Создать</button></div>';
+        
+        var profileHtml = '<div class="card"><h3>👤 Мой профиль</h3><p><strong>Имя:</strong> ' + currentUser.name + '</p><p><strong>Школа:</strong> ' + currentUser.school + '</p><p><strong>Корпус:</strong> ' + currentUser.corp + '</p><p><strong>💰 Основной баланс:</strong> ' + (parseFloat(currentUser.balance)||0).toFixed(2) + ' ₽</p><p><strong>🎁 Бонусный счёт:</strong> ' + (parseFloat(currentUser.bonus_balance)||0).toFixed(2) + ' ₽</p><p><strong>👥 Приглашено друзей:</strong> ' + (parseInt(currentUser.referral_count)||0) + '</p><div class="referral-code" onclick="copyReferralLink()">🔗 ' + getReferralLink() + '</div><p style="font-size:12px; margin-top:10px;">➕ За каждого друга, который зарегистрируется по вашей ссылке, вы получите +5₽ на бонусный счёт!</p></div>';
+        
+        var activeTab = window._activeTab || 'allTasks';
+        var content = '';
+        if (activeTab === 'allTasks') content = '<h3>📋 Доступные задания ' + (filters.scope === 'all' ? '(для всех участников)' : '(школа ' + currentUser.school + ')') + '</h3>' + helpBlock + '<div class="filter-group"><select id="filterScope"><option value="school"' + (filters.scope === 'school' ? ' selected' : '') + '>🏫 Только моя школа</option><option value="all"' + (filters.scope === 'all' ? ' selected' : '') + '>🌍 Для всех участников</option></select><input type="number" id="filterMinPrice" placeholder="Цена от" value="' + filters.minPrice + '"><input type="number" id="filterMaxPrice" placeholder="Цена до" value="' + filters.maxPrice + '"><button id="applyFilters" class="btn-info">🔍 Применить</button></div><div class="tasks-grid">' + tasksGridHtml + '</div>';
+        else if (activeTab === 'myTasks') content = '<h3>📌 Мои задания (созданные мной)</h3><div class="tasks-grid">' + myTasksGridHtml + '</div>';
+        else if (activeTab === 'myExecutions') content = '<h3>⚡ Мои выполнения</h3><div class="tasks-grid">' + myExecGridHtml + '</div>';
+        else if (activeTab === 'profile') content = profileHtml;
         else if (activeTab === 'create') content = createForm;
         
-        appDiv.innerHTML = `
-            <div class="container">
-                <div class="header"><div class="logo"><h1>🏫 SchoolTask</h1></div><div class="user-info"><div>👋 ${currentUser.name} | ${currentUser.school}</div><div class="balance-card">💰 ${(parseFloat(currentUser.balance)||0).toFixed(2)} ₽</div><div class="bonus-card" onclick="showBonusHelp()">🎁 ${(parseFloat(currentUser.bonus_balance)||0).toFixed(2)} ₽</div><button class="theme-toggle" id="themeToggleBtn">${isDarkTheme ? '☀️' : '🌙'}</button><button class="btn-danger" id="logoutBtn">Выйти</button></div></div>
-                <div style="display:flex; justify-content:space-between; margin-bottom:15px; flex-wrap:wrap; gap:10px;"><span class="disabled-warning">⚠️ Пополнение и вывод временно недоступны</span><div>${adminEntryBtn}</div></div>
-                ${adminPanelHtml}
-                <div class="tabs"><div class="tab ${activeTab === 'allTasks' ? 'active' : ''}" data-tab="allTasks">📋 Все задания</div><div class="tab ${activeTab === 'myTasks' ? 'active' : ''}" data-tab="myTasks">📦 Мои</div><div class="tab ${activeTab === 'myExecutions' ? 'active' : ''}" data-tab="myExecutions">⚡ Мои выполнения</div><div class="tab ${activeTab === 'profile' ? 'active' : ''}" data-tab="profile">👤 Профиль</div><div class="tab ${activeTab === 'create' ? 'active' : ''}" data-tab="create">➕ Создать</div></div>
-                ${content}
-                <div style="margin-top:20px; text-align:center; font-size:12px;">⚠️ Комиссия 5% | 5 часов на подтверждение получения</div>
-            </div>
-        `;
+        appDiv.innerHTML = '<div class="container"><div class="header"><div class="logo"><h1>🏫 SchoolTask</h1></div><div class="user-info"><div>👋 ' + currentUser.name + ' | ' + currentUser.school + '</div><div class="balance-card">💰 ' + (parseFloat(currentUser.balance)||0).toFixed(2) + ' ₽</div><div class="bonus-card" onclick="showBonusHelp()">🎁 ' + (parseFloat(currentUser.bonus_balance)||0).toFixed(2) + ' ₽</div><button class="theme-toggle" id="themeToggleBtn">' + (isDarkTheme ? '☀️' : '🌙') + '</button><button class="btn-danger" id="logoutBtn">Выйти</button></div></div><div style="display:flex; justify-content:space-between; margin-bottom:15px; flex-wrap:wrap; gap:10px;"><span class="disabled-warning">⚠️ Пополнение и вывод временно недоступны</span><div>' + adminEntryBtn + '</div></div>' + adminPanelHtml + '<div class="tabs"><div class="tab ' + (activeTab === 'allTasks' ? 'active' : '') + '" data-tab="allTasks">📋 Все задания</div><div class="tab ' + (activeTab === 'myTasks' ? 'active' : '') + '" data-tab="myTasks">📦 Мои</div><div class="tab ' + (activeTab === 'myExecutions' ? 'active' : '') + '" data-tab="myExecutions">⚡ Мои выполнения</div><div class="tab ' + (activeTab === 'profile' ? 'active' : '') + '" data-tab="profile">👤 Профиль</div><div class="tab ' + (activeTab === 'create' ? 'active' : '') + '" data-tab="create">➕ Создать</div></div>' + content + '<div style="margin-top:20px; text-align:center; font-size:12px;">⚠️ Комиссия 5% | 5 часов на подтверждение получения</div></div>';
         
-        document.querySelectorAll('.tab').forEach(tab => tab.addEventListener('click', () => { window._activeTab = tab.dataset.tab; renderApp(); }));
-        document.getElementById('logoutBtn')?.addEventListener('click', logout);
-        document.getElementById('themeToggleBtn')?.addEventListener('click', toggleTheme);
-        document.getElementById('createBtn')?.addEventListener('click', () => { const d = document.getElementById('taskDesc')?.value, p = document.getElementById('taskPrice')?.value, l = document.getElementById('taskLocation')?.value, pt = document.getElementById('paymentType')?.value, sc = document.getElementById('taskScope')?.value; if(d && p && l) createTask(d, p, l, pt, sc); else showToast('Заполните все поля', true); });
-        document.getElementById('applyFilters')?.addEventListener('click', () => { filters.scope = document.getElementById('filterScope')?.value || 'school'; filters.minPrice = document.getElementById('filterMinPrice')?.value || ''; filters.maxPrice = document.getElementById('filterMaxPrice')?.value || ''; renderApp(); });
-        
-        if (isAdmin) {
-            document.getElementById('adminPanelBtn')?.addEventListener('click', () => adminMode ? exitAdminMode() : requestAdminAccess());
-            document.getElementById('exitAdminBtn')?.addEventListener('click', exitAdminMode);
-            document.getElementById('refreshUsersBtn')?.addEventListener('click', async () => { await syncData(); renderApp(); showToast('Обновлено'); });
-            document.getElementById('clearTasksBtn')?.addEventListener('click', deleteAllTasks);
-            document.getElementById('adminSearch')?.addEventListener('input', (e) => { adminSearchTerm = e.target.value; renderApp(); });
-            
-            document.querySelectorAll('.topup-btn').forEach(btn => btn.addEventListener('click', () => { 
-                const userId = btn.dataset.userid; 
-                const isBonus = btn.dataset.bonus === 'true';
-                const amountField = isBonus ? document.getElementById(`bonus-${userId}`) : document.getElementById(`amount-${userId}`);
-                const amount = parseFloat(amountField?.value);
-                if (amount > 0) adminChangeBalance(userId, amount, isBonus);
-                else showToast('Введите сумму', true);
-            }));
-            document.querySelectorAll('.withdraw-btn').forEach(btn => btn.addEventListener('click', () => { 
-                const userId = btn.dataset.userid; 
-                const isBonus = btn.dataset.bonus === 'true';
-                const amountField = isBonus ? document.getElementById(`bonus-${userId}`) : document.getElementById(`amount-${userId}`);
-                const amount = parseFloat(amountField?.value);
-                if (amount > 0) adminChangeBalance(userId, -amount, isBonus);
-                else showToast('Введите сумму', true);
-            }));
-            document.querySelectorAll('.ban-btn').forEach(btn => btn.addEventListener('click', () => showBanModal(btn.dataset.userid)));
-            document.querySelectorAll('.unban-btn').forEach(btn => btn.addEventListener('click', () => unbanUser(btn.dataset.userid)));
+        var tabs = document.querySelectorAll('.tab');
+        for (var i = 0; i < tabs.length; i++) {
+            tabs[i].onclick = function() { window._activeTab = this.dataset.tab; renderApp(); };
         }
         
-        document.querySelectorAll('.take-btn').forEach(btn => btn.addEventListener('click', () => takeTask(btn.dataset.id)));
-        document.querySelectorAll('.delete-btn').forEach(btn => btn.addEventListener('click', () => deleteTask(btn.dataset.id)));
-        document.querySelectorAll('.edit-btn').forEach(btn => { const task = cachedTasks.find(t => t.id == btn.dataset.id); if(task) btn.addEventListener('click', () => showEditModal(task)); });
-        document.querySelectorAll('.complete-btn').forEach(btn => btn.addEventListener('click', () => confirmCompletion(btn.dataset.id)));
-        document.querySelectorAll('.confirm-btn').forEach(btn => btn.addEventListener('click', () => confirmReceipt(btn.dataset.id)));
-        document.querySelectorAll('.reject-btn').forEach(btn => btn.addEventListener('click', () => rejectReceipt(btn.dataset.id)));
+        var logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) logoutBtn.onclick = logout;
+        
+        var themeToggleBtn = document.getElementById('themeToggleBtn');
+        if (themeToggleBtn) themeToggleBtn.onclick = toggleTheme;
+        
+        var createBtn = document.getElementById('createBtn');
+        if (createBtn) {
+            createBtn.onclick = function() {
+                var d = document.getElementById('taskDesc').value;
+                var p = document.getElementById('taskPrice').value;
+                var l = document.getElementById('taskLocation').value;
+                var pt = document.getElementById('paymentType').value;
+                var sc = document.getElementById('taskScope').value;
+                if (d && p && l) createTask(d, p, l, pt, sc);
+                else showToast('Заполните все поля', true);
+            };
+        }
+        
+        var applyFilters = document.getElementById('applyFilters');
+        if (applyFilters) {
+            applyFilters.onclick = function() {
+                var scopeSelect = document.getElementById('filterScope');
+                var minPriceInput = document.getElementById('filterMinPrice');
+                var maxPriceInput = document.getElementById('filterMaxPrice');
+                if (scopeSelect) filters.scope = scopeSelect.value;
+                if (minPriceInput) filters.minPrice = minPriceInput.value;
+                if (maxPriceInput) filters.maxPrice = maxPriceInput.value;
+                renderApp();
+            };
+        }
+        
+        if (isAdmin) {
+            var adminPanelBtn = document.getElementById('adminPanelBtn');
+            if (adminPanelBtn) adminPanelBtn.onclick = function() { if (adminMode) exitAdminMode(); else requestAdminAccess(); };
+            
+            var exitAdminBtn = document.getElementById('exitAdminBtn');
+            if (exitAdminBtn) exitAdminBtn.onclick = exitAdminMode;
+            
+            var refreshUsersBtn = document.getElementById('refreshUsersBtn');
+            if (refreshUsersBtn) refreshUsersBtn.onclick = function() { syncData().then(function() { renderApp(); showToast('Обновлено', false); }); };
+            
+            var clearTasksBtn = document.getElementById('clearTasksBtn');
+            if (clearTasksBtn) clearTasksBtn.onclick = deleteAllTasks;
+            
+            var adminSearch = document.getElementById('adminSearch');
+            if (adminSearch) {
+                adminSearch.oninput = function(e) { adminSearchTerm = e.target.value; renderApp(); };
+            }
+            
+            var topupBtns = document.querySelectorAll('.topup-btn');
+            for (var i = 0; i < topupBtns.length; i++) {
+                topupBtns[i].onclick = function() {
+                    var userId = this.dataset.userid;
+                    var isBonus = this.dataset.bonus === 'true';
+                    var amountField = isBonus ? document.getElementById('bonus-' + userId) : document.getElementById('amount-' + userId);
+                    var amount = parseFloat(amountField ? amountField.value : 100);
+                    if (amount > 0) adminChangeBalance(userId, amount, isBonus);
+                    else showToast('Введите сумму', true);
+                };
+            }
+            
+            var withdrawBtns = document.querySelectorAll('.withdraw-btn');
+            for (var i = 0; i < withdrawBtns.length; i++) {
+                withdrawBtns[i].onclick = function() {
+                    var userId = this.dataset.userid;
+                    var isBonus = this.dataset.bonus === 'true';
+                    var amountField = isBonus ? document.getElementById('bonus-' + userId) : document.getElementById('amount-' + userId);
+                    var amount = parseFloat(amountField ? amountField.value : 100);
+                    if (amount > 0) adminChangeBalance(userId, -amount, isBonus);
+                    else showToast('Введите сумму', true);
+                };
+            }
+            
+            var banBtns = document.querySelectorAll('.ban-btn');
+            for (var i = 0; i < banBtns.length; i++) {
+                banBtns[i].onclick = function() { showBanModal(this.dataset.userid); };
+            }
+            
+            var unbanBtns = document.querySelectorAll('.unban-btn');
+            for (var i = 0; i < unbanBtns.length; i++) {
+                unbanBtns[i].onclick = function() { unbanUser(this.dataset.userid); };
+            }
+        }
+        
+        var takeBtns = document.querySelectorAll('.take-btn');
+        for (var i = 0; i < takeBtns.length; i++) {
+            takeBtns[i].onclick = function() { takeTask(this.dataset.id); };
+        }
+        
+        var deleteBtns = document.querySelectorAll('.delete-btn');
+        for (var i = 0; i < deleteBtns.length; i++) {
+            deleteBtns[i].onclick = function() { deleteTask(this.dataset.id); };
+        }
+        
+        var editBtns = document.querySelectorAll('.edit-btn');
+        for (var i = 0; i < editBtns.length; i++) {
+            (function(btn) {
+                var taskId = btn.dataset.id;
+                var task = null;
+                for (var j = 0; j < cachedTasks.length; j++) {
+                    if (cachedTasks[j].id == taskId) { task = cachedTasks[j]; break; }
+                }
+                if (task) btn.onclick = function() { showEditModal(task); };
+            })(editBtns[i]);
+        }
+        
+        var completeBtns = document.querySelectorAll('.complete-btn');
+        for (var i = 0; i < completeBtns.length; i++) {
+            completeBtns[i].onclick = function() { confirmCompletion(this.dataset.id); };
+        }
+        
+        var confirmBtns = document.querySelectorAll('.confirm-btn');
+        for (var i = 0; i < confirmBtns.length; i++) {
+            confirmBtns[i].onclick = function() { confirmReceipt(this.dataset.id); };
+        }
+        
+        var rejectBtns = document.querySelectorAll('.reject-btn');
+        for (var i = 0; i < rejectBtns.length; i++) {
+            rejectBtns[i].onclick = function() { rejectReceipt(this.dataset.id); };
+        }
     }
     
-    function toggleTheme() { 
-        isDarkTheme = !isDarkTheme; 
-        localStorage.setItem('darkTheme', isDarkTheme); 
-        if (isDarkTheme) document.body.classList.add('dark-theme'); 
-        else document.body.classList.remove('dark-theme'); 
-        renderApp(); 
-    }
-    
-    restoreSession().then(() => renderApp());
+    restoreSession().then(function() { renderApp(); });
+})();
 </script>
 </body>
 </html>
