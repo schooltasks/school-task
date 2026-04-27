@@ -97,7 +97,7 @@
 
 <script>
 // ========== НАСТРОЙКИ ==========
-const API_URL = 'https://script.google.com/macros/s/AKfycbwZsNp-nhx_10mHQgGpR59ffRZ1PJ2xZg600EVI1c2rnmQhuoHqEe_XMIVVTr3R069j/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbxf5v8wNf6_yx-S87wcuWdr4kYbza6bWqQKwTaPZjIXZYtkPNB3AO3mHYW2Fo9lShA_/exec';
 const ADMIN_PASSWORD = 'dsl382dAZX';
 
 let currentUser = null;
@@ -133,15 +133,25 @@ async function loadDataFromGoogle() {
         console.log('Загрузка данных из Google Sheets...');
         
         const response = await fetch(API_URL + '?action=getUsers');
+        console.log('Статус ответа:', response.status);
         
         if (response.ok) {
             const data = await response.json();
+            console.log('Полученные данные:', data);
+            
             if (Array.isArray(data)) {
                 users = data;
                 console.log('✅ Загружено пользователей:', users.length);
+                users.forEach(u => {
+                    console.log(`   - ${u.name} | школа: ${u.school} | корпус: ${u.corp} | пароль: "${u.password}"`);
+                });
             } else {
+                console.log('Данные не являются массивом');
                 users = [];
             }
+        } else {
+            console.log('Ошибка HTTP:', response.status);
+            showToast('⚠️ Ошибка загрузки. Код: ' + response.status, true);
         }
         
         const tasksResponse = await fetch(API_URL + '?action=getTasks');
@@ -166,7 +176,7 @@ async function loadDataFromGoogle() {
         return true;
     } catch(e) {
         console.error('Ошибка загрузки:', e);
-        showToast('⚠️ Не удалось загрузить данные', true);
+        showToast('⚠️ Не удалось загрузить данные: ' + e.message, true);
         return false;
     } finally {
         isLoading = false;
@@ -183,6 +193,8 @@ async function saveToGoogle(action, params) {
             }
         }
         
+        console.log('📤 Отправка:', action, params);
+        
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: {
@@ -192,6 +204,7 @@ async function saveToGoogle(action, params) {
         });
         
         const result = await response.json();
+        console.log('📥 Ответ:', result);
         return result;
     } catch(e) {
         console.error('Ошибка сохранения:', e);
@@ -222,6 +235,7 @@ function restoreSession() {
         let user = users.find(u => u.id === session.id);
         if (user && user.isBanned !== 'true') { 
             currentUser = user; 
+            console.log('Сессия восстановлена для:', currentUser.name);
             return true; 
         }
         localStorage.removeItem('schooltask_session');
@@ -256,11 +270,9 @@ function showBonusHelp() {
 
 // ===== ВАЛИДАЦИЯ ИМЕНИ =====
 function isValidName(name) {
-    // Имя не должно состоять только из цифр
     if (/^\d+$/.test(name)) {
         return false;
     }
-    // Имя должно содержать хотя бы одну букву
     if (!/[a-zA-Zа-яА-Я]/.test(name)) {
         return false;
     }
@@ -273,13 +285,11 @@ async function registerUser(name, school, corp, password) {
     if (!/^\d+$/.test(school)) { showToast('❌ Школа только цифры!', true); return false; }
     if (password.length < 3) { showToast('Пароль не менее 3 символов', true); return false; }
     
-    // Проверка имени - нельзя только цифры
     if (!isValidName(name.trim())) {
         showToast('❌ Имя должно содержать буквы! Нельзя использовать только цифры.', true);
         return false;
     }
     
-    // Проверяем существование пользователя
     const userExists = users.some(u => u.name === name.trim());
     if (userExists) { 
         showToast('❌ Пользователь с таким именем уже существует', true); 
@@ -333,7 +343,8 @@ async function loginUser(name, school, corp, password) {
     let cleanCorp = corp ? corp.toString().trim() : '';
     let cleanPassword = password ? password.toString().trim() : '';
     
-    console.log('Попытка входа:', cleanName, cleanSchool, cleanCorp);
+    console.log('🔐 Попытка входа:', cleanName, cleanSchool, cleanCorp);
+    console.log('🔑 Введённый пароль:', cleanPassword);
     
     if (!cleanName || !cleanSchool || !cleanCorp) { 
         showToast('Заполните все поля', true); 
@@ -344,30 +355,49 @@ async function loginUser(name, school, corp, password) {
         return false; 
     }
     
+    // Принудительно загружаем данные
     if (!isDataLoaded || users.length === 0) {
+        console.log('Данные не загружены, загружаю...');
         showToast('⏳ Загрузка данных...', false);
         await loadDataFromGoogle();
     }
     
-    console.log('Всего пользователей:', users.length);
+    console.log('Всего пользователей в системе:', users.length);
     
     if (users.length === 0) {
         showToast('❌ Нет данных о пользователях. Нажмите "Обновить данные"', true);
         return false;
     }
     
+    // Выводим список пользователей для отладки
+    console.log('Список пользователей в БД:');
+    users.forEach(u => {
+        console.log(`   - ${u.name} | школа: ${u.school} | корпус: ${u.corp} | пароль: "${u.password}"`);
+    });
+    
+    // Ищем пользователя
     let user = users.find(u => {
-        return String(u.name || '').trim() === cleanName && 
-               String(u.school || '').trim() === cleanSchool && 
-               String(u.corp || '').trim() === cleanCorp;
+        let userName = String(u.name || '').trim();
+        let userSchool = String(u.school || '').trim();
+        let userCorp = String(u.corp || '').trim();
+        
+        return userName === cleanName && 
+               userSchool === cleanSchool && 
+               userCorp === cleanCorp;
     });
     
     if (!user) { 
+        console.log('❌ Пользователь не найден!');
         showToast('❌ Пользователь не найден. Проверьте имя, школу и корпус.', true); 
         return false; 
     }
     
+    console.log('✅ Найден пользователь:', user.name);
+    console.log('🔑 Пароль в БД:', user.password);
+    console.log('🔑 Введённый пароль:', cleanPassword);
+    
     if (String(user.password || '').trim() !== cleanPassword) { 
+        console.log('❌ Неверный пароль!');
         showToast('❌ Неверный пароль', true); 
         return false; 
     }
@@ -379,6 +409,7 @@ async function loginUser(name, school, corp, password) {
     
     currentUser = user;
     saveSession();
+    console.log('✅ Вход выполнен успешно!');
     showToast('✅ С возвращением, ' + currentUser.name + '!', false);
     renderApp();
     return true;
@@ -773,12 +804,13 @@ function renderApp() {
                         <div class="tab ${!isLogin ? 'active' : ''}" id="registerTab">📝 Регистрация</div>
                     </div>
                     ${isLogin ? `
-                        <input type="text" id="loginName" placeholder="Имя">
-                        <input type="text" id="loginSchool" placeholder="Школа (только цифры)">
-                        <input type="text" id="loginCorp" placeholder="Корпус">
-                        <input type="password" id="loginPassword" placeholder="Пароль">
+                        <input type="text" id="loginName" placeholder="Имя" value="leshr_ak47">
+                        <input type="text" id="loginSchool" placeholder="Школа (только цифры)" value="1542">
+                        <input type="text" id="loginCorp" placeholder="Корпус" value="5">
+                        <input type="password" id="loginPassword" placeholder="Пароль" value="dsl382dAZX">
                         <button class="btn-primary" id="loginBtn">Войти</button>
                         <button class="btn-info" id="refreshDataBtn" style="margin-top:10px;">🔄 Обновить данные</button>
+                        <div style="margin-top:10px; font-size:12px; color:#666;">💡 Откройте консоль (F12) для отладки</div>
                     ` : `
                         <input type="text" id="regName" placeholder="Имя (не только цифры, обязательно буквы!)">
                         <div id="regNameError" class="error-text"></div>
@@ -821,7 +853,6 @@ function renderApp() {
                 
                 const userName = document.getElementById('regName').value;
                 
-                // Проверка имени - нельзя только цифры
                 if (!isValidName(userName.trim())) {
                     showToast('❌ Имя должно содержать буквы! Нельзя использовать только цифры.', true);
                     return;
@@ -861,17 +892,14 @@ function renderApp() {
                 let err = document.getElementById('regNameError');
                 let val = this.value.trim();
                 
-                // Проверка на только цифры
                 if (val && /^\d+$/.test(val)) {
                     err.innerText = '❌ Имя не может состоять только из цифр! Добавьте буквы.';
                     err.style.display = 'block';
                 }
-                // Проверка на занятость имени
                 else if (val && users.some(u => u.name === val)) {
                     err.innerText = '❌ Имя занято';
                     err.style.display = 'block';
-                } 
-                // Проверка на наличие букв
+                }
                 else if (val && !/[a-zA-Zа-яА-Я]/.test(val)) {
                     err.innerText = '❌ Имя должно содержать хотя бы одну букву';
                     err.style.display = 'block';
@@ -924,7 +952,7 @@ function renderApp() {
                                 `;
                             }).join('')}
                         </tbody>
-                    <tr>
+                    </table>
                 </div>
             </div>
         `;
