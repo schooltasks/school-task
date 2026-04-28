@@ -122,7 +122,6 @@ let currentChatTask = null;
 let chatMessages = [];
 let isLoading = false;
 let isDataLoaded = false;
-let isWalletModalOpen = false;
 
 if (isDarkTheme) document.body.classList.add('dark-theme');
 
@@ -140,8 +139,6 @@ async function loadDataFromGoogle() {
     isLoading = true;
     
     try {
-        console.log('Загрузка данных...');
-        
         const response = await fetch(API_URL + '?action=getUsers');
         if (response.ok) {
             const data = await response.json();
@@ -262,38 +259,23 @@ function showBonusHelp() {
 }
 
 // ===== МЕНЮ КОШЕЛЬКА =====
+let walletModal = null;
+
 function openWalletModal() {
     if (!currentUser) return;
-    isWalletModalOpen = true;
-    renderWalletModal();
-}
-
-function closeWalletModal() {
-    isWalletModalOpen = false;
-    renderApp();
-}
-
-function showPaymentAlert(type) {
-    if (type === 'deposit') {
-        alert('💳 ПОПОЛНЕНИЕ БАЛАНСА\n\nДля пополнения баланса напишите в Telegram:\n@leshr_ak47\n\nУкажите ваш логин и сумму пополнения.\n\nКомиссия: 10% (1₽ на сайте = 0.9₽ после комиссии)');
-    } else {
-        alert('💸 ВЫВОД СРЕДСТВ\n\nДля вывода средств напишите в Telegram:\n@leshr_ak47\n\nУкажите ваш логин, сумму вывода и реквизиты для перевода.\n\nМинимальная сумма вывода: 100₽');
-    }
-}
-
-function renderWalletModal() {
-    let modal = document.getElementById('walletModal');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'walletModal';
-        modal.className = 'wallet-modal';
-        document.body.appendChild(modal);
-    }
     
     const mainBalance = (parseFloat(currentUser.balance) || 0).toFixed(2);
     const bonusBalance = (parseFloat(currentUser.bonus_balance) || 0).toFixed(2);
     
-    modal.innerHTML = `
+    // Удаляем старый модал если есть
+    if (walletModal) {
+        walletModal.remove();
+    }
+    
+    walletModal = document.createElement('div');
+    walletModal.id = 'walletModal';
+    walletModal.className = 'wallet-modal';
+    walletModal.innerHTML = `
         <div class="wallet-container">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h3>💰 Кошелёк</h3>
@@ -318,7 +300,24 @@ function renderWalletModal() {
         </div>
     `;
     
-    modal.style.display = 'flex';
+    document.body.appendChild(walletModal);
+    walletModal.style.display = 'flex';
+}
+
+function closeWalletModal() {
+    if (walletModal) {
+        walletModal.remove();
+        walletModal = null;
+    }
+    renderApp();
+}
+
+function showPaymentAlert(type) {
+    if (type === 'deposit') {
+        alert('💳 ПОПОЛНЕНИЕ БАЛАНСА\n\nДля пополнения баланса напишите в Telegram:\n@leshr_ak47\n\nУкажите ваш логин и сумму пополнения.\n\nКомиссия: 10% (1₽ на сайте = 0.9₽ после комиссии)');
+    } else {
+        alert('💸 ВЫВОД СРЕДСТВ\n\nДля вывода средств напишите в Telegram:\n@leshr_ak47\n\nУкажите ваш логин, сумму вывода и реквизиты для перевода.\n\nМинимальная сумма вывода: 100₽');
+    }
 }
 
 // ===== ВАЛИДАЦИЯ ИМЕНИ =====
@@ -792,11 +791,6 @@ function getRatingStars(rating) {
 
 function renderApp() {
     let appDiv = document.getElementById('app');
-    
-    if (isWalletModalOpen) {
-        renderWalletModal();
-        return;
-    }
     
     if (!currentUser) {
         let isLogin = authMode === 'login';
