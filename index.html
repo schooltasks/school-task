@@ -85,7 +85,9 @@
         .wallet-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 2000; }
         .wallet-container { background: white; border-radius: 32px; width: 90%; max-width: 400px; padding: 20px; }
         body.dark-theme .wallet-container { background: #1e293b; }
-        .wallet-balance { font-size: 2rem; font-weight: bold; text-align: center; margin: 20px 0; }
+        .wallet-balance { font-size: 1.5rem; font-weight: bold; text-align: center; margin: 15px 0; }
+        .wallet-buttons { display: flex; gap: 15px; margin-top: 20px; }
+        .wallet-buttons button { flex: 1; }
         
         .chat-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 2000; }
         .chat-container { background: white; border-radius: 32px; width: 90%; max-width: 500px; height: 80%; display: flex; flex-direction: column; overflow: hidden; }
@@ -120,6 +122,7 @@ let currentChatTask = null;
 let chatMessages = [];
 let isLoading = false;
 let isDataLoaded = false;
+let isWalletModalOpen = false;
 
 if (isDarkTheme) document.body.classList.add('dark-theme');
 
@@ -259,17 +262,23 @@ function showBonusHelp() {
 }
 
 // ===== МЕНЮ КОШЕЛЬКА =====
-let walletModalOpen = false;
-
 function openWalletModal() {
     if (!currentUser) return;
-    walletModalOpen = true;
+    isWalletModalOpen = true;
     renderWalletModal();
 }
 
 function closeWalletModal() {
-    walletModalOpen = false;
+    isWalletModalOpen = false;
     renderApp();
+}
+
+function showPaymentAlert(type) {
+    if (type === 'deposit') {
+        alert('💳 ПОПОЛНЕНИЕ БАЛАНСА\n\nДля пополнения баланса напишите в Telegram:\n@leshr_ak47\n\nУкажите ваш логин и сумму пополнения.\n\nКомиссия: 10% (1₽ на сайте = 0.9₽ после комиссии)');
+    } else {
+        alert('💸 ВЫВОД СРЕДСТВ\n\nДля вывода средств напишите в Telegram:\n@leshr_ak47\n\nУкажите ваш логин, сумму вывода и реквизиты для перевода.\n\nМинимальная сумма вывода: 100₽');
+    }
 }
 
 function renderWalletModal() {
@@ -288,22 +297,24 @@ function renderWalletModal() {
         <div class="wallet-container">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h3>💰 Кошелёк</h3>
-                <button onclick="closeWalletModal()" style="background: none; font-size: 24px;">✕</button>
+                <button onclick="closeWalletModal()" style="background: none; font-size: 28px; cursor: pointer; padding: 0 10px;">✕</button>
             </div>
             <div class="wallet-balance">
                 <div>💰 Основной баланс</div>
-                <div style="color: #2c6e4f;">${mainBalance} ₽</div>
+                <div style="color: #2c6e4f; font-size: 2rem;">${mainBalance} ₽</div>
             </div>
             <div class="wallet-balance" style="border-top: 1px solid #e2e8f0; padding-top: 15px;">
                 <div>🎁 Бонусный счёт</div>
-                <div style="color: #eab308;">${bonusBalance} ₽</div>
+                <div style="color: #eab308; font-size: 2rem;">${bonusBalance} ₽</div>
             </div>
             <div style="margin-top: 20px; padding: 15px; background: #e0f2fe; border-radius: 20px; text-align: center;">
                 <p style="font-size: 14px;">💡 1 ₽ на сайте = 0.9 ₽ после комиссии (-10%)</p>
-                <p style="font-size: 12px; margin-top: 10px;">⚠️ Пополнение временно недоступно</p>
-                <p style="font-size: 12px;">📞 Для пополнения свяжитесь с администратором</p>
             </div>
-            <button class="btn-primary" onclick="closeWalletModal()" style="margin-top: 20px; width: 100%;">Закрыть</button>
+            <div class="wallet-buttons">
+                <button class="btn-success" onclick="showPaymentAlert('deposit')">💰 Пополнить</button>
+                <button class="btn-primary" onclick="showPaymentAlert('withdraw')">💸 Вывод</button>
+            </div>
+            <button class="btn-danger" onclick="closeWalletModal()" style="margin-top: 15px; width: 100%;">Закрыть</button>
         </div>
     `;
     
@@ -782,7 +793,7 @@ function getRatingStars(rating) {
 function renderApp() {
     let appDiv = document.getElementById('app');
     
-    if (walletModalOpen) {
+    if (isWalletModalOpen) {
         renderWalletModal();
         return;
     }
@@ -987,9 +998,7 @@ function renderApp() {
     // ФИЛЬТРАЦИЯ ЗАДАНИЙ: показываем только задания из той же школы и того же корпуса
     let openTasks = tasks.filter(t => {
         if (t.status !== 'open') return false;
-        // Если задание для всех участников (scope === 'all') - показываем всем
         if (t.scope === 'all') return true;
-        // Иначе показываем только если школа И корпус совпадают
         return t.creatorSchool === currentUser.school && t.creatorCorp === currentUser.corp;
     });
     
@@ -1265,6 +1274,7 @@ window.copyReferralLink = copyReferralLink;
 window.showBonusHelp = showBonusHelp;
 window.openWalletModal = openWalletModal;
 window.closeWalletModal = closeWalletModal;
+window.showPaymentAlert = showPaymentAlert;
 
 // ЗАПУСК
 loadDataFromGoogle().then(() => {
