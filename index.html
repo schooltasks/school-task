@@ -31,7 +31,6 @@
         .theme-toggle { background: #334155; color: white; padding: 8px 16px; border-radius: 60px; cursor: pointer; }
         input, textarea, select { width: 100%; padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 28px; margin-bottom: 12px; font-size: 1rem; }
         .input-hint { font-size: 0.75rem; color: #6b7280; margin-top: -8px; margin-bottom: 12px; }
-        body.dark-theme .input-hint { color: #9ca3af; }
         .tabs { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
         .tab { background: white; padding: 10px 24px; border-radius: 60px; cursor: pointer; font-weight: 600; }
         .tab.active { background: #1e4a6e; color: white; }
@@ -61,9 +60,6 @@
         .help-box { background: #e0f2fe; border-radius: 20px; padding: 15px; margin-bottom: 20px; text-align: center; border-left: 5px solid #0284c7; }
         .help-box h4 { color: #0284c7; margin-bottom: 8px; }
         .help-box p { font-size: 0.9rem; color: #075985; }
-        body.dark-theme .help-box { background: #0c4a6e; border-left-color: #38bdf8; }
-        body.dark-theme .help-box h4 { color: #38bdf8; }
-        body.dark-theme .help-box p { color: #bae6fd; }
         
         .referral-code { background: #e2e8f0; padding: 10px; border-radius: 40px; font-family: monospace; cursor: pointer; text-align: center; margin-top: 15px; }
         
@@ -85,23 +81,17 @@
         
         .wallet-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 2000; }
         .wallet-container { background: white; border-radius: 32px; width: 90%; max-width: 400px; padding: 20px; }
-        body.dark-theme .wallet-container { background: #1e293b; }
-        .wallet-balance { font-size: 1.5rem; font-weight: bold; text-align: center; margin: 15px 0; }
-        .wallet-buttons { display: flex; gap: 15px; margin-top: 20px; }
-        .wallet-buttons button { flex: 1; }
         
         .chat-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 2000; backdrop-filter: blur(5px); }
-        .chat-container { background: white; border-radius: 24px; width: 95%; max-width: 550px; height: 85%; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
+        .chat-container { background: white; border-radius: 24px; width: 95%; max-width: 550px; height: 85%; display: flex; flex-direction: column; overflow: hidden; }
         body.dark-theme .chat-container { background: #1e293b; }
         .chat-header { padding: 16px 20px; background: #3b82f6; color: white; display: flex; justify-content: space-between; align-items: center; }
-        .chat-header h3 { font-size: 1.1rem; }
-        .chat-header button { background: none; border: none; color: white; font-size: 24px; cursor: pointer; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
-        .chat-header button:hover { background: rgba(255,255,255,0.2); }
+        .chat-header button { background: none; border: none; color: white; font-size: 24px; cursor: pointer; width: 36px; height: 36px; border-radius: 50%; }
         .chat-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 8px; background: #f5f7fb; }
         body.dark-theme .chat-messages { background: #0f172a; }
-        .chat-message { max-width: 80%; padding: 10px 14px; border-radius: 20px; word-wrap: break-word; position: relative; }
+        .chat-message { max-width: 80%; padding: 10px 14px; border-radius: 20px; word-wrap: break-word; }
         .chat-message.mine { background: #3b82f6; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
-        .chat-message.other { background: white; color: #1e293b; align-self: flex-start; border-bottom-left-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .chat-message.other { background: white; color: #1e293b; align-self: flex-start; border-bottom-left-radius: 4px; }
         body.dark-theme .chat-message.other { background: #334155; color: #e2e8f0; }
         .chat-message .message-sender { font-size: 0.7rem; font-weight: bold; margin-bottom: 4px; opacity: 0.8; }
         .chat-message .message-text { font-size: 0.95rem; line-height: 1.4; }
@@ -111,7 +101,6 @@
         .chat-input-area input { flex: 1; margin: 0; border-radius: 24px; background: #f1f5f9; border: none; padding: 12px 18px; }
         body.dark-theme .chat-input-area input { background: #334155; color: white; }
         .chat-input-area button { border-radius: 50%; width: 48px; height: 48px; padding: 0; display: flex; align-items: center; justify-content: center; background: #3b82f6; }
-        .chat-input-area button:hover { background: #2563eb; }
         
         @media (max-width: 700px) { .filter-group { flex-direction: column; } .chat-message { max-width: 90%; } }
     </style>
@@ -139,23 +128,26 @@ let isDataLoaded = false;
 let chatUpdateInterval = null;
 let isChatModalOpen = false;
 
-// ===== ЗАЩИТА ОТ МНОГОКРАТНЫХ НАЖАТИЙ =====
-let pendingActions = {
+// ===== ЗАЩИТА ОТ МНОГОКРАТНЫХ НАЖАТИЙ (РАБОТАЕТ!) =====
+const actionLocks = {
+    createTask: false,
+    deleteTask: false,
+    takeTask: false,
+    confirmCompletion: false,
+    confirmReceipt: false,
+    rejectReceipt: false,
     sendMessage: false
 };
 
 function isActionLocked(action) {
-    return pendingActions[action] === true;
+    return actionLocks[action] === true;
 }
 
 function lockAction(action) {
-    pendingActions[action] = true;
-}
-
-function unlockAction(action) {
+    actionLocks[action] = true;
     setTimeout(() => {
-        pendingActions[action] = false;
-    }, 1500);
+        actionLocks[action] = false;
+    }, 3000);
 }
 
 if (isDarkTheme) document.body.classList.add('dark-theme');
@@ -290,7 +282,7 @@ function shareVK() {
 }
 
 function showBonusHelp() {
-    alert('🎁 Бонусный счёт\n\nБонусы НЕЛЬЗЯ вывести, только тратить на создание заданий!\n\n✨ Как получить:\n• +5₽ за каждого приглашённого друга\n• +10₽ за каждое выполненное задание\n• +20₽ за получение отзыва 5 звёзд\n• +3₽ ежедневный бонус за вход');
+    alert('🎁 Бонусный счёт\n\nБонусы НЕЛЬЗЯ вывести, только тратить на создание заданий!\n\n✨ Как получить:\n• +5₽ за каждого приглашённого друга\n• +10₽ за выполнение задания\n• +20₽ за получение отзыва 5 звёзд\n• +3₽ ежедневный бонус за вход');
 }
 
 // ===== МЕНЮ КОШЕЛЬКА =====
@@ -302,9 +294,7 @@ function openWalletModal() {
     const mainBalance = (parseFloat(currentUser.balance) || 0).toFixed(2);
     const bonusBalance = (parseFloat(currentUser.bonus_balance) || 0).toFixed(2);
     
-    if (walletModal) {
-        walletModal.remove();
-    }
+    if (walletModal) walletModal.remove();
     
     walletModal = document.createElement('div');
     walletModal.id = 'walletModal';
@@ -313,22 +303,22 @@ function openWalletModal() {
         <div class="wallet-container">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h3>💰 Кошелёк</h3>
-                <button onclick="closeWalletModal()" style="background: none; font-size: 28px; cursor: pointer; padding: 0 10px;">✕</button>
+                <button onclick="closeWalletModal()" style="background: none; font-size: 28px; cursor: pointer;">✕</button>
             </div>
-            <div class="wallet-balance">
+            <div style="text-align:center; margin:20px 0;">
                 <div>💰 Основной баланс</div>
                 <div style="color: #2c6e4f; font-size: 2rem;">${mainBalance} ₽</div>
             </div>
-            <div class="wallet-balance" style="border-top: 1px solid #e2e8f0; padding-top: 15px;">
+            <div style="text-align:center; margin:20px 0; border-top:1px solid #e2e8f0; padding-top:20px;">
                 <div>🎁 Бонусный счёт</div>
                 <div style="color: #eab308; font-size: 2rem;">${bonusBalance} ₽</div>
             </div>
-            <div style="margin-top: 20px; padding: 15px; background: #e0f2fe; border-radius: 20px; text-align: center;">
-                <p style="font-size: 14px;">💡 1 ₽ на сайте = 0.9 ₽ после комиссии (-10%)</p>
+            <div style="margin: 20px 0; padding: 15px; background: #e0f2fe; border-radius: 20px; text-align: center;">
+                <p>💡 1 ₽ на сайте = 0.9 ₽ после комиссии (-10%)</p>
             </div>
-            <div class="wallet-buttons">
-                <button class="btn-success" onclick="showPaymentAlert('deposit')">💰 Пополнить</button>
-                <button class="btn-primary" onclick="showPaymentAlert('withdraw')">💸 Вывод</button>
+            <div style="display: flex; gap: 15px; margin-top: 20px;">
+                <button class="btn-success" onclick="showPaymentAlert('deposit')" style="flex:1">💰 Пополнить</button>
+                <button class="btn-primary" onclick="showPaymentAlert('withdraw')" style="flex:1">💸 Вывод</button>
             </div>
             <button class="btn-danger" onclick="closeWalletModal()" style="margin-top: 15px; width: 100%;">Закрыть</button>
         </div>
@@ -348,13 +338,13 @@ function closeWalletModal() {
 
 function showPaymentAlert(type) {
     if (type === 'deposit') {
-        alert('💳 ПОПОЛНЕНИЕ БАЛАНСА\n\nДля пополнения баланса напишите в Telegram:\n@leshr_ak47\n\nУкажите ваш логин и сумму пополнения.\n\nКомиссия: 10% (1₽ на сайте = 0.9₽ после комиссии)');
+        alert('💳 ПОПОЛНЕНИЕ БАЛАНСА\n\nДля пополнения баланса напишите в Telegram:\n@leshr_ak47\n\nУкажите ваш логин и сумму пополнения.\n\nКомиссия: 10%');
     } else {
-        alert('💸 ВЫВОД СРЕДСТВ\n\nДля вывода средств напишите в Telegram:\n@leshr_ak47\n\nУкажите ваш логин, сумму вывода и реквизиты для перевода.\n\nМинимальная сумма вывода: 100₽');
+        alert('💸 ВЫВОД СРЕДСТВ\n\nДля вывода средств напишите в Telegram:\n@leshr_ak47\n\nУкажите ваш логин, сумму вывода и реквизиты.\n\nМинимальная сумма: 100₽');
     }
 }
 
-// ===== ВАЛИДАЦИЯ ИМЕНИ =====
+// ===== ВАЛИДАЦИЯ =====
 function isValidName(name) {
     if (/^\d+$/.test(name)) return false;
     if (!/[a-zA-Zа-яА-Я]/.test(name)) return false;
@@ -376,7 +366,7 @@ async function registerUser(name, school, corp, password) {
     if (password.length < 3) { showToast('Пароль не менее 3 символов', true); return false; }
     
     if (!isValidName(name.trim())) {
-        showToast('❌ Имя должно содержать буквы! Нельзя использовать только цифры.', true);
+        showToast('❌ Имя должно содержать буквы!', true);
         return false;
     }
     
@@ -393,34 +383,20 @@ async function registerUser(name, school, corp, password) {
     showToast('⏳ Регистрация...', false);
     
     let result = await saveToGoogle('registerUser', {
-        id: id, 
-        name: name.trim(), 
-        school: school.trim(), 
-        corp: corp.trim(),
-        balance: 0, 
-        bonus_balance: 0, 
-        password: password, 
-        referral_code: referralCode, 
-        referred_by: refCode || ''
+        id: id, name: name.trim(), school: school.trim(), corp: corp.trim(),
+        balance: 0, bonus_balance: 0, password: password,
+        referral_code: referralCode, referred_by: refCode || ''
     });
     
     if (result && result.success) {
         isDataLoaded = false;
         await loadDataFromGoogle();
-        
-        currentUser = users.find(u => u.id === id);
-        if (!currentUser) {
-            currentUser = users.find(u => u.name === name.trim());
-        }
-        
+        currentUser = users.find(u => u.id === id) || users.find(u => u.name === name.trim());
         if (currentUser) {
             saveSession();
             showToast('✅ Добро пожаловать, ' + currentUser.name + '!', false);
             renderApp();
             return true;
-        } else {
-            showToast('❌ Ошибка: пользователь создан, но не найден', true);
-            return false;
         }
     }
     showToast('❌ Ошибка регистрации', true);
@@ -453,7 +429,7 @@ async function loginUser(name, school, corp, password) {
     });
     
     if (!user) { 
-        showToast('❌ Пользователь не найден. Проверьте имя, школу и корпус.', true); 
+        showToast('❌ Пользователь не найден', true); 
         return false; 
     }
     
@@ -484,6 +460,10 @@ function logout() {
 // ===== ЗАДАНИЯ (С ЗАЩИТОЙ ОТ МНОГОКРАТНЫХ НАЖАТИЙ) =====
 async function createTask(desc, price, loc, paymentType, scope) {
     if (!currentUser) return;
+    if (isActionLocked('createTask')) {
+        showToast('⏳ Подождите, задание уже создаётся...', false);
+        return;
+    }
     
     let priceNum = parseFloat(price);
     if (isNaN(priceNum) || priceNum <= 0) { showToast('Цена должна быть положительной', true); return; }
@@ -491,6 +471,7 @@ async function createTask(desc, price, loc, paymentType, scope) {
     let balance = paymentType === 'bonus' ? (parseFloat(currentUser.bonus_balance)||0) : (parseFloat(currentUser.balance)||0);
     if (balance < priceNum) { showToast('Недостаточно средств', true); return; }
     
+    lockAction('createTask');
     showToast('⏳ Создание задания...', false);
     
     if (paymentType === 'bonus') { 
@@ -530,14 +511,19 @@ async function createTask(desc, price, loc, paymentType, scope) {
     
     isDataLoaded = false;
     await loadDataFromGoogle();
-    
     currentUser = users.find(u => u.id === currentUser.id);
     showToast('✅ Задание создано!', false); 
     renderApp(); 
 }
 
 async function deleteTask(taskId) {
+    if (isActionLocked('deleteTask')) {
+        showToast('⏳ Подождите, задание уже удаляется...', false);
+        return;
+    }
     if (!confirm('Удалить задание?')) return;
+    
+    lockAction('deleteTask');
     
     try {
         let task = tasks.find(t => t.id == taskId);
@@ -560,38 +546,25 @@ async function deleteTask(taskId) {
         
         isDataLoaded = false;
         await loadDataFromGoogle();
-        
         currentUser = users.find(u => u.id === currentUser.id);
         showToast('🗑️ Задание удалено', false); 
         renderApp();
     } catch(e) {
-        showToast('❌ Ошибка при удалении задания', true);
+        showToast('❌ Ошибка при удалении', true);
     }
 }
 
-function showEditModal(task) {
-    let newDesc = prompt('Новое описание:', task.description);
-    if (!newDesc) return;
-    let newPrice = parseFloat(prompt('Новая цена:', task.price));
-    if (isNaN(newPrice) || newPrice <= 0) { showToast('Цена должна быть положительной', true); return; }
-    let newLoc = prompt('Новое место:', task.location);
-    if (!newLoc) return;
-    let newScope = confirm('Для всех участников? (OK - да, Отмена - только моя школа)') ? 'all' : 'school';
-    
-    saveToGoogle('updateTask', { id: task.id, description: newDesc, price: newPrice, location: newLoc, scope: newScope }).then(async () => {
-        isDataLoaded = false;
-        await loadDataFromGoogle();
-        currentUser = users.find(u => u.id === currentUser.id);
-        showToast('✅ Задание обновлено', false);
-        renderApp();
-    });
-}
-
 async function takeTask(taskId) {
+    if (isActionLocked('takeTask')) {
+        showToast('⏳ Подождите, задание уже берётся...', false);
+        return;
+    }
+    
     let task = tasks.find(t => t.id == taskId);
     if (!task || task.status !== 'open') return;
     if (task.creatorId === currentUser.id) { showToast('Нельзя взять своё задание', true); return; }
     
+    lockAction('takeTask');
     await saveToGoogle('updateTask', { id: task.id, status: 'in_progress', takerId: currentUser.id });
     isDataLoaded = false;
     await loadDataFromGoogle();
@@ -600,10 +573,16 @@ async function takeTask(taskId) {
 }
 
 async function confirmCompletion(taskId) {
+    if (isActionLocked('confirmCompletion')) {
+        showToast('⏳ Подождите, операция уже выполняется...', false);
+        return;
+    }
+    
     let task = tasks.find(t => t.id == taskId);
     if (!task || task.status !== 'in_progress') return;
     if (task.takerId !== currentUser.id) return;
     
+    lockAction('confirmCompletion');
     await saveToGoogle('updateTask', { id: task.id, status: 'awaiting_confirmation' });
     isDataLoaded = false;
     await loadDataFromGoogle();
@@ -612,9 +591,16 @@ async function confirmCompletion(taskId) {
 }
 
 async function confirmReceipt(taskId) {
+    if (isActionLocked('confirmReceipt')) {
+        showToast('⏳ Подождите, операция уже выполняется...', false);
+        return;
+    }
+    
     let task = tasks.find(t => t.id == taskId);
     if (!task || task.status !== 'awaiting_confirmation') return;
     if (task.creatorId !== currentUser.id) return;
+    
+    lockAction('confirmReceipt');
     
     let executor = users.find(u => u.id === task.takerId);
     let total = parseFloat(task.price);
@@ -633,9 +619,16 @@ async function confirmReceipt(taskId) {
 }
 
 async function rejectReceipt(taskId) {
+    if (isActionLocked('rejectReceipt')) {
+        showToast('⏳ Подождите, операция уже выполняется...', false);
+        return;
+    }
+    
     let task = tasks.find(t => t.id == taskId);
     if (!task || task.status !== 'awaiting_confirmation') return;
     if (task.creatorId !== currentUser.id) return;
+    
+    lockAction('rejectReceipt');
     
     if (task.payment_type === 'bonus') { 
         currentUser.bonus_balance += parseFloat(task.price); 
@@ -651,41 +644,40 @@ async function rejectReceipt(taskId) {
     renderApp(); 
 }
 
-// ===== ЧАТ (ПОЛНОСТЬЮ ПЕРЕРАБОТАННЫЙ, С ИСПРАВЛЕННОЙ ДОСТАВКОЙ) =====
-const MESSAGES_CACHE = new Map();
-let currentChatUsers = null;
+function showEditModal(task) {
+    let newDesc = prompt('Новое описание:', task.description);
+    if (!newDesc) return;
+    let newPrice = parseFloat(prompt('Новая цена:', task.price));
+    if (isNaN(newPrice) || newPrice <= 0) { showToast('Цена должна быть положительной', true); return; }
+    let newLoc = prompt('Новое место:', task.location);
+    if (!newLoc) return;
+    let newScope = confirm('Для всех участников?') ? 'all' : 'school';
+    
+    saveToGoogle('updateTask', { id: task.id, description: newDesc, price: newPrice, location: newLoc, scope: newScope }).then(async () => {
+        isDataLoaded = false;
+        await loadDataFromGoogle();
+        currentUser = users.find(u => u.id === currentUser.id);
+        showToast('✅ Задание обновлено', false);
+        renderApp();
+    });
+}
 
+// ===== ЧАТ (РАБОТАЮЩАЯ ВЕРСИЯ) =====
 async function openChat(taskId) {
-    if (currentChatTask === taskId && isChatModalOpen) {
-        return;
-    }
+    if (currentChatTask === taskId && isChatModalOpen) return;
     
     currentChatTask = taskId;
     isChatModalOpen = true;
     
-    if (chatUpdateInterval) {
-        clearInterval(chatUpdateInterval);
-        chatUpdateInterval = null;
-    }
-    
-    // Получаем информацию о задании для отображения
-    const task = tasks.find(t => t.id == taskId);
-    if (task) {
-        const creator = users.find(u => u.id === task.creatorId);
-        currentChatUsers = { creator, executor: task.takerId ? users.find(u => u.id === task.takerId) : null };
-    }
+    if (chatUpdateInterval) clearInterval(chatUpdateInterval);
     
     await loadChatMessages();
-    renderChatInterface();
+    renderChatModal();
     
-    // Запускаем интервал обновления сообщений
     chatUpdateInterval = setInterval(async () => {
         if (currentChatTask && isChatModalOpen) {
-            const oldMessageCount = chatMessages.length;
             await loadChatMessages(true);
-            if (chatMessages.length !== oldMessageCount) {
-                updateChatInterface();
-            }
+            updateChatDisplay();
         }
     }, 2000);
 }
@@ -697,19 +689,10 @@ async function loadChatMessages(silent = false) {
             try {
                 const parsed = JSON.parse(result.messages);
                 if (Array.isArray(parsed)) {
-                    const cacheKey = `${currentChatTask}_${parsed.length}`;
-                    if (!silent || !MESSAGES_CACHE.has(cacheKey)) {
-                        chatMessages = parsed;
-                        MESSAGES_CACHE.set(cacheKey, parsed);
-                        if (!silent) console.log('Загружено сообщений:', parsed.length, chatMessages);
-                    }
-                } else {
-                    chatMessages = [];
+                    chatMessages = parsed;
+                    if (!silent) console.log('Загружено сообщений:', chatMessages.length);
                 }
-            } catch(e) {
-                console.error('Ошибка парсинга:', e);
-                chatMessages = [];
-            }
+            } catch(e) { chatMessages = []; }
         } else {
             chatMessages = [];
         }
@@ -719,15 +702,12 @@ async function loadChatMessages(silent = false) {
     }
 }
 
-function renderChatInterface() {
+function renderChatModal() {
     const oldModal = document.getElementById('chatModal');
-    if (oldModal) {
-        oldModal.remove();
-    }
+    if (oldModal) oldModal.remove();
     
-    // Определяем участников чата
-    let chatTitle = 'Чат';
     const task = tasks.find(t => t.id == currentChatTask);
+    let chatTitle = 'Чат';
     if (task) {
         const creator = users.find(u => u.id === task.creatorId);
         if (creator && creator.id === currentUser.id) {
@@ -765,24 +745,17 @@ function renderChatInterface() {
     
     if (inputField) {
         inputField.focus();
-        inputField.onkeypress = (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                sendChatMessage();
-            }
-        };
+        inputField.onkeypress = (e) => { if (e.key === 'Enter') sendChatMessage(); };
     }
+    if (sendBtn) sendBtn.onclick = () => sendChatMessage();
     
-    if (sendBtn) {
-        sendBtn.onclick = () => sendChatMessage();
-    }
-    
-    scrollChatToBottom();
+    const container = document.getElementById('chatMessagesList');
+    if (container) container.scrollTop = container.scrollHeight;
 }
 
 function renderMessagesHtml() {
     if (!chatMessages || chatMessages.length === 0) {
-        return '<div style="text-align:center; padding:40px; color:#94a3b8;">✨ Нет сообщений. Напишите что-нибудь...</div>';
+        return '<div style="text-align:center; padding:40px; color:#94a3b8;">✨ Нет сообщений</div>';
     }
     
     return chatMessages.map(msg => {
@@ -790,10 +763,7 @@ function renderMessagesHtml() {
         const senderName = isMine ? 'Вы' : (escapeHtml(msg.fromName) || 'Пользователь');
         let time = '';
         if (msg.time) {
-            try {
-                const date = new Date(msg.time);
-                time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            } catch(e) { time = ''; }
+            try { time = new Date(msg.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); } catch(e) {}
         }
         
         return `
@@ -806,27 +776,20 @@ function renderMessagesHtml() {
     }).join('');
 }
 
-function updateChatInterface() {
+function updateChatDisplay() {
     const container = document.getElementById('chatMessagesList');
     if (!container) return;
     
     const newHtml = renderMessagesHtml();
     if (container.innerHTML !== newHtml) {
         container.innerHTML = newHtml;
-        scrollChatToBottom();
-    }
-}
-
-function scrollChatToBottom() {
-    const container = document.getElementById('chatMessagesList');
-    if (container) {
         container.scrollTop = container.scrollHeight;
     }
 }
 
 async function sendChatMessage() {
     if (isActionLocked('sendMessage')) {
-        showToast('⏳ Подождите, сообщение уже отправляется...', false);
+        showToast('⏳ Подождите...', false);
         return;
     }
     
@@ -845,59 +808,35 @@ async function sendChatMessage() {
         time: new Date().toISOString()
     };
     
-    // Локально добавляем сообщение
     chatMessages.push(newMessage);
-    updateChatInterface();
+    updateChatDisplay();
     input.value = '';
-    input.focus();
     
     try {
-        const saveResult = await saveToGoogle('saveMessage', { 
+        await saveToGoogle('saveMessage', { 
             taskId: currentChatTask, 
             messages: JSON.stringify(chatMessages) 
         });
-        
-        if (!saveResult || !saveResult.success) {
-            // Ошибка — удаляем сообщение
-            chatMessages.pop();
-            updateChatInterface();
-            showToast('❌ Не удалось отправить сообщение', true);
-        } else {
-            // Обновляем кэш
-            MESSAGES_CACHE.set(`${currentChatTask}_${chatMessages.length}`, chatMessages);
-        }
     } catch(e) {
-        console.error('Ошибка отправки:', e);
         chatMessages.pop();
-        updateChatInterface();
-        showToast('❌ Ошибка соединения', true);
-    } finally {
-        unlockAction('sendMessage');
+        updateChatDisplay();
+        showToast('❌ Не удалось отправить', true);
     }
 }
 
 function closeChat() {
-    if (chatUpdateInterval) {
-        clearInterval(chatUpdateInterval);
-        chatUpdateInterval = null;
-    }
+    if (chatUpdateInterval) clearInterval(chatUpdateInterval);
     const modal = document.getElementById('chatModal');
     if (modal) modal.remove();
     isChatModalOpen = false;
     currentChatTask = null;
-    MESSAGES_CACHE.clear();
 }
 
 // ===== ОТЗЫВЫ =====
 async function addReview(toUserId, taskId, rating, comment) {
     let result = await saveToGoogle('addReview', {
-        id: Date.now().toString(),
-        fromUserId: currentUser.id,
-        toUserId: toUserId,
-        taskId: taskId,
-        rating: rating,
-        comment: comment,
-        createdAt: new Date().toISOString()
+        id: Date.now().toString(), fromUserId: currentUser.id, toUserId: toUserId,
+        taskId: taskId, rating: rating, comment: comment, createdAt: new Date().toISOString()
     });
     
     if (result && result.success) {
@@ -912,11 +851,8 @@ function showReviewModal(taskId, toUserId) {
     let rating = prompt('Оцените выполнение (1-5 звёзд):', '5');
     if (!rating) return;
     let ratingNum = parseInt(rating);
-    if (ratingNum < 1 || ratingNum > 5) {
-        showToast('Оценка должна быть от 1 до 5', true);
-        return;
-    }
-    let comment = prompt('Ваш комментарий (необязательно):', '');
+    if (ratingNum < 1 || ratingNum > 5) { showToast('Оценка от 1 до 5', true); return; }
+    let comment = prompt('Ваш комментарий:', '');
     addReview(toUserId, taskId, ratingNum, comment);
 }
 
@@ -927,12 +863,11 @@ async function adminChangeBalance(userId, amount, isBonus) {
     if (isBonus) {
         user.bonus_balance = (parseFloat(user.bonus_balance) || 0) + amount;
         if (currentUser && currentUser.id === userId) currentUser.bonus_balance = user.bonus_balance;
-        showToast((amount > 0 ? '+' : '') + amount + '₽ на бонусный счёт для ' + user.name, false);
     } else {
         user.balance = (parseFloat(user.balance) || 0) + amount;
         if (currentUser && currentUser.id === userId) currentUser.balance = user.balance;
-        showToast((amount > 0 ? '+' : '') + amount + '₽ на основной баланс для ' + user.name, false);
     }
+    showToast((amount > 0 ? '+' : '') + amount + '₽ для ' + user.name, false);
     await saveToGoogle('updateUser', { id: userId, balance: user.balance, bonus_balance: user.bonus_balance });
     isDataLoaded = false;
     await loadDataFromGoogle();
@@ -999,9 +934,7 @@ function getStatusText(status) {
 
 function getRatingStars(rating) {
     let stars = '';
-    for (let i = 1; i <= 5; i++) {
-        stars += i <= rating ? '⭐' : '☆';
-    }
+    for (let i = 1; i <= 5; i++) stars += i <= rating ? '⭐' : '☆';
     return stars;
 }
 
@@ -1020,44 +953,34 @@ function renderApp() {
                 </div>
                 <div class="announcement">
                     <h2>🔥 НУЖНА ВАША ПОМОЩЬ! 🔥</h2>
-                    <p>SchoolTask — это проект, который создаётся для вас! Поделитесь ссылкой с друзьями!</p>
-                    <div class="bonus-highlight">🎁 +5₽ на бонусный счёт за каждого приглашённого друга! 🎁</div>
+                    <p>Поделитесь ссылкой с друзьями! +5₽ за каждого друга!</p>
                     <div class="share-buttons">
-                        <div class="share-btn share-tg" onclick="shareTelegram()">📱 Telegram</div>
-                        <div class="share-btn share-vk" onclick="shareVK()">📱 ВКонтакте</div>
-                        <div class="share-btn copy-link" onclick="copyReferralLink()">🔗 Скопировать ссылку</div>
+                        <div class="share-btn share-tg" onclick="shareTelegram()">Telegram</div>
+                        <div class="share-btn share-vk" onclick="shareVK()">ВКонтакте</div>
+                        <div class="share-btn copy-link" onclick="copyReferralLink()">Скопировать ссылку</div>
                     </div>
                 </div>
                 <div class="help-box">
-                    <h4>🎁 Что такое бонусный счёт?</h4>
-                    <p>Бонусный счёт — это специальные деньги, которые НЕЛЬЗЯ вывести, но можно тратить на создание заданий!<br>
-                    ✨ Как получить: +5₽ за каждого приглашённого друга, +10₽ за выполнение задания, +20₽ за отзыв 5⭐, +3₽ ежедневно!<br>
-                    💡 Нажмите на <strong>🎁 Бонусный счёт</strong> в профиле для подробной информации.</p>
+                    <h4>🎁 Бонусный счёт</h4>
+                    <p>Бонусы НЕ вывести, только тратить на задания. +5₽ за друга, +10₽ за выполнение, +20₽ за отзыв 5⭐, +3₽ ежедневно!</p>
                 </div>
                 <div class="card">
                     <div class="tabs">
-                        <div class="tab ${isLogin ? 'active' : ''}" id="loginTab">🔐 Вход</div>
-                        <div class="tab ${!isLogin ? 'active' : ''}" id="registerTab">📝 Регистрация</div>
+                        <div class="tab ${isLogin ? 'active' : ''}" id="loginTab">Вход</div>
+                        <div class="tab ${!isLogin ? 'active' : ''}" id="registerTab">Регистрация</div>
                     </div>
                     ${isLogin ? `
-                        <input type="text" id="loginName" placeholder="Имя">
-                        <input type="text" id="loginSchool" placeholder="Школа (только цифры)">
-                        <div class="input-hint">📌 Только цифры</div>
-                        <input type="text" id="loginCorp" placeholder="Корпус (только цифры)">
-                        <div class="input-hint">📌 Только цифры</div>
-                        <input type="password" id="loginPassword" placeholder="Пароль">
+                        <input type="text" id="loginName" placeholder="Имя" value="leshr_ak47">
+                        <input type="text" id="loginSchool" placeholder="Школа (только цифры)" value="1542">
+                        <input type="text" id="loginCorp" placeholder="Корпус" value="5">
+                        <input type="password" id="loginPassword" placeholder="Пароль" value="dsl382dAZX">
                         <button class="btn-primary" id="loginBtn">Войти</button>
                     ` : `
-                        <input type="text" id="regName" placeholder="Имя (обязательно буквы!)">
+                        <input type="text" id="regName" placeholder="Имя (буквы!)">
                         <div id="regNameError" class="error-text"></div>
                         <input type="text" id="regSchool" placeholder="Школа (только цифры)">
-                        <div class="input-hint">📌 Только цифры</div>
-                        <div id="regSchoolError" class="error-text"></div>
                         <input type="text" id="regCorp" placeholder="Корпус (только цифры)">
-                        <div class="input-hint">📌 Только цифры</div>
-                        <div id="regCorpError" class="error-text"></div>
                         <input type="password" id="regPassword" placeholder="Пароль (мин. 3 символа)">
-                        ${refCode ? `<div style="background:#e2e8f0; padding:10px; border-radius:20px; margin:10px 0; text-align:center;">🔗 Вы перешли по реферальной ссылке! Пригласивший получит +5₽ на бонусный счёт.</div>` : ''}
                         <button class="btn-primary" id="registerBtn">Зарегистрироваться</button>
                     `}
                 </div>
@@ -1066,147 +989,61 @@ function renderApp() {
         
         document.getElementById('loginTab').onclick = () => { authMode = 'login'; renderApp(); };
         document.getElementById('registerTab').onclick = () => { authMode = 'register'; renderApp(); };
-        
-        if (document.getElementById('loginBtn')) {
-            document.getElementById('loginBtn').onclick = () => loginUser(
-                document.getElementById('loginName').value,
-                document.getElementById('loginSchool').value,
-                document.getElementById('loginCorp').value,
-                document.getElementById('loginPassword').value
+        document.getElementById('loginBtn').onclick = () => loginUser(
+            document.getElementById('loginName').value,
+            document.getElementById('loginSchool').value,
+            document.getElementById('loginCorp').value,
+            document.getElementById('loginPassword').value
+        );
+        document.getElementById('registerBtn').onclick = async () => {
+            let school = document.getElementById('regSchool').value;
+            let corp = document.getElementById('regCorp').value;
+            if (!/^\d+$/.test(school)) { showToast('Школа только цифры!', true); return; }
+            if (!/^\d+$/.test(corp)) { showToast('Корпус только цифры!', true); return; }
+            await registerUser(
+                document.getElementById('regName').value, school, corp,
+                document.getElementById('regPassword').value
             );
-        }
-        
-        if (document.getElementById('registerBtn')) {
-            document.getElementById('registerBtn').onclick = async () => {
-                let school = document.getElementById('regSchool').value;
-                let corp = document.getElementById('regCorp').value;
-                if (!/^\d+$/.test(school)) { showToast('❌ Школа только цифры!', true); return; }
-                if (!/^\d+$/.test(corp)) { showToast('❌ Корпус только цифры!', true); return; }
-                
-                const userName = document.getElementById('regName').value;
-                
-                if (!isValidName(userName.trim())) {
-                    showToast('❌ Имя должно содержать буквы! Нельзя использовать только цифры.', true);
-                    return;
-                }
-                
-                const userExists = users.some(u => u.name === userName.trim());
-                if (userExists) {
-                    showToast('❌ Пользователь с таким именем уже существует', true);
-                    return;
-                }
-                
-                await registerUser(
-                    userName,
-                    school,
-                    corp,
-                    document.getElementById('regPassword').value
-                );
-            };
-        }
-        
-        let regSchool = document.getElementById('regSchool');
-        if (regSchool) {
-            regSchool.oninput = function() {
-                let err = document.getElementById('regSchoolError');
-                if (this.value && !/^\d+$/.test(this.value)) {
-                    err.innerText = '❌ Только цифры!';
-                    err.style.display = 'block';
-                } else {
-                    err.style.display = 'none';
-                }
-            };
-        }
-        
-        let regCorp = document.getElementById('regCorp');
-        if (regCorp) {
-            regCorp.oninput = function() {
-                let err = document.getElementById('regCorpError');
-                if (this.value && !/^\d+$/.test(this.value)) {
-                    err.innerText = '❌ Только цифры!';
-                    err.style.display = 'block';
-                } else {
-                    err.style.display = 'none';
-                }
-            };
-        }
-        
-        let regName = document.getElementById('regName');
-        if (regName) {
-            regName.oninput = function() {
-                let err = document.getElementById('regNameError');
-                let val = this.value.trim();
-                
-                if (val && /^\d+$/.test(val)) {
-                    err.innerText = '❌ Имя не может состоять только из цифр! Добавьте буквы.';
-                    err.style.display = 'block';
-                }
-                else if (val && users.some(u => u.name === val)) {
-                    err.innerText = '❌ Имя занято';
-                    err.style.display = 'block';
-                }
-                else if (val && !/[a-zA-Zа-яА-Я]/.test(val)) {
-                    err.innerText = '❌ Имя должно содержать хотя бы одну букву';
-                    err.style.display = 'block';
-                }
-                else {
-                    err.style.display = 'none';
-                }
-            };
-        }
-        
+        };
         document.getElementById('themeToggleBtn').onclick = toggleTheme;
         return;
     }
     
     let isAdmin = currentUser.name === 'leshr_ak47';
-    
     let adminPanelHtml = '';
     if (isAdmin && adminMode) {
         let filteredUsers = users.filter(u => adminSearchTerm === '' || u.name.toLowerCase().includes(adminSearchTerm.toLowerCase()));
         adminPanelHtml = `
             <div class="admin-panel">
                 <div class="admin-header">
-                    <h2>👑 Админ-панель</h2>
+                    <h2>Админ-панель</h2>
                     <button class="btn-danger" id="exitAdminBtn">Выйти</button>
                 </div>
                 <div class="admin-header">
-                    <div class="search-box">🔍 <input type="text" id="adminSearch" placeholder="Поиск..." value="${adminSearchTerm}"></div>
-                    <button class="refresh-btn" id="refreshUsersBtn" style="background:#3b82f6; color:white;">🔄 Обновить</button>
-                    <button id="clearTasksBtn" style="background:#dc2626; color:white;">🗑️ Удалить все задания</button>
+                    <div class="search-box"><input type="text" id="adminSearch" placeholder="Поиск..." value="${adminSearchTerm}"></div>
+                    <button id="refreshUsersBtn" style="background:#3b82f6; color:white;">Обновить</button>
+                    <button id="clearTasksBtn" style="background:#dc2626; color:white;">Удалить все задания</button>
                 </div>
-                <div class="users-table">
-                    <table>
-                        <thead>
-                            <tr><th>Имя</th><th>Школа</th><th>Корпус</th><th>Основной баланс</th><th>Бонусный счёт</th><th>Статус</th><th>Управление балансом</th><th>Управление бонусами</th><th>Действия</th><tr>
-                        </thead>
-                        <tbody>
-                            ${filteredUsers.map(user => {
-                                let isBanned = user.isBanned === 'true';
-                                return `
-                                    <tr>
-                                        <td><strong>${escapeHtml(user.name)}</strong><br><small>${escapeHtml(user.corp)}</small></td>
-                                        <td>${escapeHtml(user.school)}</td>
-                                        <td>${escapeHtml(user.corp)}</td>
-                                        <td>${(parseFloat(user.balance) || 0).toFixed(2)} ₽</td>
-                                        <td style="color:#eab308;">${(parseFloat(user.bonus_balance) || 0).toFixed(2)} ₽</td>
-                                        <td>${isBanned ? '⛔ Забанен' : '✅ Активен'}${isBanned && user.banReason ? `<br><small>${escapeHtml(user.banReason)}</small>` : ''}</td>
-                                        <td><div class="balance-control"><input type="number" id="amount-${user.id}" value="100"><button class="topup-btn" data-userid="${user.id}" data-bonus="false">💰 +</button><button class="withdraw-btn" data-userid="${user.id}" data-bonus="false">💸 -</button></div></td>
-                                        <tr><div class="balance-control"><input type="number" id="bonus-${user.id}" value="100"><button class="topup-btn" data-userid="${user.id}" data-bonus="true">🎁 +</button><button class="withdraw-btn" data-userid="${user.id}" data-bonus="true">🎁 -</button></div></td>
-                                        <td>${!isBanned ? `<button class="ban-btn" data-userid="${user.id}">⛔ Бан</button>` : `<button class="unban-btn" data-userid="${user.id}">✅ Разбан</button>`}</td>
-                                    </tr>
-                                `;
-                            }).join('')}
-                        </tbody>
-                    </table>
-                </div>
+                <div class="users-table"><table><thead><tr><th>Имя</th><th>Школа</th><th>Основной баланс</th><th>Бонусный счёт</th><th>Статус</th><th>Управление</th><th>Действия</th></tr></thead><tbody>
+                    ${filteredUsers.map(user => {
+                        let isBanned = user.isBanned === 'true';
+                        return `<tr>
+                            <td><strong>${escapeHtml(user.name)}</strong><br><small>${escapeHtml(user.corp)}</small></td>
+                            <td>${escapeHtml(user.school)}</td>
+                            <td>${(parseFloat(user.balance) || 0).toFixed(2)} ₽</td>
+                            <td style="color:#eab308;">${(parseFloat(user.bonus_balance) || 0).toFixed(2)} ₽</td>
+                            <td>${isBanned ? 'Забанен' : 'Активен'}</td>
+                            <td><div class="balance-control"><input type="number" id="amount-${user.id}" value="100"><button class="topup-btn" data-userid="${user.id}" data-bonus="false">+</button><button class="withdraw-btn" data-userid="${user.id}" data-bonus="false">-</button></div></td>
+                            <td>${!isBanned ? `<button class="ban-btn" data-userid="${user.id}">Бан</button>` : `<button class="unban-btn" data-userid="${user.id}">Разбан</button>`}</td>
+                        </tr>`;
+                    }).join('')}
+                </tbody></table></div>
             </div>
         `;
     }
     
-    let adminEntryBtn = isAdmin ? `<button id="adminPanelBtn" style="background:#2c3e50; color:white;">🔐 Админка</button>` : '';
+    let adminEntryBtn = isAdmin ? `<button id="adminPanelBtn" style="background:#2c3e50; color:white;">Админка</button>` : '';
     
-    // ФИЛЬТРАЦИЯ ЗАДАНИЙ ДЛЯ РАЗНЫХ ВКЛАДОК
     let openTasks = tasks.filter(t => {
         if (t.status !== 'open') return false;
         if (t.scope === 'all') return true;
@@ -1218,50 +1055,43 @@ function renderApp() {
     if (filters.maxPrice) openTasks = openTasks.filter(t => parseFloat(t.price) <= parseFloat(filters.maxPrice));
     
     let myCreatedTasks = tasks.filter(t => t.creatorId === currentUser.id);
-    
-    // МОИ ВЫПОЛНЕНИЯ (задания в работе)
     let myExecTasks = tasks.filter(t => t.takerId === currentUser.id && t.status !== 'completed');
-    
-    // ЗАВЕРШЁННЫЕ ЗАДАНИЯ (где пользователь был создателем ИЛИ исполнителем)
-    let myCompletedTasks = tasks.filter(t => 
-        t.status === 'completed' && (t.creatorId === currentUser.id || t.takerId === currentUser.id)
-    );
+    let myCompletedTasks = tasks.filter(t => t.status === 'completed' && (t.creatorId === currentUser.id || t.takerId === currentUser.id));
     
     let helpBlock = `<div class="help-box">
         <h4>🎁 Бонусный счёт</h4>
         <p>Бонусы НЕ вывести, только тратить на задания. +5₽ за друга, +10₽ за выполнение, +20₽ за отзыв 5⭐, +3₽ ежедневно.</p>
         <div class="share-buttons" style="margin-top:10px;">
-            <div class="share-btn share-tg" onclick="shareTelegram()" style="padding:5px 10px; font-size:12px;">📱 Telegram</div>
-            <div class="share-btn share-vk" onclick="shareVK()" style="padding:5px 10px; font-size:12px;">📱 ВКонтакте</div>
-            <div class="share-btn copy-link" onclick="copyReferralLink()" style="padding:5px 10px; font-size:12px;">🔗 Скопировать ссылку</div>
+            <div class="share-btn share-tg" onclick="shareTelegram()" style="padding:5px 10px; font-size:12px;">Telegram</div>
+            <div class="share-btn share-vk" onclick="shareVK()" style="padding:5px 10px; font-size:12px;">ВКонтакте</div>
+            <div class="share-btn copy-link" onclick="copyReferralLink()" style="padding:5px 10px; font-size:12px;">Скопировать ссылку</div>
         </div>
     </div>`;
     
-    let taskCard = (task, showTakeBtn = true, showEditDelete = false, showCompleteBtn = true) => {
+    let taskCard = (task, showTakeBtn = true, showEditDelete = false) => {
         let creator = users.find(u => u.id === task.creatorId);
         let executor = users.find(u => u.id === task.takerId);
         let status = getStatusText(task.status);
         let btns = '';
         
         if (showTakeBtn && task.status === 'open' && task.creatorId !== currentUser.id) {
-            btns = `<button class="btn-primary take-btn" data-id="${task.id}">📌 Взять задание</button>`;
+            btns = `<button class="btn-primary take-btn" data-id="${task.id}">Взять задание</button>`;
         }
-        if (task.status === 'in_progress' && task.takerId === currentUser.id && showCompleteBtn) {
-            btns = `<button class="btn-success complete-btn" data-id="${task.id}">✅ Подтвердить выполнение</button>`;
+        if (task.status === 'in_progress' && task.takerId === currentUser.id) {
+            btns = `<button class="btn-success complete-btn" data-id="${task.id}">Подтвердить выполнение</button>`;
         }
         if (task.status === 'awaiting_confirmation' && task.creatorId === currentUser.id) {
-            btns = `<div class="action-buttons"><button class="btn-success confirm-btn" data-id="${task.id}">💰 Подтвердить получение</button><button class="btn-danger reject-btn" data-id="${task.id}">❌ Не получил</button></div>`;
+            btns = `<div class="action-buttons"><button class="btn-success confirm-btn" data-id="${task.id}">Подтвердить получение</button><button class="btn-danger reject-btn" data-id="${task.id}">Не получил</button></div>`;
         }
         if (task.status === 'completed' && task.creatorId === currentUser.id && !reviews.some(r => r.taskId === task.id && r.fromUserId === currentUser.id)) {
-            btns += `<button class="btn-info review-btn" data-id="${task.id}" data-userid="${task.takerId}">⭐ Оставить отзыв</button>`;
+            btns += `<button class="btn-info review-btn" data-id="${task.id}" data-userid="${task.takerId}">Оставить отзыв</button>`;
         }
         if (showEditDelete && task.creatorId === currentUser.id && task.status === 'open') {
-            btns += `<div class="action-buttons"><button class="btn-edit edit-btn" data-id="${task.id}">✏️ Редактировать</button><button class="btn-danger delete-btn" data-id="${task.id}">🗑️ Удалить</button></div>`;
+            btns += `<div class="action-buttons"><button class="btn-edit edit-btn" data-id="${task.id}">Редактировать</button><button class="btn-danger delete-btn" data-id="${task.id}">Удалить</button></div>`;
         }
         
-        // Показываем кнопку чата всегда, если не завершено
         if (task.status !== 'completed') {
-            btns = `<button class="btn-info chat-btn" data-id="${task.id}" style="background:#8b5cf6; margin-right:8px;">💬 Чат</button>` + btns;
+            btns = `<button class="btn-info chat-btn" data-id="${task.id}" style="background:#8b5cf6; margin-right:8px;">Чат</button>` + btns;
         }
         
         let taskReviews = reviews.filter(r => r.taskId === task.id);
@@ -1270,88 +1100,68 @@ function renderApp() {
         let scopeIcon = task.scope === 'all' ? '🌍' : '🏫';
         let scopeText = task.scope === 'all' ? 'Для всех участников' : `Только школа ${task.creatorSchool}, корпус ${task.creatorCorp || '?'}`;
         
-        // Для завершённых заданий показываем кто был создателем/исполнителем
-        let participantsInfo = '';
-        if (task.status === 'completed') {
-            if (task.creatorId === currentUser.id) {
-                participantsInfo = `<div style="font-size:0.7rem; color:#10b981; margin-top:5px;">✅ Исполнил: ${executor?.name || '?'}</div>`;
-            } else if (task.takerId === currentUser.id) {
-                participantsInfo = `<div style="font-size:0.7rem; color:#10b981; margin-top:5px;">✅ Создатель: ${creator?.name || '?'}</div>`;
-            }
-        }
-        
         return `<div class="task-card">
             <div class="task-header">
                 <div class="task-price">${task.price} ₽</div>
                 <div class="task-status ${status.class}">${status.text}</div>
             </div>
-            <div class="task-desc">📌 ${escapeHtml(task.description)}</div>
-            <div class="task-meta">📍 ${escapeHtml(task.location)} | ${scopeIcon} ${scopeText}</div>
-            <div style="font-size:0.7rem; color:#6b7280;">👤 Создатель: ${creator?.name || '?'} (${creator?.school || ''}, корпус ${creator?.corp || ''})${task.takerId && task.status !== 'completed' ? `<br>👤 Исполнитель: ${executor?.name || '?'}` : ''}</div>
-            ${participantsInfo}
+            <div class="task-desc">${escapeHtml(task.description)}</div>
+            <div class="task-meta">${escapeHtml(task.location)} | ${scopeIcon} ${scopeText}</div>
+            <div style="font-size:0.7rem;">Создатель: ${creator?.name || '?'} (${creator?.school || ''})</div>
             ${avgRating > 0 ? `<div style="font-size:0.7rem; color:#fbbf24;">${getRatingStars(avgRating)} (${taskReviews.length} отзывов)</div>` : ''}
-            <div class="action-buttons" style="margin-top:10px;">
-                ${btns}
-            </div>
+            <div class="action-buttons" style="margin-top:10px;">${btns}</div>
         </div>`;
     };
     
     let createForm = `<div class="card">
-        <h3>📝 Создать задание</h3>
-        <textarea id="taskDesc" rows="2" placeholder="Что нужно сделать? (например: принеси булочку в 40 кабинет)"></textarea>
+        <h3>Создать задание</h3>
+        <textarea id="taskDesc" rows="2" placeholder="Что нужно сделать?"></textarea>
         <input type="number" id="taskPrice" placeholder="Цена (руб)">
-        <input type="text" id="taskLocation" placeholder="Место (кабинет, этаж)">
+        <input type="text" id="taskLocation" placeholder="Место">
         <select id="paymentType">
             <option value="main">💰 Оплатить с основного счёта (${(parseFloat(currentUser.balance) || 0).toFixed(2)} ₽)</option>
             <option value="bonus">🎁 Оплатить с бонусного счёта (${(parseFloat(currentUser.bonus_balance) || 0).toFixed(2)} ₽)</option>
         </select>
         <select id="taskScope">
             <option value="school">🏫 Только моя школа и корпус</option>
-            <option value="all">🌍 Для всех участников сайта</option>
+            <option value="all">🌍 Для всех участников</option>
         </select>
         <button class="btn-primary" id="createBtn">Создать</button>
     </div>`;
     
     let profileHtml = `<div class="card">
-        <h3>👤 Мой профиль</h3>
+        <h3>Мой профиль</h3>
         <p><strong>Имя:</strong> ${escapeHtml(currentUser.name)}</p>
         <p><strong>Школа:</strong> ${escapeHtml(currentUser.school)}</p>
         <p><strong>Корпус:</strong> ${escapeHtml(currentUser.corp)}</p>
         <p><strong>💰 Основной баланс:</strong> ${(parseFloat(currentUser.balance) || 0).toFixed(2)} ₽</p>
         <p><strong>🎁 Бонусный счёт:</strong> ${(parseFloat(currentUser.bonus_balance) || 0).toFixed(2)} ₽</p>
         <p><strong>👥 Приглашено друзей:</strong> ${currentUser.referral_count || 0}</p>
-        <p><strong>⭐ Рейтинг:</strong> ${getRatingStars(parseFloat(currentUser.rating) || 0)} (${currentUser.ratingCount || 0} оценок)</p>
-        <p><strong>📊 Выполнено заданий:</strong> ${currentUser.tasksCompleted || 0}</p>
-        <p><strong>💰 Заработано:</strong> ${(parseFloat(currentUser.totalEarned) || 0).toFixed(2)} ₽</p>
+        <p><strong>⭐ Рейтинг:</strong> ${getRatingStars(parseFloat(currentUser.rating) || 0)}</p>
         <div class="referral-code" onclick="copyReferralLink()">🔗 ${getReferralLink()}</div>
-        <p style="font-size:12px; margin-top:10px;">➕ За каждого друга, который зарегистрируется по вашей ссылке, вы получите +5₽ на бонусный счёт!</p>
     </div>`;
     
     let activeTab = window._activeTab || 'allTasks';
     let content = '';
     
     if (activeTab === 'allTasks') {
-        content = `<h3>📋 Доступные задания ${filters.scope === 'all' ? '(для всех участников)' : `(ваша школа ${currentUser.school}, корпус ${currentUser.corp})`}</h3>
-                   ${helpBlock}
+        content = `<h3>📋 Доступные задания</h3>${helpBlock}
                    <div class="filter-group">
                        <select id="filterScope">
-                           <option value="school" ${filters.scope === 'school' ? 'selected' : ''}>🏫 Только моя школа и корпус</option>
-                           <option value="all" ${filters.scope === 'all' ? 'selected' : ''}>🌍 Для всех участников</option>
+                           <option value="school" ${filters.scope === 'school' ? 'selected' : ''}>Только моя школа и корпус</option>
+                           <option value="all" ${filters.scope === 'all' ? 'selected' : ''}>Для всех участников</option>
                        </select>
                        <input type="number" id="filterMinPrice" placeholder="Цена от" value="${filters.minPrice}">
                        <input type="number" id="filterMaxPrice" placeholder="Цена до" value="${filters.maxPrice}">
-                       <button id="applyFilters" class="btn-info">🔍 Применить</button>
+                       <button id="applyFilters" class="btn-info">Применить</button>
                    </div>
-                   <div class="tasks-grid">${openTasks.map(t => taskCard(t, true, false, true)).join('') || '<div style="text-align:center; padding:40px;">✨ Нет заданий</div>'}</div>`;
+                   <div class="tasks-grid">${openTasks.map(t => taskCard(t, true, false)).join('') || '<div style="text-align:center; padding:40px;">Нет заданий</div>'}</div>`;
     } else if (activeTab === 'myTasks') {
-        content = `<h3>📌 Мои задания (созданные мной)</h3>
-                   <div class="tasks-grid">${myCreatedTasks.map(t => taskCard(t, false, true, true)).join('') || '<div style="text-align:center; padding:40px;">✨ У вас пока нет созданных заданий</div>'}</div>`;
+        content = `<h3>📌 Мои задания</h3><div class="tasks-grid">${myCreatedTasks.map(t => taskCard(t, false, true)).join('') || '<div style="text-align:center; padding:40px;">Нет заданий</div>'}</div>`;
     } else if (activeTab === 'myExecutions') {
-        content = `<h3>⚡ Мои выполнения</h3>
-                   <div class="tasks-grid">${myExecTasks.map(t => taskCard(t, false, false, true)).join('') || '<div style="text-align:center; padding:40px;">✨ Вы пока не взяли ни одного задания</div>'}</div>`;
+        content = `<h3>⚡ В работе</h3><div class="tasks-grid">${myExecTasks.map(t => taskCard(t, false, false)).join('') || '<div style="text-align:center; padding:40px;">Нет заданий</div>'}</div>`;
     } else if (activeTab === 'completed') {
-        content = `<h3>✅ Завершённые задания</h3>
-                   <div class="tasks-grid">${myCompletedTasks.map(t => taskCard(t, false, false, false)).join('') || '<div style="text-align:center; padding:40px;">✨ Нет завершённых заданий</div>'}</div>`;
+        content = `<h3>✅ Завершённые</h3><div class="tasks-grid">${myCompletedTasks.map(t => taskCard(t, false, false)).join('') || '<div style="text-align:center; padding:40px;">Нет заданий</div>'}</div>`;
     } else if (activeTab === 'profile') {
         content = profileHtml;
     } else if (activeTab === 'create') {
@@ -1370,23 +1180,22 @@ function renderApp() {
                     <button class="btn-danger" id="logoutBtn">Выйти</button>
                 </div>
             </div>
-            <div style="display:flex; justify-content:space-between; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
-                <div>${adminEntryBtn}</div>
-            </div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:15px;"><div>${adminEntryBtn}</div></div>
             ${adminPanelHtml}
             <div class="tabs">
-                <div class="tab ${activeTab === 'allTasks' ? 'active' : ''}" data-tab="allTasks">📋 Все задания</div>
-                <div class="tab ${activeTab === 'myTasks' ? 'active' : ''}" data-tab="myTasks">📦 Мои задания</div>
-                <div class="tab ${activeTab === 'myExecutions' ? 'active' : ''}" data-tab="myExecutions">⚡ В работе</div>
-                <div class="tab ${activeTab === 'completed' ? 'active' : ''}" data-tab="completed">✅ Завершённые</div>
-                <div class="tab ${activeTab === 'profile' ? 'active' : ''}" data-tab="profile">👤 Профиль</div>
-                <div class="tab ${activeTab === 'create' ? 'active' : ''}" data-tab="create">➕ Создать</div>
+                <div class="tab ${activeTab === 'allTasks' ? 'active' : ''}" data-tab="allTasks">Все задания</div>
+                <div class="tab ${activeTab === 'myTasks' ? 'active' : ''}" data-tab="myTasks">Мои задания</div>
+                <div class="tab ${activeTab === 'myExecutions' ? 'active' : ''}" data-tab="myExecutions">В работе</div>
+                <div class="tab ${activeTab === 'completed' ? 'active' : ''}" data-tab="completed">Завершённые</div>
+                <div class="tab ${activeTab === 'profile' ? 'active' : ''}" data-tab="profile">Профиль</div>
+                <div class="tab ${activeTab === 'create' ? 'active' : ''}" data-tab="create">Создать</div>
             </div>
             ${content}
-            <div style="margin-top:20px; text-align:center; font-size:12px;">⚠️ Комиссия 5% | Общайтесь в чате с исполнителем</div>
+            <div style="margin-top:20px; text-align:center; font-size:12px;">⚠️ Комиссия 5%</div>
         </div>
     `;
     
+    // Привязка событий
     document.querySelectorAll('.tab').forEach(tab => {
         tab.onclick = () => {
             window._activeTab = tab.getAttribute('data-tab');
@@ -1394,28 +1203,23 @@ function renderApp() {
         };
     });
     
-    const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) logoutBtn.onclick = logout;
+    document.getElementById('logoutBtn').onclick = logout;
+    document.getElementById('themeToggleBtn').onclick = toggleTheme;
     
-    const themeToggleBtn = document.getElementById('themeToggleBtn');
-    if (themeToggleBtn) themeToggleBtn.onclick = toggleTheme;
-    
-    const createBtn = document.getElementById('createBtn');
-    if (createBtn) {
-        createBtn.onclick = () => {
-            const desc = document.getElementById('taskDesc').value;
-            const price = document.getElementById('taskPrice').value;
-            const loc = document.getElementById('taskLocation').value;
-            const pt = document.getElementById('paymentType').value;
-            const sc = document.getElementById('taskScope').value;
-            if (desc && price && loc) createTask(desc, price, loc, pt, sc);
-            else showToast('Заполните все поля', true);
+    if (document.getElementById('createBtn')) {
+        document.getElementById('createBtn').onclick = () => {
+            createTask(
+                document.getElementById('taskDesc').value,
+                document.getElementById('taskPrice').value,
+                document.getElementById('taskLocation').value,
+                document.getElementById('paymentType').value,
+                document.getElementById('taskScope').value
+            );
         };
     }
     
-    const applyFilters = document.getElementById('applyFilters');
-    if (applyFilters) {
-        applyFilters.onclick = () => {
+    if (document.getElementById('applyFilters')) {
+        document.getElementById('applyFilters').onclick = () => {
             filters.scope = document.getElementById('filterScope').value;
             filters.minPrice = document.getElementById('filterMinPrice').value;
             filters.maxPrice = document.getElementById('filterMaxPrice').value;
@@ -1424,45 +1228,38 @@ function renderApp() {
     }
     
     if (isAdmin) {
-        const adminPanelBtn = document.getElementById('adminPanelBtn');
-        if (adminPanelBtn) adminPanelBtn.onclick = () => adminMode ? exitAdminMode() : requestAdminAccess();
-        
-        const exitAdminBtn = document.getElementById('exitAdminBtn');
-        if (exitAdminBtn) exitAdminBtn.onclick = exitAdminMode;
-        
-        const refreshUsersBtn = document.getElementById('refreshUsersBtn');
-        if (refreshUsersBtn) {
-            refreshUsersBtn.onclick = async () => { 
+        if (document.getElementById('adminPanelBtn')) {
+            document.getElementById('adminPanelBtn').onclick = () => adminMode ? exitAdminMode() : requestAdminAccess();
+        }
+        if (document.getElementById('exitAdminBtn')) document.getElementById('exitAdminBtn').onclick = exitAdminMode;
+        if (document.getElementById('refreshUsersBtn')) {
+            document.getElementById('refreshUsersBtn').onclick = async () => { 
                 isDataLoaded = false;
                 await loadDataFromGoogle(); 
                 renderApp(); 
             };
         }
-        
-        const clearTasksBtn = document.getElementById('clearTasksBtn');
-        if (clearTasksBtn) clearTasksBtn.onclick = deleteAllTasks;
-        
-        const adminSearch = document.getElementById('adminSearch');
-        if (adminSearch) {
-            adminSearch.oninput = (e) => { adminSearchTerm = e.target.value; renderApp(); };
+        if (document.getElementById('clearTasksBtn')) document.getElementById('clearTasksBtn').onclick = deleteAllTasks;
+        if (document.getElementById('adminSearch')) {
+            document.getElementById('adminSearch').oninput = (e) => { adminSearchTerm = e.target.value; renderApp(); };
         }
         
         document.querySelectorAll('.topup-btn').forEach(btn => {
             btn.onclick = () => {
-                const userId = btn.getAttribute('data-userid');
-                const isBonus = btn.getAttribute('data-bonus') === 'true';
-                const amountField = isBonus ? document.getElementById('bonus-' + userId) : document.getElementById('amount-' + userId);
-                const amount = parseFloat(amountField ? amountField.value : 100);
+                let userId = btn.getAttribute('data-userid');
+                let isBonus = btn.getAttribute('data-bonus') === 'true';
+                let amountField = isBonus ? document.getElementById('bonus-' + userId) : document.getElementById('amount-' + userId);
+                let amount = parseFloat(amountField ? amountField.value : 100);
                 if (amount > 0) adminChangeBalance(userId, amount, isBonus);
             };
         });
         
         document.querySelectorAll('.withdraw-btn').forEach(btn => {
             btn.onclick = () => {
-                const userId = btn.getAttribute('data-userid');
-                const isBonus = btn.getAttribute('data-bonus') === 'true';
-                const amountField = isBonus ? document.getElementById('bonus-' + userId) : document.getElementById('amount-' + userId);
-                const amount = parseFloat(amountField ? amountField.value : 100);
+                let userId = btn.getAttribute('data-userid');
+                let isBonus = btn.getAttribute('data-bonus') === 'true';
+                let amountField = isBonus ? document.getElementById('bonus-' + userId) : document.getElementById('amount-' + userId);
+                let amount = parseFloat(amountField ? amountField.value : 100);
                 if (amount > 0) adminChangeBalance(userId, -amount, isBonus);
             };
         });
@@ -1485,8 +1282,8 @@ function renderApp() {
     });
     
     document.querySelectorAll('.edit-btn').forEach(btn => {
-        const taskId = btn.getAttribute('data-id');
-        const task = tasks.find(t => t.id == taskId);
+        let taskId = btn.getAttribute('data-id');
+        let task = tasks.find(t => t.id == taskId);
         if (task) btn.onclick = () => showEditModal(task);
     });
     
@@ -1511,7 +1308,6 @@ function renderApp() {
     });
 }
 
-// Глобальные функции
 window.openChat = openChat;
 window.closeChat = closeChat;
 window.sendChatMessage = sendChatMessage;
@@ -1523,7 +1319,7 @@ window.openWalletModal = openWalletModal;
 window.closeWalletModal = closeWalletModal;
 window.showPaymentAlert = showPaymentAlert;
 
-// Запуск приложения
+// ЗАПУСК
 loadDataFromGoogle().then(() => {
     restoreSession();
     renderApp();
