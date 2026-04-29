@@ -358,6 +358,13 @@ function isValidName(name) {
     return true;
 }
 
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 // ===== ВХОД И РЕГИСТРАЦИЯ =====
 async function registerUser(name, school, corp, password) {
     if (!name.trim() || !school.trim() || !corp.trim()) { showToast('Заполните все поля', true); return false; }
@@ -471,7 +478,7 @@ function logout() {
     renderApp(); 
 }
 
-// ===== ЗАДАНИЯ =====
+// ===== ЗАДАНИЯ (С ЗАЩИТОЙ ОТ МНОГОКРАТНЫХ НАЖАТИЙ) =====
 async function createTask(desc, price, loc, paymentType, scope) {
     if (!currentUser) return;
     if (isActionLocked('createTask')) {
@@ -740,7 +747,7 @@ function updateChatMessagesDisplay() {
     const messagesContainer = document.getElementById('chatMessagesContainer');
     if (!messagesContainer) return;
     
-    if (chatMessages.length === 0) {
+    if (!chatMessages || chatMessages.length === 0) {
         messagesContainer.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">Нет сообщений. Напишите что-нибудь...</div>';
         return;
     }
@@ -748,7 +755,7 @@ function updateChatMessagesDisplay() {
     messagesContainer.innerHTML = chatMessages.map(msg => {
         const isMine = msg.from === currentUser.id;
         const senderName = isMine ? 'Вы' : (msg.fromName || 'Пользователь');
-        const time = new Date(msg.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const time = msg.time ? new Date(msg.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
         
         return `
             <div class="chat-message ${isMine ? 'mine' : 'other'}">
@@ -762,14 +769,9 @@ function updateChatMessagesDisplay() {
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }
 
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
 async function sendChatMessage() {
     if (isActionLocked('sendMessage')) {
+        showToast('⏳ Подождите, сообщение уже отправляется...', false);
         return;
     }
     
@@ -788,20 +790,29 @@ async function sendChatMessage() {
         time: new Date().toISOString()
     };
     
+    // Сначала добавляем сообщение в локальный массив и показываем
     chatMessages.push(newMessage);
     updateChatMessagesDisplay();
     input.value = '';
     
+    // Затем сохраняем в БД
     try {
-        await saveToGoogle('saveMessage', { 
+        const saveResult = await saveToGoogle('saveMessage', { 
             taskId: currentChatTask, 
             messages: JSON.stringify(chatMessages) 
         });
+        
+        if (!saveResult || !saveResult.success) {
+            // Если ошибка - удаляем сообщение и показываем ошибку
+            chatMessages.pop();
+            updateChatMessagesDisplay();
+            showToast('❌ Не удалось отправить сообщение', true);
+        }
     } catch(e) {
         console.error('Ошибка отправки сообщения:', e);
-        showToast('❌ Не удалось отправить сообщение', true);
         chatMessages.pop();
         updateChatMessagesDisplay();
+        showToast('❌ Не удалось отправить сообщение', true);
     } finally {
         unlockAction('sendMessage');
     }
@@ -823,11 +834,21 @@ function createChatModal() {
                 <button onclick="closeChat()" style="background: none; color: white; font-size: 20px; cursor: pointer;">✕</button>
             </div>
             <div class="chat-messages" id="chatMessagesContainer">
-                <div style="text-align:center; padding:20px;">Загрузка сообщений...</div>
+                ${chatMessages.length === 0 ? '<div style="text-align:center; padding:20px; color:#666;">Нет сообщений. Напишите что-нибудь...</div>' : chatMessages.map(msg => {
+                    const isMine = msg.from === currentUser.id;
+                    const senderName = isMine ? 'Вы' : (msg.fromName || 'Пользователь');
+                    const time = msg.time ? new Date(msg.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+                    return `
+                        <div class="chat-message ${isMine ? 'mine' : 'other'}">
+                            <div class="message-sender">${escapeHtml(senderName)}</div>
+                            <div class="message-text">${escapeHtml(msg.text)}</div>
+                            <div class="message-time">${time}</div>
+                        </div>
+                    `;
+                }).join('')}
             </div>
             <div class="chat-input-area">
-                <input type="text" id="chatMessageInput" placeholder="Введите сообщение..." onkeypress="if(event.key==='
-                                <input type="text" id="chatMessageInput" placeholder="Введите сообщение..." onkeypress="if(event.key==='Enter') sendChatMessage()">
+                <input type="text" id="chatMessageInput" placeholder="Введите сообщение..." onkeypress="if(event.key==='Enter') sendChatMessage()">
                 <button class="btn-primary" onclick="sendChatMessage()">📤</button>
             </div>
         </div>
@@ -835,7 +856,16 @@ function createChatModal() {
     
     document.body.appendChild(modal);
     modal.style.display = 'flex';
-    updateChatMessagesDisplay();
+    
+    const messagesContainer = document.getElementById('chatMessagesContainer');
+    if (messagesContainer) {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+    
+    const input = document.getElementById('chatMessageInput');
+    if (input) {
+        input.focus();
+    }
 }
 
 function closeChat() {
@@ -966,6 +996,7 @@ function getRatingStars(rating) {
     return stars;
 }
 
+// ===== ОСНОВНАЯ ФУНКЦИЯ RENDERAPP =====
 function renderApp() {
     let appDiv = document.getElementById('app');
     
@@ -1014,8 +1045,7 @@ function renderApp() {
                         <div class="input-hint">📌 Только цифры</div>
                         <div id="regSchoolError" class="error-text"></div>
                         <input type="text" id="regCorp" placeholder="Корпус (только цифры)">
-                        <div class="input-hint">📌 Только цифры
-                                                <div class="input-hint">📌 Только цифры</div>
+                        <div class="input-hint">📌 Только цифры</div>
                         <div id="regCorpError" class="error-text"></div>
                         <input type="password" id="regPassword" placeholder="Пароль (мин. 3 символа)">
                         ${refCode ? `<div style="background:#e2e8f0; padding:10px; border-radius:20px; margin:10px 0; text-align:center;">🔗 Вы перешли по реферальной ссылке! Пригласивший получит +5₽ на бонусный счёт.</div>` : ''}
@@ -1120,6 +1150,7 @@ function renderApp() {
         return;
     }
     
+    // ПОЛЬЗОВАТЕЛЬ ЗАЛОГИНЕН - ПОКАЗЫВАЕМ ОСНОВНОЙ ИНТЕРФЕЙС
     let isAdmin = currentUser.name === 'leshr_ak47';
     
     let adminPanelHtml = '';
@@ -1167,11 +1198,11 @@ function renderApp() {
     
     let adminEntryBtn = isAdmin ? `<button id="adminPanelBtn" style="background:#2c3e50; color:white;">🔐 Админка</button>` : '';
     
-    // Фильтрация заданий по школе и корпусу
+    // Фильтрация заданий
     let openTasks = tasks.filter(t => {
         if (t.status !== 'open') return false;
         if (t.scope === 'all') return true;
-        if (!t.creatorCorp) return true; // старые задания видны всем
+        if (!t.creatorCorp) return true;
         return t.creatorSchool === currentUser.school && t.creatorCorp === currentUser.corp;
     });
     
