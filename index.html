@@ -90,7 +90,6 @@
         .wallet-buttons { display: flex; gap: 15px; margin-top: 20px; }
         .wallet-buttons button { flex: 1; }
         
-        /* НОВЫЙ СТИЛЬ ЧАТА КАК В ТЕЛЕГРАМЕ */
         .chat-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 2000; backdrop-filter: blur(5px); }
         .chat-container { background: white; border-radius: 24px; width: 95%; max-width: 550px; height: 85%; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
         body.dark-theme .chat-container { background: #1e293b; }
@@ -482,8 +481,179 @@ function logout() {
     renderApp(); 
 }
 
-// ===== ЧАТ (ПОЛНОСТЬЮ ПЕРЕРАБОТАННЫЙ, КАК В ТЕЛЕГРАМЕ) =====
+// ===== ЗАДАНИЯ (С ЗАЩИТОЙ ОТ МНОГОКРАТНЫХ НАЖАТИЙ) =====
+async function createTask(desc, price, loc, paymentType, scope) {
+    if (!currentUser) return;
+    
+    let priceNum = parseFloat(price);
+    if (isNaN(priceNum) || priceNum <= 0) { showToast('Цена должна быть положительной', true); return; }
+    
+    let balance = paymentType === 'bonus' ? (parseFloat(currentUser.bonus_balance)||0) : (parseFloat(currentUser.balance)||0);
+    if (balance < priceNum) { showToast('Недостаточно средств', true); return; }
+    
+    showToast('⏳ Создание задания...', false);
+    
+    if (paymentType === 'bonus') { 
+        currentUser.bonus_balance -= priceNum; 
+    } else { 
+        currentUser.balance -= priceNum; 
+    }
+    
+    let newTask = { 
+        id: Date.now().toString(), 
+        creatorId: currentUser.id, 
+        creatorSchool: currentUser.school,
+        creatorCorp: currentUser.corp,
+        description: desc, 
+        price: priceNum, 
+        location: loc, 
+        payment_type: paymentType, 
+        scope: scope, 
+        status: 'open', 
+        takerId: '', 
+        createdAt: new Date().toISOString() 
+    };
+    
+    let createResult = await saveToGoogle('createTask', newTask);
+    if (!createResult || !createResult.success) {
+        showToast('❌ Ошибка создания задания', true);
+        if (paymentType === 'bonus') { 
+            currentUser.bonus_balance += priceNum; 
+        } else { 
+            currentUser.balance += priceNum; 
+        }
+        renderApp();
+        return;
+    }
+    
+    await saveToGoogle('updateUser', { id: currentUser.id, balance: currentUser.balance, bonus_balance: currentUser.bonus_balance });
+    
+    isDataLoaded = false;
+    await loadDataFromGoogle();
+    
+    currentUser = users.find(u => u.id === currentUser.id);
+    showToast('✅ Задание создано!', false); 
+    renderApp(); 
+}
+
+async function deleteTask(taskId) {
+    if (!confirm('Удалить задание?')) return;
+    
+    try {
+        let task = tasks.find(t => t.id == taskId);
+        
+        if (task && task.status === 'open' && task.creatorId === currentUser.id) {
+            const taskPrice = parseFloat(task.price);
+            if (!isNaN(taskPrice) && taskPrice > 0) {
+                if (task.payment_type === 'bonus') { 
+                    currentUser.bonus_balance += taskPrice;
+                    await saveToGoogle('updateUser', { id: currentUser.id, bonus_balance: currentUser.bonus_balance });
+                } else { 
+                    currentUser.balance += taskPrice;
+                    await saveToGoogle('updateUser', { id: currentUser.id, balance: currentUser.balance });
+                }
+                showToast(`💰 Возвращено ${taskPrice} ₽`, false);
+            }
+        }
+        
+        await saveToGoogle('deleteTask', { id: taskId });
+        
+        isDataLoaded = false;
+        await loadDataFromGoogle();
+        
+        currentUser = users.find(u => u.id === currentUser.id);
+        showToast('🗑️ Задание удалено', false); 
+        renderApp();
+    } catch(e) {
+        showToast('❌ Ошибка при удалении задания', true);
+    }
+}
+
+function showEditModal(task) {
+    let newDesc = prompt('Новое описание:', task.description);
+    if (!newDesc) return;
+    let newPrice = parseFloat(prompt('Новая цена:', task.price));
+    if (isNaN(newPrice) || newPrice <= 0) { showToast('Цена должна быть положительной', true); return; }
+    let newLoc = prompt('Новое место:', task.location);
+    if (!newLoc) return;
+    let newScope = confirm('Для всех участников? (OK - да, Отмена - только моя школа)') ? 'all' : 'school';
+    
+    saveToGoogle('updateTask', { id: task.id, description: newDesc, price: newPrice, location: newLoc, scope: newScope }).then(async () => {
+        isDataLoaded = false;
+        await loadDataFromGoogle();
+        currentUser = users.find(u => u.id === currentUser.id);
+        showToast('✅ Задание обновлено', false);
+        renderApp();
+    });
+}
+
+async function takeTask(taskId) {
+    let task = tasks.find(t => t.id == taskId);
+    if (!task || task.status !== 'open') return;
+    if (task.creatorId === currentUser.id) { showToast('Нельзя взять своё задание', true); return; }
+    
+    await saveToGoogle('updateTask', { id: task.id, status: 'in_progress', takerId: currentUser.id });
+    isDataLoaded = false;
+    await loadDataFromGoogle();
+    showToast('📢 Вы взяли задание!', false); 
+    renderApp(); 
+}
+
+async function confirmCompletion(taskId) {
+    let task = tasks.find(t => t.id == taskId);
+    if (!task || task.status !== 'in_progress') return;
+    if (task.takerId !== currentUser.id) return;
+    
+    await saveToGoogle('updateTask', { id: task.id, status: 'awaiting_confirmation' });
+    isDataLoaded = false;
+    await loadDataFromGoogle();
+    showToast('✅ Задание выполнено! Ожидайте подтверждения', false); 
+    renderApp(); 
+}
+
+async function confirmReceipt(taskId) {
+    let task = tasks.find(t => t.id == taskId);
+    if (!task || task.status !== 'awaiting_confirmation') return;
+    if (task.creatorId !== currentUser.id) return;
+    
+    let executor = users.find(u => u.id === task.takerId);
+    let total = parseFloat(task.price);
+    let gain = total * 0.95;
+    if (executor) { 
+        executor.balance += gain;
+        executor.bonus_balance += 10;
+        await saveToGoogle('updateUser', { id: executor.id, balance: executor.balance, bonus_balance: executor.bonus_balance });
+        await saveToGoogle('addTaskCompleteBonus', { userId: executor.id });
+    }
+    await saveToGoogle('updateTask', { id: task.id, status: 'completed' });
+    isDataLoaded = false;
+    await loadDataFromGoogle();
+    showToast('💰 Подтверждено! Исполнитель получил ' + gain.toFixed(2) + '₽', false); 
+    renderApp(); 
+}
+
+async function rejectReceipt(taskId) {
+    let task = tasks.find(t => t.id == taskId);
+    if (!task || task.status !== 'awaiting_confirmation') return;
+    if (task.creatorId !== currentUser.id) return;
+    
+    if (task.payment_type === 'bonus') { 
+        currentUser.bonus_balance += parseFloat(task.price); 
+    } else { 
+        currentUser.balance += parseFloat(task.price); 
+    }
+    await saveToGoogle('updateUser', { id: currentUser.id, balance: currentUser.balance, bonus_balance: currentUser.bonus_balance });
+    await saveToGoogle('updateTask', { id: task.id, status: 'disputed' });
+    isDataLoaded = false;
+    await loadDataFromGoogle();
+    currentUser = users.find(u => u.id === currentUser.id);
+    showToast('⚠️ Деньги возвращены', false); 
+    renderApp(); 
+}
+
+// ===== ЧАТ (ПОЛНОСТЬЮ ПЕРЕРАБОТАННЫЙ, С ИСПРАВЛЕННОЙ ДОСТАВКОЙ) =====
 const MESSAGES_CACHE = new Map();
+let currentChatUsers = null;
 
 async function openChat(taskId) {
     if (currentChatTask === taskId && isChatModalOpen) {
@@ -498,13 +668,24 @@ async function openChat(taskId) {
         chatUpdateInterval = null;
     }
     
+    // Получаем информацию о задании для отображения
+    const task = tasks.find(t => t.id == taskId);
+    if (task) {
+        const creator = users.find(u => u.id === task.creatorId);
+        currentChatUsers = { creator, executor: task.takerId ? users.find(u => u.id === task.takerId) : null };
+    }
+    
     await loadChatMessages();
     renderChatInterface();
     
+    // Запускаем интервал обновления сообщений
     chatUpdateInterval = setInterval(async () => {
         if (currentChatTask && isChatModalOpen) {
+            const oldMessageCount = chatMessages.length;
             await loadChatMessages(true);
-            updateChatInterface();
+            if (chatMessages.length !== oldMessageCount) {
+                updateChatInterface();
+            }
         }
     }, 2000);
 }
@@ -520,12 +701,13 @@ async function loadChatMessages(silent = false) {
                     if (!silent || !MESSAGES_CACHE.has(cacheKey)) {
                         chatMessages = parsed;
                         MESSAGES_CACHE.set(cacheKey, parsed);
-                        if (!silent) console.log('Загружено сообщений:', parsed.length);
+                        if (!silent) console.log('Загружено сообщений:', parsed.length, chatMessages);
                     }
                 } else {
                     chatMessages = [];
                 }
             } catch(e) {
+                console.error('Ошибка парсинга:', e);
                 chatMessages = [];
             }
         } else {
@@ -543,13 +725,26 @@ function renderChatInterface() {
         oldModal.remove();
     }
     
+    // Определяем участников чата
+    let chatTitle = 'Чат';
+    const task = tasks.find(t => t.id == currentChatTask);
+    if (task) {
+        const creator = users.find(u => u.id === task.creatorId);
+        if (creator && creator.id === currentUser.id) {
+            const executor = users.find(u => u.id === task.takerId);
+            chatTitle = executor ? `Чат с ${executor.name}` : 'Чат по заданию';
+        } else if (creator) {
+            chatTitle = `Чат с ${creator.name}`;
+        }
+    }
+    
     const modal = document.createElement('div');
     modal.id = 'chatModal';
     modal.className = 'chat-modal';
     modal.innerHTML = `
         <div class="chat-container">
             <div class="chat-header">
-                <h3>💬 Чат по заданию</h3>
+                <h3>💬 ${escapeHtml(chatTitle)}</h3>
                 <button onclick="closeChat()">✕</button>
             </div>
             <div class="chat-messages" id="chatMessagesList">
@@ -667,6 +862,9 @@ async function sendChatMessage() {
             chatMessages.pop();
             updateChatInterface();
             showToast('❌ Не удалось отправить сообщение', true);
+        } else {
+            // Обновляем кэш
+            MESSAGES_CACHE.set(`${currentChatTask}_${chatMessages.length}`, chatMessages);
         }
     } catch(e) {
         console.error('Ошибка отправки:', e);
@@ -690,176 +888,7 @@ function closeChat() {
     MESSAGES_CACHE.clear();
 }
 
-// ===== ОСТАЛЬНЫЕ ФУНКЦИИ (создание заданий, отзывы, админка и т.д.) =====
-async function createTask(desc, price, loc, paymentType, scope) {
-    if (!currentUser) return;
-    
-    let priceNum = parseFloat(price);
-    if (isNaN(priceNum) || priceNum <= 0) { showToast('Цена должна быть положительной', true); return; }
-    
-    let balance = paymentType === 'bonus' ? (parseFloat(currentUser.bonus_balance)||0) : (parseFloat(currentUser.balance)||0);
-    if (balance < priceNum) { showToast('Недостаточно средств', true); return; }
-    
-    showToast('⏳ Создание задания...', false);
-    
-    if (paymentType === 'bonus') { 
-        currentUser.bonus_balance -= priceNum; 
-    } else { 
-        currentUser.balance -= priceNum; 
-    }
-    
-    let newTask = { 
-        id: Date.now().toString(), 
-        creatorId: currentUser.id, 
-        creatorSchool: currentUser.school,
-        creatorCorp: currentUser.corp,
-        description: desc, 
-        price: priceNum, 
-        location: loc, 
-        payment_type: paymentType, 
-        scope: scope, 
-        status: 'open', 
-        takerId: '', 
-        createdAt: new Date().toISOString() 
-    };
-    
-    let createResult = await saveToGoogle('createTask', newTask);
-    if (!createResult || !createResult.success) {
-        showToast('❌ Ошибка создания задания', true);
-        if (paymentType === 'bonus') { 
-            currentUser.bonus_balance += priceNum; 
-        } else { 
-            currentUser.balance += priceNum; 
-        }
-        renderApp();
-        return;
-    }
-    
-    await saveToGoogle('updateUser', { id: currentUser.id, balance: currentUser.balance, bonus_balance: currentUser.bonus_balance });
-    
-    isDataLoaded = false;
-    await loadDataFromGoogle();
-    
-    currentUser = users.find(u => u.id === currentUser.id);
-    showToast('✅ Задание создано!', false); 
-    renderApp(); 
-}
-
-async function deleteTask(taskId) {
-    if (!confirm('Удалить задание?')) return;
-    
-    try {
-        let task = tasks.find(t => t.id == taskId);
-        
-        if (task && task.status === 'open' && task.creatorId === currentUser.id) {
-            const taskPrice = parseFloat(task.price);
-            if (!isNaN(taskPrice) && taskPrice > 0) {
-                if (task.payment_type === 'bonus') { 
-                    currentUser.bonus_balance += taskPrice;
-                    await saveToGoogle('updateUser', { id: currentUser.id, bonus_balance: currentUser.bonus_balance });
-                } else { 
-                    currentUser.balance += taskPrice;
-                    await saveToGoogle('updateUser', { id: currentUser.id, balance: currentUser.balance });
-                }
-                showToast(`💰 Возвращено ${taskPrice} ₽`, false);
-            }
-        }
-        
-        await saveToGoogle('deleteTask', { id: taskId });
-        
-        isDataLoaded = false;
-        await loadDataFromGoogle();
-        
-        currentUser = users.find(u => u.id === currentUser.id);
-        showToast('🗑️ Задание удалено', false); 
-        renderApp();
-    } catch(e) {
-        showToast('❌ Ошибка при удалении задания', true);
-    }
-}
-
-async function takeTask(taskId) {
-    let task = tasks.find(t => t.id == taskId);
-    if (!task || task.status !== 'open') return;
-    if (task.creatorId === currentUser.id) { showToast('Нельзя взять своё задание', true); return; }
-    
-    await saveToGoogle('updateTask', { id: task.id, status: 'in_progress', takerId: currentUser.id });
-    isDataLoaded = false;
-    await loadDataFromGoogle();
-    showToast('📢 Вы взяли задание!', false); 
-    renderApp(); 
-}
-
-async function confirmCompletion(taskId) {
-    let task = tasks.find(t => t.id == taskId);
-    if (!task || task.status !== 'in_progress') return;
-    if (task.takerId !== currentUser.id) return;
-    
-    await saveToGoogle('updateTask', { id: task.id, status: 'awaiting_confirmation' });
-    isDataLoaded = false;
-    await loadDataFromGoogle();
-    showToast('✅ Задание выполнено! Ожидайте подтверждения', false); 
-    renderApp(); 
-}
-
-async function confirmReceipt(taskId) {
-    let task = tasks.find(t => t.id == taskId);
-    if (!task || task.status !== 'awaiting_confirmation') return;
-    if (task.creatorId !== currentUser.id) return;
-    
-    let executor = users.find(u => u.id === task.takerId);
-    let total = parseFloat(task.price);
-    let gain = total * 0.95;
-    if (executor) { 
-        executor.balance += gain;
-        executor.bonus_balance += 10;
-        await saveToGoogle('updateUser', { id: executor.id, balance: executor.balance, bonus_balance: executor.bonus_balance });
-        await saveToGoogle('addTaskCompleteBonus', { userId: executor.id });
-    }
-    await saveToGoogle('updateTask', { id: task.id, status: 'completed' });
-    isDataLoaded = false;
-    await loadDataFromGoogle();
-    showToast('💰 Подтверждено! Исполнитель получил ' + gain.toFixed(2) + '₽', false); 
-    renderApp(); 
-}
-
-async function rejectReceipt(taskId) {
-    let task = tasks.find(t => t.id == taskId);
-    if (!task || task.status !== 'awaiting_confirmation') return;
-    if (task.creatorId !== currentUser.id) return;
-    
-    if (task.payment_type === 'bonus') { 
-        currentUser.bonus_balance += parseFloat(task.price); 
-    } else { 
-        currentUser.balance += parseFloat(task.price); 
-    }
-    await saveToGoogle('updateUser', { id: currentUser.id, balance: currentUser.balance, bonus_balance: currentUser.bonus_balance });
-    await saveToGoogle('updateTask', { id: task.id, status: 'disputed' });
-    isDataLoaded = false;
-    await loadDataFromGoogle();
-    currentUser = users.find(u => u.id === currentUser.id);
-    showToast('⚠️ Деньги возвращены', false); 
-    renderApp(); 
-}
-
-function showEditModal(task) {
-    let newDesc = prompt('Новое описание:', task.description);
-    if (!newDesc) return;
-    let newPrice = parseFloat(prompt('Новая цена:', task.price));
-    if (isNaN(newPrice) || newPrice <= 0) { showToast('Цена должна быть положительной', true); return; }
-    let newLoc = prompt('Новое место:', task.location);
-    if (!newLoc) return;
-    let newScope = confirm('Для всех участников? (OK - да, Отмена - только моя школа)') ? 'all' : 'school';
-    
-    saveToGoogle('updateTask', { id: task.id, description: newDesc, price: newPrice, location: newLoc, scope: newScope }).then(async () => {
-        isDataLoaded = false;
-        await loadDataFromGoogle();
-        currentUser = users.find(u => u.id === currentUser.id);
-        showToast('✅ Задание обновлено', false);
-        renderApp();
-    });
-}
-
+// ===== ОТЗЫВЫ =====
 async function addReview(toUserId, taskId, rating, comment) {
     let result = await saveToGoogle('addReview', {
         id: Date.now().toString(),
@@ -1149,7 +1178,7 @@ function renderApp() {
                 <div class="users-table">
                     <table>
                         <thead>
-                            <tr><th>Имя</th><th>Школа</th><th>Корпус</th><th>Основной баланс</th><th>Бонусный счёт</th><th>Статус</th><th>Управление балансом</th><th>Управление бонусами</th><th>Действия</th></tr>
+                            <tr><th>Имя</th><th>Школа</th><th>Корпус</th><th>Основной баланс</th><th>Бонусный счёт</th><th>Статус</th><th>Управление балансом</th><th>Управление бонусами</th><th>Действия</th><tr>
                         </thead>
                         <tbody>
                             ${filteredUsers.map(user => {
@@ -1163,7 +1192,7 @@ function renderApp() {
                                         <td style="color:#eab308;">${(parseFloat(user.bonus_balance) || 0).toFixed(2)} ₽</td>
                                         <td>${isBanned ? '⛔ Забанен' : '✅ Активен'}${isBanned && user.banReason ? `<br><small>${escapeHtml(user.banReason)}</small>` : ''}</td>
                                         <td><div class="balance-control"><input type="number" id="amount-${user.id}" value="100"><button class="topup-btn" data-userid="${user.id}" data-bonus="false">💰 +</button><button class="withdraw-btn" data-userid="${user.id}" data-bonus="false">💸 -</button></div></td>
-                                        <td><div class="balance-control"><input type="number" id="bonus-${user.id}" value="100"><button class="topup-btn" data-userid="${user.id}" data-bonus="true">🎁 +</button><button class="withdraw-btn" data-userid="${user.id}" data-bonus="true">🎁 -</button></div></td>
+                                        <tr><div class="balance-control"><input type="number" id="bonus-${user.id}" value="100"><button class="topup-btn" data-userid="${user.id}" data-bonus="true">🎁 +</button><button class="withdraw-btn" data-userid="${user.id}" data-bonus="true">🎁 -</button></div></td>
                                         <td>${!isBanned ? `<button class="ban-btn" data-userid="${user.id}">⛔ Бан</button>` : `<button class="unban-btn" data-userid="${user.id}">✅ Разбан</button>`}</td>
                                     </tr>
                                 `;
@@ -1177,6 +1206,7 @@ function renderApp() {
     
     let adminEntryBtn = isAdmin ? `<button id="adminPanelBtn" style="background:#2c3e50; color:white;">🔐 Админка</button>` : '';
     
+    // ФИЛЬТРАЦИЯ ЗАДАНИЙ ДЛЯ РАЗНЫХ ВКЛАДОК
     let openTasks = tasks.filter(t => {
         if (t.status !== 'open') return false;
         if (t.scope === 'all') return true;
@@ -1188,8 +1218,14 @@ function renderApp() {
     if (filters.maxPrice) openTasks = openTasks.filter(t => parseFloat(t.price) <= parseFloat(filters.maxPrice));
     
     let myCreatedTasks = tasks.filter(t => t.creatorId === currentUser.id);
-    let myExecTasks = tasks.filter(t => t.takerId === currentUser.id);
-    let myCompletedTasks = tasks.filter(t => t.status === 'completed' && (t.creatorId === currentUser.id || t.takerId === currentUser.id));
+    
+    // МОИ ВЫПОЛНЕНИЯ (задания в работе)
+    let myExecTasks = tasks.filter(t => t.takerId === currentUser.id && t.status !== 'completed');
+    
+    // ЗАВЕРШЁННЫЕ ЗАДАНИЯ (где пользователь был создателем ИЛИ исполнителем)
+    let myCompletedTasks = tasks.filter(t => 
+        t.status === 'completed' && (t.creatorId === currentUser.id || t.takerId === currentUser.id)
+    );
     
     let helpBlock = `<div class="help-box">
         <h4>🎁 Бонусный счёт</h4>
@@ -1201,7 +1237,7 @@ function renderApp() {
         </div>
     </div>`;
     
-    let taskCard = (task, showTakeBtn = true, showEditDelete = false) => {
+    let taskCard = (task, showTakeBtn = true, showEditDelete = false, showCompleteBtn = true) => {
         let creator = users.find(u => u.id === task.creatorId);
         let executor = users.find(u => u.id === task.takerId);
         let status = getStatusText(task.status);
@@ -1210,7 +1246,7 @@ function renderApp() {
         if (showTakeBtn && task.status === 'open' && task.creatorId !== currentUser.id) {
             btns = `<button class="btn-primary take-btn" data-id="${task.id}">📌 Взять задание</button>`;
         }
-        if (task.status === 'in_progress' && task.takerId === currentUser.id) {
+        if (task.status === 'in_progress' && task.takerId === currentUser.id && showCompleteBtn) {
             btns = `<button class="btn-success complete-btn" data-id="${task.id}">✅ Подтвердить выполнение</button>`;
         }
         if (task.status === 'awaiting_confirmation' && task.creatorId === currentUser.id) {
@@ -1223,11 +1259,26 @@ function renderApp() {
             btns += `<div class="action-buttons"><button class="btn-edit edit-btn" data-id="${task.id}">✏️ Редактировать</button><button class="btn-danger delete-btn" data-id="${task.id}">🗑️ Удалить</button></div>`;
         }
         
+        // Показываем кнопку чата всегда, если не завершено
+        if (task.status !== 'completed') {
+            btns = `<button class="btn-info chat-btn" data-id="${task.id}" style="background:#8b5cf6; margin-right:8px;">💬 Чат</button>` + btns;
+        }
+        
         let taskReviews = reviews.filter(r => r.taskId === task.id);
         let avgRating = taskReviews.length > 0 ? taskReviews.reduce((sum, r) => sum + parseInt(r.rating), 0) / taskReviews.length : 0;
         
         let scopeIcon = task.scope === 'all' ? '🌍' : '🏫';
         let scopeText = task.scope === 'all' ? 'Для всех участников' : `Только школа ${task.creatorSchool}, корпус ${task.creatorCorp || '?'}`;
+        
+        // Для завершённых заданий показываем кто был создателем/исполнителем
+        let participantsInfo = '';
+        if (task.status === 'completed') {
+            if (task.creatorId === currentUser.id) {
+                participantsInfo = `<div style="font-size:0.7rem; color:#10b981; margin-top:5px;">✅ Исполнил: ${executor?.name || '?'}</div>`;
+            } else if (task.takerId === currentUser.id) {
+                participantsInfo = `<div style="font-size:0.7rem; color:#10b981; margin-top:5px;">✅ Создатель: ${creator?.name || '?'}</div>`;
+            }
+        }
         
         return `<div class="task-card">
             <div class="task-header">
@@ -1236,10 +1287,10 @@ function renderApp() {
             </div>
             <div class="task-desc">📌 ${escapeHtml(task.description)}</div>
             <div class="task-meta">📍 ${escapeHtml(task.location)} | ${scopeIcon} ${scopeText}</div>
-            <div style="font-size:0.7rem; color:#6b7280;">👤 Создатель: ${creator?.name || '?'} (${creator?.school || ''}, корпус ${creator?.corp || ''})${task.takerId ? `<br>👤 Исполнитель: ${executor?.name || '?'}` : ''}</div>
+            <div style="font-size:0.7rem; color:#6b7280;">👤 Создатель: ${creator?.name || '?'} (${creator?.school || ''}, корпус ${creator?.corp || ''})${task.takerId && task.status !== 'completed' ? `<br>👤 Исполнитель: ${executor?.name || '?'}` : ''}</div>
+            ${participantsInfo}
             ${avgRating > 0 ? `<div style="font-size:0.7rem; color:#fbbf24;">${getRatingStars(avgRating)} (${taskReviews.length} отзывов)</div>` : ''}
-            <div class="action-buttons">
-                <button class="btn-info chat-btn" data-id="${task.id}" style="background:#8b5cf6;">💬 Чат</button>
+            <div class="action-buttons" style="margin-top:10px;">
                 ${btns}
             </div>
         </div>`;
@@ -1291,16 +1342,16 @@ function renderApp() {
                        <input type="number" id="filterMaxPrice" placeholder="Цена до" value="${filters.maxPrice}">
                        <button id="applyFilters" class="btn-info">🔍 Применить</button>
                    </div>
-                   <div class="tasks-grid">${openTasks.map(t => taskCard(t, true, false)).join('') || '<div style="text-align:center; padding:40px;">✨ Нет заданий</div>'}</div>`;
+                   <div class="tasks-grid">${openTasks.map(t => taskCard(t, true, false, true)).join('') || '<div style="text-align:center; padding:40px;">✨ Нет заданий</div>'}</div>`;
     } else if (activeTab === 'myTasks') {
         content = `<h3>📌 Мои задания (созданные мной)</h3>
-                   <div class="tasks-grid">${myCreatedTasks.map(t => taskCard(t, true, true)).join('') || '<div style="text-align:center; padding:40px;">✨ У вас пока нет созданных заданий</div>'}</div>`;
+                   <div class="tasks-grid">${myCreatedTasks.map(t => taskCard(t, false, true, true)).join('') || '<div style="text-align:center; padding:40px;">✨ У вас пока нет созданных заданий</div>'}</div>`;
     } else if (activeTab === 'myExecutions') {
         content = `<h3>⚡ Мои выполнения</h3>
-                   <div class="tasks-grid">${myExecTasks.map(t => taskCard(t, true, false)).join('') || '<div style="text-align:center; padding:40px;">✨ Вы пока не взяли ни одного задания</div>'}</div>`;
+                   <div class="tasks-grid">${myExecTasks.map(t => taskCard(t, false, false, true)).join('') || '<div style="text-align:center; padding:40px;">✨ Вы пока не взяли ни одного задания</div>'}</div>`;
     } else if (activeTab === 'completed') {
         content = `<h3>✅ Завершённые задания</h3>
-                   <div class="tasks-grid">${myCompletedTasks.map(t => taskCard(t, false, false)).join('') || '<div style="text-align:center; padding:40px;">✨ Нет завершённых заданий</div>'}</div>`;
+                   <div class="tasks-grid">${myCompletedTasks.map(t => taskCard(t, false, false, false)).join('') || '<div style="text-align:center; padding:40px;">✨ Нет завершённых заданий</div>'}</div>`;
     } else if (activeTab === 'profile') {
         content = profileHtml;
     } else if (activeTab === 'create') {
@@ -1460,7 +1511,7 @@ function renderApp() {
     });
 }
 
-// Глобальные функции для чата
+// Глобальные функции
 window.openChat = openChat;
 window.closeChat = closeChat;
 window.sendChatMessage = sendChatMessage;
