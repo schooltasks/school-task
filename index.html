@@ -122,6 +122,7 @@ let currentChatTask = null;
 let chatMessages = [];
 let isLoading = false;
 let isDataLoaded = false;
+let isDeleting = false; // Блокировка повторного удаления
 
 if (isDarkTheme) document.body.classList.add('dark-theme');
 
@@ -267,7 +268,6 @@ function openWalletModal() {
     const mainBalance = (parseFloat(currentUser.balance) || 0).toFixed(2);
     const bonusBalance = (parseFloat(currentUser.bonus_balance) || 0).toFixed(2);
     
-    // Удаляем старый модал если есть
     if (walletModal) {
         walletModal.remove();
     }
@@ -457,6 +457,7 @@ async function createTask(desc, price, loc, paymentType, scope) {
         currentUser.balance -= priceNum; 
     }
     
+    // ВАЖНО: добавляем creatorCorp для фильтрации
     let newTask = { 
         id: Date.now().toString(), 
         creatorId: currentUser.id, 
@@ -494,23 +495,55 @@ async function createTask(desc, price, loc, paymentType, scope) {
     renderApp(); 
 }
 
+// Функция удаления задания с защитой от многократного нажатия
+let pendingDelete = null;
+
 async function deleteTask(taskId) {
-    if (!confirm('Удалить задание?')) return;
-    let task = tasks.find(t => t.id == taskId);
-    if (task && task.status === 'open' && task.creatorId === currentUser.id) {
-        if (task.payment_type === 'bonus') { 
-            currentUser.bonus_balance += parseFloat(task.price); 
-        } else { 
-            currentUser.balance += parseFloat(task.price); 
-        }
-        await saveToGoogle('updateUser', { id: currentUser.id, balance: currentUser.balance, bonus_balance: currentUser.bonus_balance });
+    // Защита от многократного нажатия
+    if (isDeleting) {
+        showToast('⏳ Подождите, операция уже выполняется...', false);
+        return;
     }
-    await saveToGoogle('deleteTask', { id: taskId });
-    isDataLoaded = false;
-    await loadDataFromGoogle();
-    currentUser = users.find(u => u.id === currentUser.id);
-    showToast('🗑️ Задание удалено', false); 
-    renderApp(); 
+    
+    if (!confirm('Удалить задание?')) return;
+    
+    isDeleting = true;
+    
+    try {
+        let task = tasks.find(t => t.id == taskId);
+        
+        // Возвращаем деньги только если задание открыто и это задание текущего пользователя
+        if (task && task.status === 'open' && task.creatorId === currentUser.id) {
+            const taskPrice = parseFloat(task.price);
+            if (!isNaN(taskPrice) && taskPrice > 0) {
+                if (task.payment_type === 'bonus') { 
+                    currentUser.bonus_balance += taskPrice;
+                    await saveToGoogle('updateUser', { id: currentUser.id, bonus_balance: currentUser.bonus_balance });
+                } else { 
+                    currentUser.balance += taskPrice;
+                    await saveToGoogle('updateUser', { id: currentUser.id, balance: currentUser.balance });
+                }
+                showToast(`💰 Возвращено ${taskPrice} ₽`, false);
+            }
+        }
+        
+        // Удаляем задание
+        await saveToGoogle('deleteTask', { id: taskId });
+        
+        // Перезагружаем данные
+        isDataLoaded = false;
+        await loadDataFromGoogle();
+        
+        // Обновляем текущего пользователя
+        currentUser = users.find(u => u.id === currentUser.id);
+        showToast('🗑️ Задание удалено', false); 
+        renderApp();
+    } catch(e) {
+        console.error('Ошибка удаления:', e);
+        showToast('❌ Ошибка при удалении задания', true);
+    } finally {
+        isDeleting = false;
+    }
 }
 
 function showEditModal(task) {
@@ -990,9 +1023,13 @@ function renderApp() {
     let adminEntryBtn = isAdmin ? `<button id="adminPanelBtn" style="background:#2c3e50; color:white;">🔐 Админка</button>` : '';
     
     // ФИЛЬТРАЦИЯ ЗАДАНИЙ: показываем только задания из той же школы и того же корпуса
+    // И проверяем что поле creatorCorp существует
     let openTasks = tasks.filter(t => {
         if (t.status !== 'open') return false;
         if (t.scope === 'all') return true;
+        // Проверяем что задание из той же школы и того же корпуса
+        // Если у задания нет creatorCorp, считаем что оно для всех (старые задания)
+        if (!t.creatorCorp) return true;
         return t.creatorSchool === currentUser.school && t.creatorCorp === currentUser.corp;
     });
     
@@ -1039,7 +1076,7 @@ function renderApp() {
         let avgRating = taskReviews.length > 0 ? taskReviews.reduce((sum, r) => sum + parseInt(r.rating), 0) / taskReviews.length : 0;
         
         let scopeIcon = task.scope === 'all' ? '🌍' : '🏫';
-        let scopeText = task.scope === 'all' ? 'Для всех участников' : `Только школа ${task.creatorSchool}, корпус ${task.creatorCorp}`;
+        let scopeText = task.scope === 'all' ? 'Для всех участников' : `Только школа ${task.creatorSchool}, корпус ${task.creatorCorp || '?'}`;
         
         return `<div class="task-card">
             <div class="task-header">
@@ -1269,6 +1306,7 @@ window.showBonusHelp = showBonusHelp;
 window.openWalletModal = openWalletModal;
 window.closeWalletModal = closeWalletModal;
 window.showPaymentAlert = showPaymentAlert;
+window.deleteTask = deleteTask;
 
 // ЗАПУСК
 loadDataFromGoogle().then(() => {
