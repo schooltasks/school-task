@@ -6,7 +6,7 @@
     <title>SchoolTask - Биржа поручений</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui; }
-        body { background: linear-gradient(145deg, #f0f4fa 0%, #e2e8f0 100%); min-height: 100vh; padding: 20px; transition: background 0.3s, color 0.3s; }
+        body { background: linear-gradient(145deg, #f0f4fa 0%, #e2e8f0 100%); min-height: 100vh; padding-bottom: 20px; transition: background 0.3s, color 0.3s; }
         body.dark-theme { background: linear-gradient(145deg, #1a1a2e 0%, #16213e 100%); color: #e2e8f0; }
         body.dark-theme .header, body.dark-theme .card, body.dark-theme .task-card, body.dark-theme .admin-panel, body.dark-theme .help-box, body.dark-theme .announcement { background: #1e293b; color: #e2e8f0; }
         body.dark-theme .user-info { background: #334155; }
@@ -96,6 +96,9 @@
         .chat-input-area { display: flex; padding: 12px 16px; gap: 12px; border-top: 1px solid #e2e8f0; background: white; }
         .chat-input-area input { flex: 1; margin: 0; border-radius: 24px; background: #f1f5f9; border: none; padding: 12px 18px; }
         .chat-input-area button { border-radius: 50%; width: 48px; height: 48px; padding: 0; display: flex; align-items: center; justify-content: center; background: #3b82f6; }
+        
+        .support-link { margin-top: 10px; padding: 10px; background: #f1f5f9; border-radius: 20px; text-align: center; font-size: 12px; color: #475569; }
+        body.dark-theme .support-link { background: #334155; color: #cbd5e1; }
         
         @media (max-width: 700px) { .filter-group { flex-direction: column; } .chat-message { max-width: 90%; } }
     </style>
@@ -837,6 +840,9 @@ function renderApp() {
                         <button class="btn-primary" id="registerBtn">Зарегистрироваться</button>
                     `}
                 </div>
+                <div class="support-link">
+                    📞 Поддержка: <strong>@leshr_ak47</strong> (Telegram)
+                </div>
             </div>
         `;
         
@@ -934,7 +940,7 @@ function renderApp() {
                 <div class="users-table">
                     <table>
                         <thead>
-                            <tr><th>Имя</th><th>Школа</th><th>Корпус</th><th>Основной баланс</th><th>Бонусный счёт</th><th>Статус</th><th>Управление балансом</th><th>Управление бонусами</th><th>Действия</th></tr>
+                            <tr><th>Имя</th><th>Школа</th><th>Корпус</th><th>Основной баланс</th><th>Бонусный счёт</th><th>Статус</th><th>Управление балансом</th><th>Управление бонусами</th><th>Действия</th></table>
                         </thead>
                         <tbody>
                             ${filteredUsers.map(user => {
@@ -972,7 +978,14 @@ function renderApp() {
     if (filters.minPrice) openTasks = openTasks.filter(t => parseFloat(t.price) >= parseFloat(filters.minPrice));
     if (filters.maxPrice) openTasks = openTasks.filter(t => parseFloat(t.price) <= parseFloat(filters.maxPrice));
     
+    // СОРТИРОВКА: задания, где есть takеrId (кто-то взял) - вверху
     let myCreatedTasks = tasks.filter(t => t.creatorId === currentUser.id);
+    myCreatedTasks.sort((a, b) => {
+        if (a.takerId && !b.takerId) return -1;
+        if (!a.takerId && b.takerId) return 1;
+        return 0;
+    });
+    
     let myExecTasks = tasks.filter(t => t.takerId === currentUser.id && t.status !== 'completed');
     let myCompletedTasks = tasks.filter(t => t.status === 'completed' && (t.creatorId === currentUser.id || t.takerId === currentUser.id));
     
@@ -1018,6 +1031,8 @@ function renderApp() {
         let scopeIcon = task.scope === 'all' ? '🌍' : '🏫';
         let scopeText = task.scope === 'all' ? 'Для всех участников' : `Только школа ${task.creatorSchool}, корпус ${task.creatorCorp || '?'}`;
         
+        let takenBadge = task.takerId ? '<span style="background:#fef3c7;color:#d97706;padding:2px 8px;border-radius:20px;font-size:10px;margin-left:8px;">👤 Взято</span>' : '';
+        
         let participantsInfo = '';
         if (task.status === 'completed') {
             if (task.creatorId === currentUser.id) {
@@ -1029,7 +1044,7 @@ function renderApp() {
         
         return `<div class="task-card">
             <div class="task-header">
-                <div class="task-price">${task.price} ₽</div>
+                <div class="task-price">${task.price} ₽ ${takenBadge}</div>
                 <div class="task-status ${status.class}">${status.text}</div>
             </div>
             <div class="task-desc">📌 ${escapeHtml(task.description)}</div>
@@ -1091,7 +1106,7 @@ function renderApp() {
                    </div>
                    <div class="tasks-grid">${openTasks.map(t => taskCard(t, true, false)).join('') || '<div style="text-align:center;padding:40px;">✨ Нет заданий</div>'}</div>`;
     } else if (activeTab === 'myTasks') {
-        content = `<h3>📌 Мои задания (созданные мной)</h3>
+        content = `<h3>📌 Мои задания (созданные мной) ${myCreatedTasks.some(t => t.takerId) ? '🔥 Есть взятые!' : ''}</h3>
                    <div class="tasks-grid">${myCreatedTasks.map(t => taskCard(t, false, true)).join('') || '<div style="text-align:center;padding:40px;">✨ У вас пока нет созданных заданий</div>'}</div>`;
     } else if (activeTab === 'myExecutions') {
         content = `<h3>⚡ Мои выполнения</h3>
@@ -1131,6 +1146,9 @@ function renderApp() {
             </div>
             ${content}
             <div style="margin-top:20px;text-align:center;font-size:12px;">⚠️ Комиссия 5% | Общайтесь в чате с исполнителем</div>
+            <div class="support-link" style="margin-top:20px;">
+                📞 Поддержка: <strong>@leshr_ak47</strong> (Telegram)
+            </div>
         </div>
     `;
     
