@@ -22,6 +22,7 @@
         .balance-card { background: #eef2ff; padding: 6px 16px; border-radius: 40px; font-weight: bold; cursor: pointer; }
         .bonus-card { background: linear-gradient(135deg, #fef3c7, #fde68a); color: #92400e; padding: 6px 16px; border-radius: 40px; font-weight: bold; cursor: pointer; }
         button { cursor: pointer; border: none; border-radius: 40px; padding: 10px 20px; font-weight: bold; transition: 0.2s; }
+        button:disabled { opacity: 0.6; cursor: not-allowed; }
         .btn-primary { background: #2c6e4f; color: white; }
         .btn-success { background: #10b981; color: white; }
         .btn-danger { background: #dc2626; color: white; }
@@ -107,7 +108,6 @@
 <script>
 // ========== НАСТРОЙКИ ==========
 const API_URL = 'https://script.google.com/macros/s/AKfycbxf5v8wNf6_yx-S87wcuWdr4kYbza6bWqQKwTaPZjIXZYtkPNB3AO3mHYW2Fo9lShA_/exec';
-const ADMIN_PASSWORD = 'dsl382dAZX';
 
 let currentUser = null;
 let authMode = 'login';
@@ -122,7 +122,32 @@ let currentChatTask = null;
 let chatMessages = [];
 let isLoading = false;
 let isDataLoaded = false;
-let isDeleting = false; // Блокировка повторного удаления
+let chatUpdateInterval = null;
+
+// ===== ЗАЩИТА ОТ МНОГОКРАТНЫХ НАЖАТИЙ =====
+let pendingActions = {
+    createTask: false,
+    deleteTask: false,
+    takeTask: false,
+    confirmCompletion: false,
+    confirmReceipt: false,
+    rejectReceipt: false,
+    sendMessage: false
+};
+
+function isActionLocked(action) {
+    return pendingActions[action] === true;
+}
+
+function lockAction(action) {
+    pendingActions[action] = true;
+}
+
+function unlockAction(action) {
+    setTimeout(() => {
+        pendingActions[action] = false;
+    }, 2000);
+}
 
 if (isDarkTheme) document.body.classList.add('dark-theme');
 
@@ -443,12 +468,18 @@ function logout() {
 // ===== ЗАДАНИЯ =====
 async function createTask(desc, price, loc, paymentType, scope) {
     if (!currentUser) return;
+    if (isActionLocked('createTask')) {
+        showToast('⏳ Подождите, операция уже выполняется...', false);
+        return;
+    }
+    
     let priceNum = parseFloat(price);
     if (isNaN(priceNum) || priceNum <= 0) { showToast('Цена должна быть положительной', true); return; }
     
     let balance = paymentType === 'bonus' ? (parseFloat(currentUser.bonus_balance)||0) : (parseFloat(currentUser.balance)||0);
     if (balance < priceNum) { showToast('Недостаточно средств', true); return; }
     
+    lockAction('createTask');
     showToast('⏳ Создание задания...', false);
     
     if (paymentType === 'bonus') { 
@@ -457,7 +488,6 @@ async function createTask(desc, price, loc, paymentType, scope) {
         currentUser.balance -= priceNum; 
     }
     
-    // ВАЖНО: добавляем creatorCorp для фильтрации
     let newTask = { 
         id: Date.now().toString(), 
         creatorId: currentUser.id, 
@@ -481,6 +511,7 @@ async function createTask(desc, price, loc, paymentType, scope) {
         } else { 
             currentUser.balance += priceNum; 
         }
+        unlockAction('createTask');
         renderApp();
         return;
     }
@@ -492,27 +523,23 @@ async function createTask(desc, price, loc, paymentType, scope) {
     
     currentUser = users.find(u => u.id === currentUser.id);
     showToast('✅ Задание создано!', false); 
+    unlockAction('createTask');
     renderApp(); 
 }
 
-// Функция удаления задания с защитой от многократного нажатия
-let pendingDelete = null;
-
 async function deleteTask(taskId) {
-    // Защита от многократного нажатия
-    if (isDeleting) {
+    if (isActionLocked('deleteTask')) {
         showToast('⏳ Подождите, операция уже выполняется...', false);
         return;
     }
     
     if (!confirm('Удалить задание?')) return;
     
-    isDeleting = true;
+    lockAction('deleteTask');
     
     try {
         let task = tasks.find(t => t.id == taskId);
         
-        // Возвращаем деньги только если задание открыто и это задание текущего пользователя
         if (task && task.status === 'open' && task.creatorId === currentUser.id) {
             const taskPrice = parseFloat(task.price);
             if (!isNaN(taskPrice) && taskPrice > 0) {
@@ -527,14 +554,11 @@ async function deleteTask(taskId) {
             }
         }
         
-        // Удаляем задание
         await saveToGoogle('deleteTask', { id: taskId });
         
-        // Перезагружаем данные
         isDataLoaded = false;
         await loadDataFromGoogle();
         
-        // Обновляем текущего пользователя
         currentUser = users.find(u => u.id === currentUser.id);
         showToast('🗑️ Задание удалено', false); 
         renderApp();
@@ -542,7 +566,7 @@ async function deleteTask(taskId) {
         console.error('Ошибка удаления:', e);
         showToast('❌ Ошибка при удалении задания', true);
     } finally {
-        isDeleting = false;
+        unlockAction('deleteTask');
     }
 }
 
@@ -565,31 +589,55 @@ function showEditModal(task) {
 }
 
 async function takeTask(taskId) {
+    if (isActionLocked('takeTask')) {
+        showToast('⏳ Подождите, операция уже выполняется...', false);
+        return;
+    }
+    
     let task = tasks.find(t => t.id == taskId);
     if (!task || task.status !== 'open') return;
     if (task.creatorId === currentUser.id) { showToast('Нельзя взять своё задание', true); return; }
+    
+    lockAction('takeTask');
     await saveToGoogle('updateTask', { id: task.id, status: 'in_progress', takerId: currentUser.id });
     isDataLoaded = false;
     await loadDataFromGoogle();
     showToast('📢 Вы взяли задание!', false); 
+    unlockAction('takeTask');
     renderApp(); 
 }
 
 async function confirmCompletion(taskId) {
+    if (isActionLocked('confirmCompletion')) {
+        showToast('⏳ Подождите, операция уже выполняется...', false);
+        return;
+    }
+    
     let task = tasks.find(t => t.id == taskId);
     if (!task || task.status !== 'in_progress') return;
     if (task.takerId !== currentUser.id) return;
+    
+    lockAction('confirmCompletion');
     await saveToGoogle('updateTask', { id: task.id, status: 'awaiting_confirmation' });
     isDataLoaded = false;
     await loadDataFromGoogle();
     showToast('✅ Задание выполнено! Ожидайте подтверждения', false); 
+    unlockAction('confirmCompletion');
     renderApp(); 
 }
 
 async function confirmReceipt(taskId) {
+    if (isActionLocked('confirmReceipt')) {
+        showToast('⏳ Подождите, операция уже выполняется...', false);
+        return;
+    }
+    
     let task = tasks.find(t => t.id == taskId);
     if (!task || task.status !== 'awaiting_confirmation') return;
     if (task.creatorId !== currentUser.id) return;
+    
+    lockAction('confirmReceipt');
+    
     let executor = users.find(u => u.id === task.takerId);
     let total = parseFloat(task.price);
     let gain = total * 0.95;
@@ -603,13 +651,22 @@ async function confirmReceipt(taskId) {
     isDataLoaded = false;
     await loadDataFromGoogle();
     showToast('💰 Подтверждено! Исполнитель получил ' + gain.toFixed(2) + '₽', false); 
+    unlockAction('confirmReceipt');
     renderApp(); 
 }
 
 async function rejectReceipt(taskId) {
+    if (isActionLocked('rejectReceipt')) {
+        showToast('⏳ Подождите, операция уже выполняется...', false);
+        return;
+    }
+    
     let task = tasks.find(t => t.id == taskId);
     if (!task || task.status !== 'awaiting_confirmation') return;
     if (task.creatorId !== currentUser.id) return;
+    
+    lockAction('rejectReceipt');
+    
     if (task.payment_type === 'bonus') { 
         currentUser.bonus_balance += parseFloat(task.price); 
     } else { 
@@ -621,6 +678,7 @@ async function rejectReceipt(taskId) {
     await loadDataFromGoogle();
     currentUser = users.find(u => u.id === currentUser.id);
     showToast('⚠️ Деньги возвращены', false); 
+    unlockAction('rejectReceipt');
     renderApp(); 
 }
 
@@ -629,6 +687,16 @@ async function openChat(taskId) {
     currentChatTask = taskId;
     await loadMessages();
     renderChatModal();
+    
+    if (chatUpdateInterval) {
+        clearInterval(chatUpdateInterval);
+    }
+    chatUpdateInterval = setInterval(async () => {
+        if (currentChatTask) {
+            await loadMessages();
+            updateChatMessages();
+        }
+    }, 3000);
 }
 
 async function loadMessages() {
@@ -644,17 +712,38 @@ async function loadMessages() {
     }
 }
 
+function updateChatMessages() {
+    const messagesDiv = document.getElementById('chatMessages');
+    if (messagesDiv) {
+        messagesDiv.innerHTML = chatMessages.map(msg => `
+            <div class="chat-message ${msg.from === currentUser.id ? 'mine' : 'other'}">
+                <div><strong>${msg.fromName}</strong> ${new Date(msg.time).toLocaleTimeString()}</div>
+                <div>${msg.text}</div>
+            </div>
+        `).join('');
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+}
+
 async function sendMessage() {
+    if (isActionLocked('sendMessage')) {
+        return;
+    }
+    
     let input = document.getElementById('chatInput');
     let text = input.value.trim();
     if (!text) return;
     
-    chatMessages.push({
+    lockAction('sendMessage');
+    
+    const newMessage = {
         from: currentUser.id,
         fromName: currentUser.name,
         text: text,
         time: new Date().toISOString()
-    });
+    };
+    
+    chatMessages.push(newMessage);
     
     await saveToGoogle('saveMessage', { 
         taskId: currentChatTask, 
@@ -662,7 +751,8 @@ async function sendMessage() {
     });
     
     input.value = '';
-    renderChatModal();
+    updateChatMessages();
+    unlockAction('sendMessage');
 }
 
 function renderChatModal() {
@@ -703,6 +793,10 @@ function renderChatModal() {
 }
 
 function closeChat() {
+    if (chatUpdateInterval) {
+        clearInterval(chatUpdateInterval);
+        chatUpdateInterval = null;
+    }
     let modal = document.getElementById('chatModal');
     if (modal) modal.style.display = 'none';
     currentChatTask = null;
@@ -782,13 +876,16 @@ function unbanUser(userId) {
     });
 }
 
-function requestAdminAccess() { 
+async function requestAdminAccess() { 
     let pwd = prompt("Пароль администратора:"); 
-    if (pwd === ADMIN_PASSWORD) { 
+    const result = await saveToGoogle('checkAdminPassword', { password: pwd });
+    if (result && result.success) { 
         adminMode = true; 
         showToast("Админ-панель активирована", false); 
         renderApp(); 
-    } else showToast("Неверный пароль", true); 
+    } else { 
+        showToast("Неверный пароль", true); 
+    }
 }
 
 function exitAdminMode() { adminMode = false; renderApp(); }
@@ -1022,13 +1119,9 @@ function renderApp() {
     
     let adminEntryBtn = isAdmin ? `<button id="adminPanelBtn" style="background:#2c3e50; color:white;">🔐 Админка</button>` : '';
     
-    // ФИЛЬТРАЦИЯ ЗАДАНИЙ: показываем только задания из той же школы и того же корпуса
-    // И проверяем что поле creatorCorp существует
     let openTasks = tasks.filter(t => {
         if (t.status !== 'open') return false;
         if (t.scope === 'all') return true;
-        // Проверяем что задание из той же школы и того же корпуса
-        // Если у задания нет creatorCorp, считаем что оно для всех (старые задания)
         if (!t.creatorCorp) return true;
         return t.creatorSchool === currentUser.school && t.creatorCorp === currentUser.corp;
     });
@@ -1306,7 +1399,6 @@ window.showBonusHelp = showBonusHelp;
 window.openWalletModal = openWalletModal;
 window.closeWalletModal = closeWalletModal;
 window.showPaymentAlert = showPaymentAlert;
-window.deleteTask = deleteTask;
 
 // ЗАПУСК
 loadDataFromGoogle().then(() => {
