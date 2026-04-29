@@ -113,6 +113,10 @@ let filters = { scope: 'school', minPrice: '', maxPrice: '' };
 let isLoading = false;
 let isDataLoaded = false;
 
+// ===== ЗАЩИТА ОТ МНОГОКРАТНОГО УДАЛЕНИЯ =====
+let isDeleting = false;
+let pendingDeleteTasks = new Set();
+
 // ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
 function escapeHtml(text) {
     if (!text) return '';
@@ -414,26 +418,112 @@ async function createTask(desc, price, loc, paymentType, scope, btn) {
     renderApp();
 }
 
+// ИСПРАВЛЕННАЯ ФУНКЦИЯ УДАЛЕНИЯ - защита от многократного начисления
 async function deleteTask(taskId, btn) {
+    // Блокируем кнопку
     if (btn) btn.disabled = true;
-    if (!confirm('Удалить задание?')) { if(btn) btn.disabled=false; return; }
     
-    let task = tasks.find(t => t.id == taskId);
-    if (task && task.status === 'open' && task.creatorId === currentUser.id) {
-        const taskPrice = parseFloat(task.price);
-        if (!isNaN(taskPrice) && taskPrice > 0) {
-            if (task.payment_type === 'bonus') currentUser.bonus_balance += taskPrice;
-            else currentUser.balance += taskPrice;
-            await saveToGoogle('updateUser', { id: currentUser.id, balance: currentUser.balance, bonus_balance: currentUser.bonus_balance });
-        }
+    // Защита от одновременного множественного удаления
+    if (isDeleting) {
+        showToast('⏳ Подождите, предыдущее удаление ещё обрабатывается...', false);
+        if (btn) btn.disabled = false;
+        return;
     }
-    await saveToGoogle('deleteTask', { id: taskId });
-    isDataLoaded = false;
-    await loadDataFromGoogle();
-    currentUser = users.find(u => u.id === currentUser.id);
-    showToast('Задание удалено', false);
-    if(btn) btn.disabled=false;
-    renderApp();
+    
+    // Защита от повторного удаления того же задания
+    if (pendingDeleteTasks.has(taskId)) {
+        showToast('⏳ Это задание уже удаляется...', false);
+        if (btn) btn.disabled = false;
+        return;
+    }
+    
+    if (!confirm('Удалить задание?')) {
+        if (btn) btn.disabled = false;
+        return;
+    }
+    
+    isDeleting = true;
+    pendingDeleteTasks.add(taskId);
+    
+    try {
+        // Получаем свежие данные о задании из актуального списка
+        let task = tasks.find(t => t.id == taskId);
+        if (!task) {
+            showToast('Задание не найдено', true);
+            if (btn) btn.disabled = false;
+            pendingDeleteTasks.delete(taskId);
+            isDeleting = false;
+            return;
+        }
+        
+        // Получаем свежие данные о пользователе
+        let freshUser = users.find(u => u.id === currentUser.id);
+        if (freshUser) {
+            currentUser.balance = parseFloat(freshUser.balance) || 0;
+            currentUser.bonus_balance = parseFloat(freshUser.bonus_balance) || 0;
+        }
+        
+        // Возвращаем деньги только если задание открыто и это задание текущего пользователя
+        let amountReturned = 0;
+        if (task.status === 'open' && task.creatorId === currentUser.id) {
+            const taskPrice = parseFloat(task.price);
+            if (!isNaN(taskPrice) && taskPrice > 0) {
+                amountReturned = taskPrice;
+                if (task.payment_type === 'bonus') {
+                    currentUser.bonus_balance += taskPrice;
+                } else {
+                    currentUser.balance += taskPrice;
+                }
+            }
+        }
+        
+        // Удаляем задание на сервере
+        const deleteResult = await saveToGoogle('deleteTask', { id: taskId });
+        
+        if (!deleteResult || !deleteResult.success) {
+            // Если удаление не удалось - откатываем баланс
+            if (amountReturned > 0) {
+                if (task.payment_type === 'bonus') {
+                    currentUser.bonus_balance -= amountReturned;
+                } else {
+                    currentUser.balance -= amountReturned;
+                }
+            }
+            showToast('Ошибка при удалении задания', true);
+            if (btn) btn.disabled = false;
+            pendingDeleteTasks.delete(taskId);
+            isDeleting = false;
+            renderApp();
+            return;
+        }
+        
+        // Если деньги были возвращены, обновляем пользователя на сервере
+        if (amountReturned > 0) {
+            await saveToGoogle('updateUser', { 
+                id: currentUser.id, 
+                balance: currentUser.balance, 
+                bonus_balance: currentUser.bonus_balance 
+            });
+            showToast(`💰 Возвращено ${amountReturned} ₽`, false);
+        }
+        
+        // Перезагружаем данные
+        isDataLoaded = false;
+        await loadDataFromGoogle();
+        
+        // Обновляем текущего пользователя
+        currentUser = users.find(u => u.id === currentUser.id);
+        showToast('🗑️ Задание удалено', false);
+        
+    } catch(e) {
+        console.error('Ошибка удаления:', e);
+        showToast('Ошибка при удалении задания', true);
+    } finally {
+        if (btn) btn.disabled = false;
+        pendingDeleteTasks.delete(taskId);
+        isDeleting = false;
+        renderApp();
+    }
 }
 
 async function takeTask(taskId, btn) {
@@ -456,7 +546,6 @@ async function confirmCompletion(taskId, btn) {
     if (!task || task.status !== 'in_progress') { if(btn) btn.disabled=false; return; }
     if (task.takerId !== currentUser.id) { if(btn) btn.disabled=false; return; }
     
-    // Показываем напоминание о видео
     showToast('🎥 Не забудьте записать видео выполнения!', false);
     
     await saveToGoogle('updateTask', { id: task.id, status: 'awaiting_confirmation' });
@@ -665,12 +754,12 @@ function renderApp() {
                         <div class="tab ${!isLogin ? 'active' : ''}" id="registerTab">📝 Регистрация</div>
                     </div>
                     ${isLogin ? `
-                        <input type="text" id="loginName" placeholder="Имя" value="leshr_ak47">
-                        <input type="text" id="loginSchool" placeholder="Школа (только цифры)" value="1542">
+                        <input type="text" id="loginName" placeholder="Имя">
+                        <input type="text" id="loginSchool" placeholder="Школа (только цифры)">
                         <div class="input-hint">📌 Только цифры</div>
-                        <input type="text" id="loginCorp" placeholder="Корпус (только цифры)" value="5">
+                        <input type="text" id="loginCorp" placeholder="Корпус (только цифры)">
                         <div class="input-hint">📌 Только цифры</div>
-                        <input type="password" id="loginPassword" placeholder="Пароль" value="dsl382dAZX">
+                        <input type="password" id="loginPassword" placeholder="Пароль">
                         <button class="btn-primary" id="loginBtn">Войти</button>
                         <button class="btn-info" id="refreshDataBtn" style="margin-top:10px;">🔄 Обновить данные</button>
                     ` : `
