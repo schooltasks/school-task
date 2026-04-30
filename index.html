@@ -175,25 +175,26 @@ async function loadDataFromGoogle() {
     isLoading = true;
     
     try {
-        const [usersRes, tasksRes, reviewsRes, reportsRes] = await Promise.all([
-            fetch(API_URL + '?action=getUsers'),
-            fetch(API_URL + '?action=getTasks'),
-            fetch(API_URL + '?action=getReviews'),
-            fetch(API_URL + '?action=getReports')
-        ]);
-        
+        const usersRes = await fetch(API_URL + '?action=getUsers');
         if (usersRes.ok) {
             const data = await usersRes.json();
             if (Array.isArray(data)) users = data;
+            console.log('Загружено пользователей:', users.length);
         }
+        
+        const tasksRes = await fetch(API_URL + '?action=getTasks');
         if (tasksRes.ok) {
             const data = await tasksRes.json();
             if (Array.isArray(data)) tasks = data;
         }
+        
+        const reviewsRes = await fetch(API_URL + '?action=getReviews');
         if (reviewsRes.ok) {
             const data = await reviewsRes.json();
             if (Array.isArray(data)) reviews = data;
         }
+        
+        const reportsRes = await fetch(API_URL + '?action=getReports');
         if (reportsRes.ok) {
             const data = await reportsRes.json();
             if (Array.isArray(data)) reports = data;
@@ -404,6 +405,7 @@ function isValidName(name) {
 
 function checkNameError(name) {
     if (!name || name.length === 0) return '';
+    if (name.length < 2) return '❌ Имя должно содержать хотя бы 2 символа';
     if (/^\d+$/.test(name)) {
         return '❌ Имя не может состоять только из цифр! Добавьте буквы.';
     }
@@ -416,9 +418,12 @@ function checkNameError(name) {
     return '';
 }
 
-// ===== РЕГИСТРАЦИЯ (ИСПРАВЛЕНА) =====
+// ===== РЕГИСТРАЦИЯ (РАБОТАЕТ!) =====
 async function registerUser(name, school, corp, password, btn) {
-    // Блокируем кнопку сразу
+    if (isActionLocked('register')) {
+        showToast('⏳ Подождите, регистрация уже выполняется...', false);
+        return false;
+    }
     if (btn) btn.disabled = true;
     
     // Валидация имени
@@ -455,6 +460,8 @@ async function registerUser(name, school, corp, password, btn) {
         if(btn) btn.disabled=false; 
         return false; 
     }
+    
+    lockAction('register');
     
     const id = 'u' + Date.now();
     const referralCode = 'REF' + Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -508,6 +515,10 @@ async function registerUser(name, school, corp, password, btn) {
 }
 
 async function loginUser(name, school, corp, password, btn) {
+    if (isActionLocked('login')) {
+        showToast('⏳ Подождите, вход уже выполняется...', false);
+        return false;
+    }
     if (btn) btn.disabled = true;
     
     let cleanName = name ? name.toString().trim() : '';
@@ -519,6 +530,8 @@ async function loginUser(name, school, corp, password, btn) {
     if (!cleanPassword) { showToast('❌ Введите пароль', true); if(btn) btn.disabled=false; return false; }
     
     if (!isDataLoaded || users.length === 0) await loadDataFromGoogle();
+    
+    lockAction('login');
     
     let user = users.find(u => String(u.name || '').trim() === cleanName && 
                               String(u.school || '').trim() === cleanSchool && 
@@ -1064,9 +1077,6 @@ function renderApp() {
                     regNameError.innerText = errorMsg;
                     regNameError.style.display = 'block';
                     document.getElementById('registerBtn').disabled = true;
-                } else if (val.length > 0 && !errorMsg) {
-                    regNameError.style.display = 'none';
-                    document.getElementById('registerBtn').disabled = false;
                 } else {
                     regNameError.style.display = 'none';
                     document.getElementById('registerBtn').disabled = false;
@@ -1078,7 +1088,7 @@ function renderApp() {
         return;
     }
     
-    // ОСТАЛЬНАЯ ЧАСТЬ RENDERAPP (ОСНОВНОЙ ИНТЕРФЕЙС)
+    // ПОЛЬЗОВАТЕЛЬ ЗАЛОГИНЕН - ПОКАЗЫВАЕМ ОСНОВНОЙ ИНТЕРФЕЙС
     let isAdmin = currentUser.name === 'leshr_ak47';
     
     let adminPanelHtml = '';
@@ -1111,7 +1121,7 @@ function renderApp() {
                                 <th style="padding:10px;text-align:left;">Статус</th>
                                 <th style="padding:10px;text-align:left;">Управление</th>
                                 <th style="padding:10px;text-align:left;">Действия</th>
-                            </tr>
+                            </table>
                         </thead>
                         <tbody>
                             ${filteredUsers.map(user => {
@@ -1362,6 +1372,7 @@ function renderApp() {
         </div>
     `;
     
+    // Привязка событий
     document.querySelectorAll('.tab').forEach(tab => {
         tab.onclick = () => {
             window._activeTab = tab.getAttribute('data-tab');
