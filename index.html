@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>SchoolTask - Биржа поручений</title>
     <style>
-        /* ===== ПОЛНЫЙ CSS КОД (400+ строк) ===== */
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui; }
         body { background: linear-gradient(145deg, #f0f4fa 0%, #e2e8f0 100%); min-height: 100vh; padding: 20px; transition: background 0.3s, color 0.3s; }
         body.dark-theme { background: linear-gradient(145deg, #1a1a2e 0%, #16213e 100%); color: #e2e8f0; }
@@ -92,12 +91,6 @@
         .support-link { margin-top: 20px; padding: 10px; background: #f1f5f9; border-radius: 20px; text-align: center; font-size: 12px; color: #475569; }
         body.dark-theme .support-link { background: #334155; color: #cbd5e1; }
         
-        /* Дополнительные стили для админ-панели */
-        .users-table table { width: 100%; border-collapse: collapse; }
-        .users-table th, .users-table td { padding: 12px 8px; text-align: left; border-bottom: 1px solid #e2e8f0; }
-        .users-table th { background: #f1f5f9; font-weight: 600; }
-        body.dark-theme .users-table th { background: #334155; }
-        
         @media (max-width: 700px) { .filter-group { flex-direction: column; } }
     </style>
 </head>
@@ -123,11 +116,9 @@ let isDeleting = false;
 let pendingDeleteTasks = new Set();
 
 // ===== ДОПОЛНИТЕЛЬНЫЕ ПЕРЕМЕННЫЕ =====
-let notifications = [];
 let reports = [];
 let userStats = { totalUsers: 0, totalTasks: 0, totalReviews: 0 };
 let dailyBonusClaimed = false;
-let lastDailyBonusDate = null;
 
 // ===== ЗАЩИТА ОТ МНОГОКРАТНЫХ НАЖАТИЙ =====
 const actionLocks = {
@@ -137,9 +128,10 @@ const actionLocks = {
     confirmCompletion: false,
     confirmReceipt: false,
     rejectReceipt: false,
-    sendMessage: false,
     addReview: false,
-    addReport: false
+    addReport: false,
+    register: false,
+    login: false
 };
 
 function isActionLocked(action) { return actionLocks[action] === true; }
@@ -197,6 +189,7 @@ async function loadDataFromGoogle() {
         if (usersRes.ok) {
             const data = await usersRes.json();
             if (Array.isArray(data)) users = data;
+            console.log('Загружено пользователей:', users.length);
         }
         if (tasksRes.ok) {
             const data = await tasksRes.json();
@@ -228,7 +221,7 @@ async function loadDataFromGoogle() {
         return true;
     } catch(e) {
         console.error('Ошибка загрузки:', e);
-        showToast('Не удалось загрузить данные', true);
+        showToast('⚠️ Не удалось загрузить данные', true);
         return false;
     } finally {
         isLoading = false;
@@ -254,7 +247,7 @@ async function saveToGoogle(action, params) {
         return await response.json();
     } catch(e) {
         console.error('Ошибка сохранения:', e);
-        showToast('Не удалось сохранить', true);
+        showToast('⚠️ Не удалось сохранить', true);
         return { success: false };
     }
 }
@@ -287,11 +280,11 @@ function getReferralLink() {
 
 function copyReferralLink() { 
     navigator.clipboard.writeText(getReferralLink()); 
-    showToast('Ссылка скопирована! +5 за каждого друга', false); 
+    showToast('✅ Ссылка скопирована! +5₽ за каждого друга', false); 
 }
 
 function shareTelegram() { 
-    window.open('https://t.me/share/url?url=' + encodeURIComponent(getReferralLink()) + '&text=' + encodeURIComponent('SchoolTask - биржа поручений! +5 на бонусный счёт за друга!'), '_blank'); 
+    window.open('https://t.me/share/url?url=' + encodeURIComponent(getReferralLink()) + '&text=' + encodeURIComponent('SchoolTask - биржа поручений! +5₽ на бонусный счёт за друга!'), '_blank'); 
 }
 
 function shareVK() { 
@@ -299,14 +292,14 @@ function shareVK() {
 }
 
 function showBonusHelp() {
-    alert('Бонусный счёт\n\nБонусы НЕЛЬЗЯ вывести, только тратить на создание заданий!\n\nКак получить:\n• +5 за каждого приглашённого друга\n• +10 за выполнение задания\n• +20 за отзыв 5 звёзд\n• +3 ежедневный бонус за вход');
+    alert('🎁 Бонусный счёт\n\nБонусы НЕЛЬЗЯ вывести, только тратить на создание заданий!\n\n✨ Как получить:\n• +5₽ за каждого приглашённого друга\n• +10₽ за выполнение задания\n• +20₽ за отзыв 5 звёзд\n• +3₽ ежедневный бонус за вход');
 }
 
 // ===== ЕЖЕДНЕВНЫЙ БОНУС =====
 async function claimDailyBonus() {
     if (!currentUser) return;
     if (dailyBonusClaimed) {
-        showToast('Вы уже получали сегодняшний бонус! Завтра будет новый.', false);
+        showToast('❌ Вы уже получали сегодняшний бонус! Завтра будет новый.', false);
         return;
     }
     
@@ -318,7 +311,7 @@ async function claimDailyBonus() {
         showToast('🎁 +3₽ на бонусный счёт! Заходите завтра за новым бонусом!', false);
         renderApp();
     } else {
-        showToast('Ошибка при получении бонуса', true);
+        showToast('❌ Ошибка при получении бонуса', true);
     }
 }
 
@@ -393,11 +386,11 @@ async function addReport(reportedId, taskId, reason) {
     });
     
     if (result && result.success) {
-        showToast('Жалоба отправлена! Администратор рассмотрит её в ближайшее время.', false);
+        showToast('✅ Жалоба отправлена! Администратор рассмотрит её в ближайшее время.', false);
         await loadDataFromGoogle();
         renderApp();
     } else {
-        showToast('Ошибка при отправке жалобы', true);
+        showToast('❌ Ошибка при отправке жалобы', true);
     }
 }
 
@@ -406,28 +399,76 @@ function showReportModal(taskId, reportedId) {
     if (reason && reason.trim()) {
         addReport(reportedId, taskId, reason.trim());
     } else if (reason !== null) {
-        showToast('Укажите причину жалобы', true);
+        showToast('❌ Укажите причину жалобы', true);
     }
 }
 
-// ===== ВАЛИДАЦИЯ =====
+// ===== ВАЛИДАЦИЯ ИМЕНИ =====
 function isValidName(name) {
+    // Если только цифры - запрещаем
     if (/^\d+$/.test(name)) return false;
+    // Если нет ни одной буквы (только спецсимволы) - тоже запрещаем
     if (!/[a-zA-Zа-яА-Я]/.test(name)) return false;
     return true;
 }
 
-// ===== РЕГИСТРАЦИЯ И ВХОД =====
+function checkNameError(name) {
+    if (!name) return '';
+    if (/^\d+$/.test(name)) {
+        return '❌ Имя не может состоять только из цифр! Добавьте буквы.';
+    }
+    if (!/[a-zA-Zа-яА-Я]/.test(name)) {
+        return '❌ Имя должно содержать хотя бы одну букву!';
+    }
+    if (users.some(u => u.name === name)) {
+        return '❌ Пользователь с таким именем уже существует';
+    }
+    return '';
+}
+
+// ===== РЕГИСТРАЦИЯ (ИСПРАВЛЕНА) =====
 async function registerUser(name, school, corp, password, btn) {
+    if (isActionLocked('register')) {
+        showToast('⏳ Подождите, регистрация уже выполняется...', false);
+        return false;
+    }
     if (btn) btn.disabled = true;
     
-    if (!name.trim() || !school.trim() || !corp.trim()) { showToast('Заполните все поля', true); if(btn) btn.disabled=false; return false; }
-    if (!/^\d+$/.test(school)) { showToast('Школа только цифры!', true); if(btn) btn.disabled=false; return false; }
-    if (!/^\d+$/.test(corp)) { showToast('Корпус только цифры!', true); if(btn) btn.disabled=false; return false; }
-    if (password.length < 3) { showToast('Пароль не менее 3 символов', true); if(btn) btn.disabled=false; return false; }
-    if (!isValidName(name.trim())) { showToast('Имя должно содержать буквы!', true); if(btn) btn.disabled=false; return false; }
+    // Валидация
+    if (!name.trim() || !school.trim() || !corp.trim()) { 
+        showToast('❌ Заполните все поля', true); 
+        if(btn) btn.disabled=false; 
+        return false; 
+    }
+    if (!/^\d+$/.test(school)) { 
+        showToast('❌ Школа только цифры!', true); 
+        if(btn) btn.disabled=false; 
+        return false; 
+    }
+    if (!/^\d+$/.test(corp)) { 
+        showToast('❌ Корпус только цифры!', true); 
+        if(btn) btn.disabled=false; 
+        return false; 
+    }
+    if (password.length < 3) { 
+        showToast('❌ Пароль не менее 3 символов', true); 
+        if(btn) btn.disabled=false; 
+        return false; 
+    }
+    if (!isValidName(name.trim())) { 
+        showToast('❌ Имя должно содержать буквы! Нельзя использовать только цифры.', true); 
+        if(btn) btn.disabled=false; 
+        return false; 
+    }
     
-    if (users.some(u => u.name === name.trim())) { showToast('Пользователь уже существует', true); if(btn) btn.disabled=false; return false; }
+    // Проверка существования пользователя
+    if (users.some(u => u.name === name.trim())) { 
+        showToast('❌ Пользователь с таким именем уже существует', true); 
+        if(btn) btn.disabled=false; 
+        return false; 
+    }
+    
+    lockAction('register');
     
     const id = 'u' + Date.now();
     const referralCode = 'REF' + Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -437,30 +478,45 @@ async function registerUser(name, school, corp, password, btn) {
     
     try {
         const result = await saveToGoogle('registerUser', {
-            id: id, name: name.trim(), school: school.trim(), corp: corp.trim(),
-            balance: 0, bonus_balance: 0, password: password,
-            referral_code: referralCode, referred_by: refCode || ''
+            id: id, 
+            name: name.trim(), 
+            school: school.trim(), 
+            corp: corp.trim(),
+            balance: 0, 
+            bonus_balance: 0, 
+            password: password,
+            referral_code: referralCode, 
+            referred_by: refCode || ''
         });
         
+        console.log('Результат регистрации:', result);
+        
         if (result && result.success) {
+            // Обновляем данные
             isDataLoaded = false;
             await loadDataFromGoogle();
-            currentUser = users.find(u => u.id === id) || users.find(u => u.name === name.trim());
+            
+            // Ищем созданного пользователя
+            currentUser = users.find(u => u.id === id);
+            if (!currentUser) {
+                currentUser = users.find(u => u.name === name.trim());
+            }
+            
             if (currentUser) {
                 saveSession();
-                showToast('Добро пожаловать, ' + currentUser.name + '!', false);
+                showToast(`✅ Добро пожаловать, ${currentUser.name}!`, false);
                 renderApp();
                 if(btn) btn.disabled=false;
                 return true;
             } else {
-                showToast('Ошибка: пользователь создан, но не найден', true);
+                showToast('❌ Ошибка: пользователь создан, но не найден', true);
             }
         } else {
-            showToast('Ошибка регистрации: ' + (result?.error || 'Неизвестная ошибка'), true);
+            showToast(`❌ Ошибка регистрации: ${result?.error || 'Неизвестная ошибка'}`, true);
         }
     } catch(e) {
         console.error('Ошибка регистрации:', e);
-        showToast('Ошибка соединения. Попробуйте позже.', true);
+        showToast('❌ Ошибка соединения. Попробуйте позже.', true);
     }
     
     if(btn) btn.disabled=false;
@@ -468,6 +524,10 @@ async function registerUser(name, school, corp, password, btn) {
 }
 
 async function loginUser(name, school, corp, password, btn) {
+    if (isActionLocked('login')) {
+        showToast('⏳ Подождите, вход уже выполняется...', false);
+        return false;
+    }
     if (btn) btn.disabled = true;
     
     let cleanName = name ? name.toString().trim() : '';
@@ -475,22 +535,24 @@ async function loginUser(name, school, corp, password, btn) {
     let cleanCorp = corp ? corp.toString().trim() : '';
     let cleanPassword = password ? password.toString().trim() : '';
     
-    if (!cleanName || !cleanSchool || !cleanCorp) { showToast('Заполните все поля', true); if(btn) btn.disabled=false; return false; }
-    if (!cleanPassword) { showToast('Введите пароль', true); if(btn) btn.disabled=false; return false; }
+    if (!cleanName || !cleanSchool || !cleanCorp) { showToast('❌ Заполните все поля', true); if(btn) btn.disabled=false; return false; }
+    if (!cleanPassword) { showToast('❌ Введите пароль', true); if(btn) btn.disabled=false; return false; }
     
     if (!isDataLoaded || users.length === 0) await loadDataFromGoogle();
+    
+    lockAction('login');
     
     let user = users.find(u => String(u.name || '').trim() === cleanName && 
                               String(u.school || '').trim() === cleanSchool && 
                               String(u.corp || '').trim() === cleanCorp);
     
-    if (!user) { showToast('Пользователь не найден', true); if(btn) btn.disabled=false; return false; }
-    if (String(user.password || '').trim() !== cleanPassword) { showToast('Неверный пароль', true); if(btn) btn.disabled=false; return false; }
-    if (user.isBanned === 'true') { showToast('Аккаунт заблокирован', true); if(btn) btn.disabled=false; return false; }
+    if (!user) { showToast('❌ Пользователь не найден', true); if(btn) btn.disabled=false; return false; }
+    if (String(user.password || '').trim() !== cleanPassword) { showToast('❌ Неверный пароль', true); if(btn) btn.disabled=false; return false; }
+    if (user.isBanned === 'true') { showToast('⛔ Аккаунт заблокирован', true); if(btn) btn.disabled=false; return false; }
     
     currentUser = user;
     saveSession();
-    showToast('С возвращением, ' + currentUser.name + '!', false);
+    showToast(`✅ С возвращением, ${currentUser.name}!`, false);
     renderApp();
     if(btn) btn.disabled=false;
     return true;
@@ -515,10 +577,10 @@ async function createTask(desc, price, loc, paymentType, scope, btn) {
     if (!currentUser) { if(btn) btn.disabled=false; return; }
     
     let priceNum = parseFloat(price);
-    if (isNaN(priceNum) || priceNum <= 0) { showToast('Цена должна быть положительной', true); if(btn) btn.disabled=false; return; }
+    if (isNaN(priceNum) || priceNum <= 0) { showToast('❌ Цена должна быть положительной', true); if(btn) btn.disabled=false; return; }
     
     let balance = paymentType === 'bonus' ? (parseFloat(currentUser.bonus_balance)||0) : (parseFloat(currentUser.balance)||0);
-    if (balance < priceNum) { showToast('Недостаточно средств', true); if(btn) btn.disabled=false; return; }
+    if (balance < priceNum) { showToast('❌ Недостаточно средств', true); if(btn) btn.disabled=false; return; }
     
     lockAction('createTask');
     
@@ -535,7 +597,7 @@ async function createTask(desc, price, loc, paymentType, scope, btn) {
     
     let createResult = await saveToGoogle('createTask', newTask);
     if (!createResult || !createResult.success) {
-        showToast('Ошибка создания задания', true);
+        showToast('❌ Ошибка создания задания', true);
         if (paymentType === 'bonus') currentUser.bonus_balance += priceNum;
         else currentUser.balance += priceNum;
         if(btn) btn.disabled=false;
@@ -584,7 +646,7 @@ async function deleteTask(taskId, btn) {
     try {
         let task = tasks.find(t => t.id == taskId);
         if (!task) {
-            showToast('Задание не найдено', true);
+            showToast('❌ Задание не найдено', true);
             if(btn) btn.disabled=false;
             pendingDeleteTasks.delete(taskId);
             isDeleting = false;
@@ -620,7 +682,7 @@ async function deleteTask(taskId, btn) {
                     currentUser.balance -= amountReturned;
                 }
             }
-            showToast('Ошибка при удалении задания', true);
+            showToast('❌ Ошибка при удалении задания', true);
             if(btn) btn.disabled=false;
             pendingDeleteTasks.delete(taskId);
             isDeleting = false;
@@ -644,7 +706,7 @@ async function deleteTask(taskId, btn) {
         
     } catch(e) {
         console.error('Ошибка удаления:', e);
-        showToast('Ошибка при удалении задания', true);
+        showToast('❌ Ошибка при удалении задания', true);
     } finally {
         if(btn) btn.disabled=false;
         pendingDeleteTasks.delete(taskId);
@@ -663,7 +725,7 @@ async function takeTask(taskId, btn) {
     
     let task = tasks.find(t => t.id == taskId);
     if (!task || task.status !== 'open') { if(btn) btn.disabled=false; return; }
-    if (task.creatorId === currentUser.id) { showToast('Нельзя взять своё задание', true); if(btn) btn.disabled=false; return; }
+    if (task.creatorId === currentUser.id) { showToast('❌ Нельзя взять своё задание', true); if(btn) btn.disabled=false; return; }
     
     lockAction('takeTask');
     await saveToGoogle('updateTask', { id: task.id, status: 'in_progress', takerId: currentUser.id });
@@ -723,7 +785,7 @@ async function confirmReceipt(taskId, btn) {
     await saveToGoogle('updateTask', { id: task.id, status: 'completed' });
     isDataLoaded = false;
     await loadDataFromGoogle();
-    showToast('💰 Подтверждено! Исполнитель получил ' + gain.toFixed(2) + '₽', false);
+    showToast(`💰 Подтверждено! Исполнитель получил ${gain.toFixed(2)} ₽`, false);
     if(btn) btn.disabled=false;
     renderApp();
 }
@@ -758,7 +820,7 @@ function showEditModal(task) {
     let newDesc = prompt('Новое описание:', task.description);
     if (!newDesc) return;
     let newPrice = parseFloat(prompt('Новая цена:', task.price));
-    if (isNaN(newPrice) || newPrice <= 0) { showToast('Цена должна быть положительной', true); return; }
+    if (isNaN(newPrice) || newPrice <= 0) { showToast('❌ Цена должна быть положительной', true); return; }
     let newLoc = prompt('Новое место:', task.location);
     if (!newLoc) return;
     let newScope = confirm('Для всех участников? (OK - да, Отмена - только моя школа)') ? 'all' : 'school';
@@ -787,7 +849,6 @@ async function addReview(toUserId, taskId, rating, comment) {
     });
     
     if (result && result.success) {
-        // Обновляем рейтинг пользователя
         const user = users.find(u => u.id === toUserId);
         if (user) {
             const currentRating = parseFloat(user.rating) || 0;
@@ -806,7 +867,7 @@ async function addReview(toUserId, taskId, rating, comment) {
         await loadDataFromGoogle();
         renderApp();
     } else {
-        showToast('Ошибка при добавлении отзыва', true);
+        showToast('❌ Ошибка при добавлении отзыва', true);
     }
 }
 
@@ -814,7 +875,7 @@ function showReviewModal(taskId, toUserId) {
     let rating = prompt('Оцените выполнение (1-5 звёзд):', '5');
     if (!rating) return;
     let ratingNum = parseInt(rating);
-    if (ratingNum < 1 || ratingNum > 5) { showToast('Оценка от 1 до 5', true); return; }
+    if (ratingNum < 1 || ratingNum > 5) { showToast('❌ Оценка от 1 до 5', true); return; }
     let comment = prompt('Ваш комментарий (необязательно):', '');
     addReview(toUserId, taskId, ratingNum, comment || '');
 }
@@ -846,7 +907,7 @@ function showBanModal(userId) {
         isDataLoaded = false;
         await loadDataFromGoogle();
         if (currentUser && currentUser.id === userId) logout();
-        else showToast(user.name + ' заблокирован', false);
+        else showToast('⛔ ' + user.name + ' заблокирован', false);
         renderApp();
     });
 }
@@ -855,7 +916,7 @@ function unbanUser(userId) {
     saveToGoogle('updateUser', { id: userId, isBanned: 'false', banReason: '' }).then(async () => {
         isDataLoaded = false;
         await loadDataFromGoogle();
-        showToast('Пользователь разблокирован', false);
+        showToast('✅ Пользователь разблокирован', false);
         renderApp();
     });
 }
@@ -863,8 +924,8 @@ function unbanUser(userId) {
 async function requestAdminAccess() { 
     let pwd = prompt("Пароль администратора:"); 
     const result = await saveToGoogle('checkAdminPassword', { password: pwd });
-    if (result && result.success) { adminMode = true; showToast("Админ-панель активирована", false); renderApp(); } 
-    else showToast("Неверный пароль", true); 
+    if (result && result.success) { adminMode = true; showToast("👑 Админ-панель активирована", false); renderApp(); } 
+    else showToast("❌ Неверный пароль", true); 
 }
 
 function exitAdminMode() { adminMode = false; renderApp(); }
@@ -874,7 +935,7 @@ function deleteAllTasks() {
         Promise.all(tasks.map(task => saveToGoogle('deleteTask', { id: task.id }))).then(async () => {
             isDataLoaded = false;
             await loadDataFromGoogle();
-            showToast('Все задания удалены', false);
+            showToast('✅ Все задания удалены', false);
             renderApp();
         });
     }
@@ -917,14 +978,6 @@ async function getUserTasks(userId) {
     const result = await saveToGoogle('getUserTasks', { userId: userId });
     if (result && Array.isArray(result)) return result;
     return tasks.filter(t => t.creatorId === userId || t.takerId === userId);
-}
-
-async function getTopUsers() {
-    const result = await saveToGoogle('getTopUsers');
-    if (result && result.topByBalance) return result;
-    const sortedByBalance = [...users].sort((a,b) => (parseFloat(b.balance)||0) - (parseFloat(a.balance)||0)).slice(0, 10);
-    const sortedByBonus = [...users].sort((a,b) => (parseFloat(b.bonus_balance)||0) - (parseFloat(a.bonus_balance)||0)).slice(0, 10);
-    return { topByBalance: sortedByBalance, topByBonus: sortedByBonus };
 }
 
 // ===== ОСНОВНАЯ ФУНКЦИЯ RENDERAPP =====
@@ -1005,7 +1058,7 @@ function renderApp() {
         document.getElementById('refreshDataBtn').onclick = async () => {
             isDataLoaded = false;
             await loadDataFromGoogle();
-            showToast('✅ Данные обновлены. Пользователей: ' + users.length, false);
+            showToast(`✅ Данные обновлены. Пользователей: ${users.length}`, false);
             renderApp();
         };
         document.getElementById('registerBtn').onclick = () => {
@@ -1049,14 +1102,9 @@ function renderApp() {
             regName.oninput = function() {
                 let err = document.getElementById('regNameError');
                 let val = this.value.trim();
-                if (val && /^\d+$/.test(val)) {
-                    err.innerText = '❌ Имя не может состоять только из цифр! Добавьте буквы.';
-                    err.style.display = 'block';
-                } else if (val && users.some(u => u.name === val)) {
-                    err.innerText = '❌ Имя занято';
-                    err.style.display = 'block';
-                } else if (val && !/[a-zA-Zа-яА-Я]/.test(val)) {
-                    err.innerText = '❌ Имя должно содержать хотя бы одну букву';
+                let errorMsg = checkNameError(val);
+                if (errorMsg) {
+                    err.innerText = errorMsg;
                     err.style.display = 'block';
                 } else {
                     err.style.display = 'none';
@@ -1087,9 +1135,20 @@ function renderApp() {
                     <button id="showReportsBtn" style="background:#ef4444;color:white;">⚠️ Жалобы (${reports.length})</button>
                 </div>
                 <div class="users-table">
-                    <table>
+                    <table style="width:100%;border-collapse:collapse;">
                         <thead>
-                            <tr><th>Имя</th><th>Школа</th><th>Корпус</th><th>Основной</th><th>Бонусный</th><th>Рейтинг</th><th>Заданий</th><th>Статус</th><th>Управление</th><th>Действия</th></tr>
+                            <tr style="background:#f1f5f9;">
+                                <th style="padding:10px;text-align:left;">Имя</th>
+                                <th style="padding:10px;text-align:left;">Школа</th>
+                                <th style="padding:10px;text-align:left;">Корпус</th>
+                                <th style="padding:10px;text-align:left;">Основной</th>
+                                <th style="padding:10px;text-align:left;">Бонусный</th>
+                                <th style="padding:10px;text-align:left;">Рейтинг</th>
+                                <th style="padding:10px;text-align:left;">Заданий</th>
+                                <th style="padding:10px;text-align:left;">Статус</th>
+                                <th style="padding:10px;text-align:left;">Управление</th>
+                                <th style="padding:10px;text-align:left;">Действия</th>
+                            </tr>
                         </thead>
                         <tbody>
                             ${filteredUsers.map(user => {
@@ -1097,16 +1156,16 @@ function renderApp() {
                                 let rating = parseFloat(user.rating) || 0;
                                 let tasksCompleted = parseInt(user.tasksCompleted) || 0;
                                 return `
-                                    <tr>
-                                        <td><strong>${escapeHtml(user.name)}</strong><br><small style="color:#6b7280;">ID: ${escapeHtml(user.id).slice(-8)}</small></td>
-                                        <td>${escapeHtml(user.school)}</td>
-                                        <td>${escapeHtml(user.corp)}</td>
-                                        <td style="color:#2c6e4f;">${(parseFloat(user.balance)||0).toFixed(2)} ₽</td>
-                                        <td style="color:#eab308;">${(parseFloat(user.bonus_balance)||0).toFixed(2)} ₽</td>
-                                        <td>${getRatingStars(rating)} (${user.ratingCount||0})</td>
-                                        <td>${tasksCompleted}</td>
-                                        <td>${isBanned ? '⛔ Забанен' : '✅ Активен'}${isBanned && user.banReason ? `<br><small style="color:#dc2626;">${escapeHtml(user.banReason)}</small>` : ''}</td>
-                                        <td>
+                                    <tr style="border-bottom:1px solid #e2e8f0;">
+                                        <td style="padding:10px;"><strong>${escapeHtml(user.name)}</strong><br><small style="color:#6b7280;">ID: ${escapeHtml(user.id).slice(-8)}</small></td>
+                                        <td style="padding:10px;">${escapeHtml(user.school)}</td>
+                                        <td style="padding:10px;">${escapeHtml(user.corp)}</td>
+                                        <td style="padding:10px;color:#2c6e4f;">${(parseFloat(user.balance)||0).toFixed(2)} ₽</td>
+                                        <td style="padding:10px;color:#eab308;">${(parseFloat(user.bonus_balance)||0).toFixed(2)} ₽</td>
+                                        <td style="padding:10px;">${getRatingStars(rating)} (${user.ratingCount||0})</td>
+                                        <td style="padding:10px;">${tasksCompleted}</td>
+                                        <td style="padding:10px;">${isBanned ? '⛔ Забанен' : '✅ Активен'}${isBanned && user.banReason ? `<br><small style="color:#dc2626;">${escapeHtml(user.banReason)}</small>` : ''}</td>
+                                        <td style="padding:10px;">
                                             <div style="display:flex;flex-direction:column;gap:5px;">
                                                 <div style="display:flex;gap:5px;">
                                                     <input type="number" id="amount-${user.id}" value="100" style="width:70px;padding:5px;border-radius:20px;">
@@ -1120,7 +1179,7 @@ function renderApp() {
                                                 </div>
                                             </div>
                                         </td>
-                                        <td>
+                                        <td style="padding:10px;">
                                             ${!isBanned ? `<button class="ban-btn" data-userid="${user.id}" style="background:#dc2626;color:white;padding:5px 10px;">⛔ Бан</button>` : `<button class="unban-btn" data-userid="${user.id}" style="background:#10b981;color:white;padding:5px 10px;">✅ Разбан</button>`}
                                             <button class="reviews-btn" data-userid="${user.id}" style="background:#3b82f6;color:white;padding:5px 10px;margin-top:5px;">⭐ Отзывы</button>
                                             <button class="user-tasks-btn" data-userid="${user.id}" style="background:#8b5cf6;color:white;padding:5px 10px;margin-top:5px;">📋 Задания</button>
@@ -1408,8 +1467,8 @@ function renderApp() {
                         const reported = users.find(u => u.id === r.reportedId);
                         const task = tasks.find(t => t.id === r.taskId);
                         reportsText += `${i+1}. От: ${reporter?.name || '?'} → На: ${reported?.name || '?'}\n`;
-                        reportsText += `   Задание: ${task?.description || '?'}\n`;
-                        reportsText += `   Причина: ${r.reason}\n   Дата: ${formatDate(r.createdAt)}\n   Статус: ${r.status || 'pending'}\n\n`;
+                        reportsText += `   Задание: ${task?.description?.substring(0,50) || '?'}\n`;
+                        reportsText += `   Причина: ${r.reason}\n   Дата: ${formatDate(r.createdAt)}\n\n`;
                     });
                     alert(reportsText);
                 }
@@ -1480,7 +1539,7 @@ function renderApp() {
                     tasksText += `✅ Завершил: ${userTasks.filter(t=>t.status==='completed' && (t.creatorId===userId || t.takerId===userId)).length} заданий\n\n`;
                     userTasks.slice(0, 10).forEach(t => {
                         const status = getStatusText(t.status);
-                        tasksText += `• ${t.description.substring(0,30)}... — ${t.price}₽ (${status.text})\n`;
+                        tasksText += `• ${t.description?.substring(0,30)}... — ${t.price}₽ (${status.text})\n`;
                     });
                     if (userTasks.length > 10) tasksText += `\n... и ещё ${userTasks.length-10} заданий`;
                     alert(tasksText);
