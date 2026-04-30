@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>SchoolTask - Биржа поручений</title>
     <style>
+        /* ===== ПОЛНЫЙ CSS КОД (400+ строк) ===== */
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui; }
         body { background: linear-gradient(145deg, #f0f4fa 0%, #e2e8f0 100%); min-height: 100vh; padding: 20px; transition: background 0.3s, color 0.3s; }
         body.dark-theme { background: linear-gradient(145deg, #1a1a2e 0%, #16213e 100%); color: #e2e8f0; }
@@ -91,6 +92,12 @@
         .support-link { margin-top: 20px; padding: 10px; background: #f1f5f9; border-radius: 20px; text-align: center; font-size: 12px; color: #475569; }
         body.dark-theme .support-link { background: #334155; color: #cbd5e1; }
         
+        /* Дополнительные стили для админ-панели */
+        .users-table table { width: 100%; border-collapse: collapse; }
+        .users-table th, .users-table td { padding: 12px 8px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+        .users-table th { background: #f1f5f9; font-weight: 600; }
+        body.dark-theme .users-table th { background: #334155; }
+        
         @media (max-width: 700px) { .filter-group { flex-direction: column; } }
     </style>
 </head>
@@ -112,10 +119,32 @@ let isDarkTheme = localStorage.getItem('darkTheme') === 'true';
 let filters = { scope: 'school', minPrice: '', maxPrice: '' };
 let isLoading = false;
 let isDataLoaded = false;
-
-// ===== ЗАЩИТА ОТ МНОГОКРАТНОГО УДАЛЕНИЯ =====
 let isDeleting = false;
 let pendingDeleteTasks = new Set();
+
+// ===== ДОПОЛНИТЕЛЬНЫЕ ПЕРЕМЕННЫЕ =====
+let notifications = [];
+let reports = [];
+let userStats = { totalUsers: 0, totalTasks: 0, totalReviews: 0 };
+let dailyBonusClaimed = false;
+let lastDailyBonusDate = null;
+
+// ===== ЗАЩИТА ОТ МНОГОКРАТНЫХ НАЖАТИЙ =====
+const actionLocks = {
+    createTask: false,
+    deleteTask: false,
+    takeTask: false,
+    confirmCompletion: false,
+    confirmReceipt: false,
+    rejectReceipt: false,
+    sendMessage: false,
+    addReview: false,
+    addReport: false
+};
+
+function isActionLocked(action) { return actionLocks[action] === true; }
+function lockAction(action) { actionLocks[action] = true; setTimeout(() => { actionLocks[action] = false; }, 3000); }
+function unlockAction(action) { actionLocks[action] = false; }
 
 // ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
 function escapeHtml(text) {
@@ -125,13 +154,21 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-function showToast(msg, isError) {
+function showToast(msg, isError, duration = 3000) {
     let toast = document.createElement('div');
     toast.className = 'toast';
     toast.innerText = msg;
     if (isError) toast.style.background = '#b91c1c';
     document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
+    setTimeout(() => toast.remove(), duration);
+}
+
+function formatDate(date) {
+    if (!date) return 'неизвестно';
+    return new Date(date).toLocaleString('ru-RU', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+    });
 }
 
 if (isDarkTheme) document.body.classList.add('dark-theme');
@@ -144,28 +181,47 @@ function toggleTheme() {
     renderApp(); 
 }
 
-// ===== ЗАГРУЗКА ДАННЫХ =====
+// ===== ЗАГРУЗКА ДАННЫХ ИЗ GOOGLE =====
 async function loadDataFromGoogle() {
     if (isLoading) return isDataLoaded;
     isLoading = true;
     
     try {
-        const response = await fetch(API_URL + '?action=getUsers');
-        if (response.ok) {
-            const data = await response.json();
+        const [usersRes, tasksRes, reviewsRes, reportsRes] = await Promise.all([
+            fetch(API_URL + '?action=getUsers'),
+            fetch(API_URL + '?action=getTasks'),
+            fetch(API_URL + '?action=getReviews'),
+            fetch(API_URL + '?action=getReports')
+        ]);
+        
+        if (usersRes.ok) {
+            const data = await usersRes.json();
             if (Array.isArray(data)) users = data;
         }
-        
-        const tasksResponse = await fetch(API_URL + '?action=getTasks');
-        if (tasksResponse.ok) {
-            const tasksData = await tasksResponse.json();
-            if (Array.isArray(tasksData)) tasks = tasksData;
+        if (tasksRes.ok) {
+            const data = await tasksRes.json();
+            if (Array.isArray(data)) tasks = data;
+        }
+        if (reviewsRes.ok) {
+            const data = await reviewsRes.json();
+            if (Array.isArray(data)) reviews = data;
+        }
+        if (reportsRes.ok) {
+            const data = await reportsRes.json();
+            if (Array.isArray(data)) reports = data;
         }
         
-        const reviewsResponse = await fetch(API_URL + '?action=getReviews');
-        if (reviewsResponse.ok) {
-            const reviewsData = await reviewsResponse.json();
-            if (Array.isArray(reviewsData)) reviews = reviewsData;
+        userStats.totalUsers = users.length;
+        userStats.totalTasks = tasks.length;
+        userStats.totalReviews = reviews.length;
+        
+        const lastBonus = localStorage.getItem('lastDailyBonus');
+        if (lastBonus) {
+            const lastDate = new Date(parseInt(lastBonus));
+            const today = new Date();
+            dailyBonusClaimed = lastDate.toDateString() === today.toDateString();
+        } else {
+            dailyBonusClaimed = false;
         }
         
         isDataLoaded = true;
@@ -243,7 +299,27 @@ function shareVK() {
 }
 
 function showBonusHelp() {
-    alert('Бонусный счёт\n\nБонусы НЕЛЬЗЯ вывести, только тратить на создание заданий!\n\nКак получить:\n+5 за каждого приглашённого друга\n+10 за выполнение задания\n+20 за отзыв 5 звёзд\n+3 ежедневный бонус за вход');
+    alert('Бонусный счёт\n\nБонусы НЕЛЬЗЯ вывести, только тратить на создание заданий!\n\nКак получить:\n• +5 за каждого приглашённого друга\n• +10 за выполнение задания\n• +20 за отзыв 5 звёзд\n• +3 ежедневный бонус за вход');
+}
+
+// ===== ЕЖЕДНЕВНЫЙ БОНУС =====
+async function claimDailyBonus() {
+    if (!currentUser) return;
+    if (dailyBonusClaimed) {
+        showToast('Вы уже получали сегодняшний бонус! Завтра будет новый.', false);
+        return;
+    }
+    
+    const result = await saveToGoogle('addDailyBonus', { userId: currentUser.id });
+    if (result && result.success) {
+        currentUser.bonus_balance = (parseFloat(currentUser.bonus_balance) || 0) + 3;
+        dailyBonusClaimed = true;
+        localStorage.setItem('lastDailyBonus', Date.now().toString());
+        showToast('🎁 +3₽ на бонусный счёт! Заходите завтра за новым бонусом!', false);
+        renderApp();
+    } else {
+        showToast('Ошибка при получении бонуса', true);
+    }
 }
 
 // ===== МЕНЮ КОШЕЛЬКА =====
@@ -257,25 +333,26 @@ function openWalletModal() {
     walletModal.className = 'wallet-modal';
     walletModal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:2000;';
     walletModal.innerHTML = `
-        <div style="background:white;border-radius:32px;width:90%;max-width:400px;padding:20px;">
+        <div class="wallet-container">
             <div style="display:flex;justify-content:space-between;margin-bottom:20px;">
                 <h3>💰 Кошелёк</h3>
                 <button onclick="closeWalletModal()" style="background:none;font-size:28px;cursor:pointer;">✕</button>
             </div>
             <div style="text-align:center;margin:20px 0;">
-                <div>💰 Основной баланс</div>
-                <div style="color:#2c6e4f;font-size:2rem;">${(parseFloat(currentUser.balance)||0).toFixed(2)} ₽</div>
+                <div style="color:#6b7280;">💰 Основной баланс</div>
+                <div style="color:#2c6e4f;font-size:2rem;font-weight:bold;">${(parseFloat(currentUser.balance)||0).toFixed(2)} ₽</div>
             </div>
             <div style="text-align:center;margin:20px 0;border-top:1px solid #e2e8f0;padding-top:20px;">
-                <div>🎁 Бонусный счёт</div>
-                <div style="color:#eab308;font-size:2rem;">${(parseFloat(currentUser.bonus_balance)||0).toFixed(2)} ₽</div>
+                <div style="color:#6b7280;">🎁 Бонусный счёт</div>
+                <div style="color:#eab308;font-size:2rem;font-weight:bold;">${(parseFloat(currentUser.bonus_balance)||0).toFixed(2)} ₽</div>
             </div>
             <div style="margin:20px 0;padding:15px;background:#e0f2fe;border-radius:20px;text-align:center;">
-                <p>💡 1 ₽ на сайте = 0.9 ₽ после комиссии (-10%)</p>
+                <p style="font-size:14px;">💡 1 ₽ на сайте = 0.9 ₽ после комиссии (-10%)</p>
             </div>
-            <div style="display:flex;gap:15px;">
-                <button class="btn-success" onclick="showPaymentAlert('deposit')" style="flex:1">💰 Пополнить</button>
-                <button class="btn-primary" onclick="showPaymentAlert('withdraw')" style="flex:1">💸 Вывод</button>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+                <button class="btn-success" onclick="showPaymentAlert('deposit')">💰 Пополнить</button>
+                <button class="btn-primary" onclick="showPaymentAlert('withdraw')">💸 Вывод</button>
+                <button class="btn-info" onclick="claimDailyBonus()">🎁 Ежедневный бонус (+3₽)</button>
             </div>
             <button class="btn-danger" onclick="closeWalletModal()" style="margin-top:15px;width:100%">Закрыть</button>
         </div>
@@ -296,6 +373,43 @@ function showPaymentAlert(type) {
     }
 }
 
+// ===== ЖАЛОБЫ =====
+async function addReport(reportedId, taskId, reason) {
+    if (isActionLocked('addReport')) {
+        showToast('⏳ Подождите...', false);
+        return;
+    }
+    if (!currentUser) return;
+    
+    lockAction('addReport');
+    
+    const result = await saveToGoogle('addReport', {
+        id: Date.now().toString(),
+        reporterId: currentUser.id,
+        reportedId: reportedId,
+        taskId: taskId,
+        reason: reason,
+        createdAt: new Date().toISOString()
+    });
+    
+    if (result && result.success) {
+        showToast('Жалоба отправлена! Администратор рассмотрит её в ближайшее время.', false);
+        await loadDataFromGoogle();
+        renderApp();
+    } else {
+        showToast('Ошибка при отправке жалобы', true);
+    }
+}
+
+function showReportModal(taskId, reportedId) {
+    let reason = prompt('Опишите причину жалобы (мошенничество, нарушение правил и т.д.):', 'Нарушение правил');
+    if (reason && reason.trim()) {
+        addReport(reportedId, taskId, reason.trim());
+    } else if (reason !== null) {
+        showToast('Укажите причину жалобы', true);
+    }
+}
+
 // ===== ВАЛИДАЦИЯ =====
 function isValidName(name) {
     if (/^\d+$/.test(name)) return false;
@@ -303,7 +417,7 @@ function isValidName(name) {
     return true;
 }
 
-// ===== ВХОД И РЕГИСТРАЦИЯ =====
+// ===== РЕГИСТРАЦИЯ И ВХОД =====
 async function registerUser(name, school, corp, password, btn) {
     if (btn) btn.disabled = true;
     
@@ -312,31 +426,43 @@ async function registerUser(name, school, corp, password, btn) {
     if (!/^\d+$/.test(corp)) { showToast('Корпус только цифры!', true); if(btn) btn.disabled=false; return false; }
     if (password.length < 3) { showToast('Пароль не менее 3 символов', true); if(btn) btn.disabled=false; return false; }
     if (!isValidName(name.trim())) { showToast('Имя должно содержать буквы!', true); if(btn) btn.disabled=false; return false; }
+    
     if (users.some(u => u.name === name.trim())) { showToast('Пользователь уже существует', true); if(btn) btn.disabled=false; return false; }
     
-    let id = 'u' + Date.now();
-    let referralCode = 'REF' + Math.random().toString(36).substring(2, 8).toUpperCase();
-    let refCode = new URLSearchParams(window.location.search).get('ref');
+    const id = 'u' + Date.now();
+    const referralCode = 'REF' + Math.random().toString(36).substring(2, 8).toUpperCase();
+    const refCode = new URLSearchParams(window.location.search).get('ref');
     
-    let result = await saveToGoogle('registerUser', {
-        id: id, name: name.trim(), school: school.trim(), corp: corp.trim(),
-        balance: 0, bonus_balance: 0, password: password,
-        referral_code: referralCode, referred_by: refCode || ''
-    });
+    showToast('⏳ Регистрация...', false);
     
-    if (result && result.success) {
-        isDataLoaded = false;
-        await loadDataFromGoogle();
-        currentUser = users.find(u => u.id === id) || users.find(u => u.name === name.trim());
-        if (currentUser) {
-            saveSession();
-            showToast('Добро пожаловать, ' + currentUser.name + '!', false);
-            renderApp();
-            if(btn) btn.disabled=false;
-            return true;
+    try {
+        const result = await saveToGoogle('registerUser', {
+            id: id, name: name.trim(), school: school.trim(), corp: corp.trim(),
+            balance: 0, bonus_balance: 0, password: password,
+            referral_code: referralCode, referred_by: refCode || ''
+        });
+        
+        if (result && result.success) {
+            isDataLoaded = false;
+            await loadDataFromGoogle();
+            currentUser = users.find(u => u.id === id) || users.find(u => u.name === name.trim());
+            if (currentUser) {
+                saveSession();
+                showToast('Добро пожаловать, ' + currentUser.name + '!', false);
+                renderApp();
+                if(btn) btn.disabled=false;
+                return true;
+            } else {
+                showToast('Ошибка: пользователь создан, но не найден', true);
+            }
+        } else {
+            showToast('Ошибка регистрации: ' + (result?.error || 'Неизвестная ошибка'), true);
         }
+    } catch(e) {
+        console.error('Ошибка регистрации:', e);
+        showToast('Ошибка соединения. Попробуйте позже.', true);
     }
-    showToast('Ошибка регистрации', true);
+    
     if(btn) btn.disabled=false;
     return false;
 }
@@ -374,19 +500,27 @@ function logout() {
     currentUser = null; 
     adminMode = false; 
     localStorage.removeItem('schooltask_session'); 
+    dailyBonusClaimed = false;
     renderApp(); 
 }
 
 // ===== ЗАДАНИЯ =====
 async function createTask(desc, price, loc, paymentType, scope, btn) {
+    if (isActionLocked('createTask')) {
+        showToast('⏳ Подождите, операция уже выполняется...', false);
+        if(btn) btn.disabled=false;
+        return;
+    }
     if (btn) btn.disabled = true;
-    if (!currentUser) return;
+    if (!currentUser) { if(btn) btn.disabled=false; return; }
     
     let priceNum = parseFloat(price);
     if (isNaN(priceNum) || priceNum <= 0) { showToast('Цена должна быть положительной', true); if(btn) btn.disabled=false; return; }
     
     let balance = paymentType === 'bonus' ? (parseFloat(currentUser.bonus_balance)||0) : (parseFloat(currentUser.balance)||0);
     if (balance < priceNum) { showToast('Недостаточно средств', true); if(btn) btn.disabled=false; return; }
+    
+    lockAction('createTask');
     
     if (paymentType === 'bonus') currentUser.bonus_balance -= priceNum;
     else currentUser.balance -= priceNum;
@@ -413,57 +547,56 @@ async function createTask(desc, price, loc, paymentType, scope, btn) {
     isDataLoaded = false;
     await loadDataFromGoogle();
     currentUser = users.find(u => u.id === currentUser.id);
-    showToast('Задание создано!', false);
+    showToast('✅ Задание создано!', false);
     if(btn) btn.disabled=false;
     renderApp();
 }
 
-// ИСПРАВЛЕННАЯ ФУНКЦИЯ УДАЛЕНИЯ - защита от многократного начисления
 async function deleteTask(taskId, btn) {
-    // Блокируем кнопку
+    if (isActionLocked('deleteTask')) {
+        showToast('⏳ Подождите, операция уже выполняется...', false);
+        if(btn) btn.disabled=false;
+        return;
+    }
     if (btn) btn.disabled = true;
     
-    // Защита от одновременного множественного удаления
     if (isDeleting) {
         showToast('⏳ Подождите, предыдущее удаление ещё обрабатывается...', false);
-        if (btn) btn.disabled = false;
+        if(btn) btn.disabled=false;
         return;
     }
     
-    // Защита от повторного удаления того же задания
     if (pendingDeleteTasks.has(taskId)) {
         showToast('⏳ Это задание уже удаляется...', false);
-        if (btn) btn.disabled = false;
+        if(btn) btn.disabled=false;
         return;
     }
     
-    if (!confirm('Удалить задание?')) {
-        if (btn) btn.disabled = false;
+    if (!confirm('Удалить задание? Деньги вернутся на счёт.')) {
+        if(btn) btn.disabled=false;
         return;
     }
     
+    lockAction('deleteTask');
     isDeleting = true;
     pendingDeleteTasks.add(taskId);
     
     try {
-        // Получаем свежие данные о задании из актуального списка
         let task = tasks.find(t => t.id == taskId);
         if (!task) {
             showToast('Задание не найдено', true);
-            if (btn) btn.disabled = false;
+            if(btn) btn.disabled=false;
             pendingDeleteTasks.delete(taskId);
             isDeleting = false;
             return;
         }
         
-        // Получаем свежие данные о пользователе
         let freshUser = users.find(u => u.id === currentUser.id);
         if (freshUser) {
             currentUser.balance = parseFloat(freshUser.balance) || 0;
             currentUser.bonus_balance = parseFloat(freshUser.bonus_balance) || 0;
         }
         
-        // Возвращаем деньги только если задание открыто и это задание текущего пользователя
         let amountReturned = 0;
         if (task.status === 'open' && task.creatorId === currentUser.id) {
             const taskPrice = parseFloat(task.price);
@@ -477,11 +610,9 @@ async function deleteTask(taskId, btn) {
             }
         }
         
-        // Удаляем задание на сервере
         const deleteResult = await saveToGoogle('deleteTask', { id: taskId });
         
         if (!deleteResult || !deleteResult.success) {
-            // Если удаление не удалось - откатываем баланс
             if (amountReturned > 0) {
                 if (task.payment_type === 'bonus') {
                     currentUser.bonus_balance -= amountReturned;
@@ -490,14 +621,13 @@ async function deleteTask(taskId, btn) {
                 }
             }
             showToast('Ошибка при удалении задания', true);
-            if (btn) btn.disabled = false;
+            if(btn) btn.disabled=false;
             pendingDeleteTasks.delete(taskId);
             isDeleting = false;
             renderApp();
             return;
         }
         
-        // Если деньги были возвращены, обновляем пользователя на сервере
         if (amountReturned > 0) {
             await saveToGoogle('updateUser', { 
                 id: currentUser.id, 
@@ -507,11 +637,8 @@ async function deleteTask(taskId, btn) {
             showToast(`💰 Возвращено ${amountReturned} ₽`, false);
         }
         
-        // Перезагружаем данные
         isDataLoaded = false;
         await loadDataFromGoogle();
-        
-        // Обновляем текущего пользователя
         currentUser = users.find(u => u.id === currentUser.id);
         showToast('🗑️ Задание удалено', false);
         
@@ -519,7 +646,7 @@ async function deleteTask(taskId, btn) {
         console.error('Ошибка удаления:', e);
         showToast('Ошибка при удалении задания', true);
     } finally {
-        if (btn) btn.disabled = false;
+        if(btn) btn.disabled=false;
         pendingDeleteTasks.delete(taskId);
         isDeleting = false;
         renderApp();
@@ -527,40 +654,62 @@ async function deleteTask(taskId, btn) {
 }
 
 async function takeTask(taskId, btn) {
+    if (isActionLocked('takeTask')) {
+        showToast('⏳ Подождите, операция уже выполняется...', false);
+        if(btn) btn.disabled=false;
+        return;
+    }
     if (btn) btn.disabled = true;
+    
     let task = tasks.find(t => t.id == taskId);
     if (!task || task.status !== 'open') { if(btn) btn.disabled=false; return; }
     if (task.creatorId === currentUser.id) { showToast('Нельзя взять своё задание', true); if(btn) btn.disabled=false; return; }
     
+    lockAction('takeTask');
     await saveToGoogle('updateTask', { id: task.id, status: 'in_progress', takerId: currentUser.id });
     isDataLoaded = false;
     await loadDataFromGoogle();
-    showToast('Вы взяли задание!', false);
+    showToast('📢 Вы взяли задание!', false);
     if(btn) btn.disabled=false;
     renderApp();
 }
 
 async function confirmCompletion(taskId, btn) {
+    if (isActionLocked('confirmCompletion')) {
+        showToast('⏳ Подождите, операция уже выполняется...', false);
+        if(btn) btn.disabled=false;
+        return;
+    }
     if (btn) btn.disabled = true;
+    
     let task = tasks.find(t => t.id == taskId);
     if (!task || task.status !== 'in_progress') { if(btn) btn.disabled=false; return; }
     if (task.takerId !== currentUser.id) { if(btn) btn.disabled=false; return; }
     
+    lockAction('confirmCompletion');
     showToast('🎥 Не забудьте записать видео выполнения!', false);
     
     await saveToGoogle('updateTask', { id: task.id, status: 'awaiting_confirmation' });
     isDataLoaded = false;
     await loadDataFromGoogle();
-    showToast('Задание выполнено! Ожидайте подтверждения', false);
+    showToast('✅ Задание выполнено! Ожидайте подтверждения', false);
     if(btn) btn.disabled=false;
     renderApp();
 }
 
 async function confirmReceipt(taskId, btn) {
+    if (isActionLocked('confirmReceipt')) {
+        showToast('⏳ Подождите, операция уже выполняется...', false);
+        if(btn) btn.disabled=false;
+        return;
+    }
     if (btn) btn.disabled = true;
+    
     let task = tasks.find(t => t.id == taskId);
     if (!task || task.status !== 'awaiting_confirmation') { if(btn) btn.disabled=false; return; }
     if (task.creatorId !== currentUser.id) { if(btn) btn.disabled=false; return; }
+    
+    lockAction('confirmReceipt');
     
     let executor = users.find(u => u.id === task.takerId);
     let total = parseFloat(task.price);
@@ -574,16 +723,24 @@ async function confirmReceipt(taskId, btn) {
     await saveToGoogle('updateTask', { id: task.id, status: 'completed' });
     isDataLoaded = false;
     await loadDataFromGoogle();
-    showToast('Подтверждено! Исполнитель получил ' + gain.toFixed(2) + '₽', false);
+    showToast('💰 Подтверждено! Исполнитель получил ' + gain.toFixed(2) + '₽', false);
     if(btn) btn.disabled=false;
     renderApp();
 }
 
 async function rejectReceipt(taskId, btn) {
+    if (isActionLocked('rejectReceipt')) {
+        showToast('⏳ Подождите, операция уже выполняется...', false);
+        if(btn) btn.disabled=false;
+        return;
+    }
     if (btn) btn.disabled = true;
+    
     let task = tasks.find(t => t.id == taskId);
     if (!task || task.status !== 'awaiting_confirmation') { if(btn) btn.disabled=false; return; }
     if (task.creatorId !== currentUser.id) { if(btn) btn.disabled=false; return; }
+    
+    lockAction('rejectReceipt');
     
     if (task.payment_type === 'bonus') currentUser.bonus_balance += parseFloat(task.price);
     else currentUser.balance += parseFloat(task.price);
@@ -592,7 +749,7 @@ async function rejectReceipt(taskId, btn) {
     isDataLoaded = false;
     await loadDataFromGoogle();
     currentUser = users.find(u => u.id === currentUser.id);
-    showToast('Деньги возвращены', false);
+    showToast('⚠️ Деньги возвращены', false);
     if(btn) btn.disabled=false;
     renderApp();
 }
@@ -604,28 +761,52 @@ function showEditModal(task) {
     if (isNaN(newPrice) || newPrice <= 0) { showToast('Цена должна быть положительной', true); return; }
     let newLoc = prompt('Новое место:', task.location);
     if (!newLoc) return;
-    let newScope = confirm('Для всех участников?') ? 'all' : 'school';
+    let newScope = confirm('Для всех участников? (OK - да, Отмена - только моя школа)') ? 'all' : 'school';
     
     saveToGoogle('updateTask', { id: task.id, description: newDesc, price: newPrice, location: newLoc, scope: newScope }).then(async () => {
         isDataLoaded = false;
         await loadDataFromGoogle();
         currentUser = users.find(u => u.id === currentUser.id);
-        showToast('Задание обновлено', false);
+        showToast('✅ Задание обновлено', false);
         renderApp();
     });
 }
 
 // ===== ОТЗЫВЫ =====
 async function addReview(toUserId, taskId, rating, comment) {
+    if (isActionLocked('addReview')) {
+        showToast('⏳ Подождите...', false);
+        return;
+    }
+    
+    lockAction('addReview');
+    
     let result = await saveToGoogle('addReview', {
         id: Date.now().toString(), fromUserId: currentUser.id, toUserId: toUserId,
         taskId: taskId, rating: rating, comment: comment, createdAt: new Date().toISOString()
     });
+    
     if (result && result.success) {
-        showToast('Отзыв добавлен!', false);
+        // Обновляем рейтинг пользователя
+        const user = users.find(u => u.id === toUserId);
+        if (user) {
+            const currentRating = parseFloat(user.rating) || 0;
+            const currentCount = parseInt(user.ratingCount) || 0;
+            const newAvg = (currentRating * currentCount + rating) / (currentCount + 1);
+            await saveToGoogle('updateUserRating', { userId: toUserId, rating: rating });
+            user.rating = newAvg;
+            user.ratingCount = currentCount + 1;
+            if (currentUser.id === toUserId) {
+                currentUser.rating = newAvg;
+                currentUser.ratingCount = currentCount + 1;
+            }
+        }
+        showToast('✅ Отзыв добавлен!', false);
         isDataLoaded = false;
         await loadDataFromGoogle();
         renderApp();
+    } else {
+        showToast('Ошибка при добавлении отзыва', true);
     }
 }
 
@@ -634,8 +815,8 @@ function showReviewModal(taskId, toUserId) {
     if (!rating) return;
     let ratingNum = parseInt(rating);
     if (ratingNum < 1 || ratingNum > 5) { showToast('Оценка от 1 до 5', true); return; }
-    let comment = prompt('Ваш комментарий:', '');
-    addReview(toUserId, taskId, ratingNum, comment);
+    let comment = prompt('Ваш комментарий (необязательно):', '');
+    addReview(toUserId, taskId, ratingNum, comment || '');
 }
 
 // ===== АДМИНКА =====
@@ -649,7 +830,7 @@ async function adminChangeBalance(userId, amount, isBonus) {
         user.balance = (parseFloat(user.balance) || 0) + amount;
         if (currentUser && currentUser.id === userId) currentUser.balance = user.balance;
     }
-    showToast((amount > 0 ? '+' : '') + amount + ' для ' + user.name, false);
+    showToast((amount > 0 ? '+' : '') + amount + ' ₽ для ' + user.name, false);
     await saveToGoogle('updateUser', { id: userId, balance: user.balance, bonus_balance: user.bonus_balance });
     isDataLoaded = false;
     await loadDataFromGoogle();
@@ -689,7 +870,7 @@ async function requestAdminAccess() {
 function exitAdminMode() { adminMode = false; renderApp(); }
 
 function deleteAllTasks() {
-    if (confirm('Удалить ВСЕ задания?')) {
+    if (confirm('Удалить ВСЕ задания? Это действие необратимо!')) {
         Promise.all(tasks.map(task => saveToGoogle('deleteTask', { id: task.id }))).then(async () => {
             isDataLoaded = false;
             await loadDataFromGoogle();
@@ -701,10 +882,10 @@ function deleteAllTasks() {
 
 function getStatusText(status) {
     switch(status) {
-        case 'open': return { text: 'Доступно', class: 'status-open' };
-        case 'in_progress': return { text: 'Выполняется', class: 'status-progress' };
-        case 'awaiting_confirmation': return { text: 'Ожидает', class: 'status-awaiting' };
-        case 'completed': return { text: 'Выполнено', class: 'status-completed' };
+        case 'open': return { text: '📋 Доступно', class: 'status-open' };
+        case 'in_progress': return { text: '⏳ Выполняется', class: 'status-progress' };
+        case 'awaiting_confirmation': return { text: '🕐 Ожидает', class: 'status-awaiting' };
+        case 'completed': return { text: '✅ Выполнено', class: 'status-completed' };
         default: return { text: status, class: 'status-open' };
     }
 }
@@ -713,6 +894,37 @@ function getRatingStars(rating) {
     let stars = '';
     for (let i = 1; i <= 5; i++) stars += i <= rating ? '⭐' : '☆';
     return stars;
+}
+
+// ===== ДОПОЛНИТЕЛЬНЫЕ ФУНКЦИИ =====
+async function getUserStats() {
+    const stats = await saveToGoogle('getStats');
+    if (stats) {
+        userStats.totalUsers = stats.usersCount || users.length;
+        userStats.totalTasks = stats.tasksCount || tasks.length;
+        userStats.totalReviews = stats.reviewsCount || reviews.length;
+    }
+    return userStats;
+}
+
+async function getUserReviews(userId) {
+    const result = await saveToGoogle('getUserReviews', { userId: userId });
+    if (result && Array.isArray(result)) return result;
+    return reviews.filter(r => r.toUserId === userId);
+}
+
+async function getUserTasks(userId) {
+    const result = await saveToGoogle('getUserTasks', { userId: userId });
+    if (result && Array.isArray(result)) return result;
+    return tasks.filter(t => t.creatorId === userId || t.takerId === userId);
+}
+
+async function getTopUsers() {
+    const result = await saveToGoogle('getTopUsers');
+    if (result && result.topByBalance) return result;
+    const sortedByBalance = [...users].sort((a,b) => (parseFloat(b.balance)||0) - (parseFloat(a.balance)||0)).slice(0, 10);
+    const sortedByBonus = [...users].sort((a,b) => (parseFloat(b.bonus_balance)||0) - (parseFloat(a.bonus_balance)||0)).slice(0, 10);
+    return { topByBalance: sortedByBalance, topByBonus: sortedByBonus };
 }
 
 // ===== ОСНОВНАЯ ФУНКЦИЯ RENDERAPP =====
@@ -745,8 +957,7 @@ function renderApp() {
                 <div class="video-rule">
                     <h4>🎥 ВАЖНОЕ ПРАВИЛО!</h4>
                     <p>При выполнении задания ОБЯЗАТЕЛЬНО запишите видео процесса выполнения!<br>
-                    Это защитит вас от мошенничества и докажет, что вы выполнили работу.<br>
-                    Видео можно отправить в поддержку или показать при споре.</p>
+                    Это защитит вас от мошенничества и докажет, что вы выполнили работу.</p>
                 </div>
                 <div class="card">
                     <div class="tabs">
@@ -794,14 +1005,14 @@ function renderApp() {
         document.getElementById('refreshDataBtn').onclick = async () => {
             isDataLoaded = false;
             await loadDataFromGoogle();
-            showToast('Данные обновлены. Пользователей: ' + users.length, false);
+            showToast('✅ Данные обновлены. Пользователей: ' + users.length, false);
             renderApp();
         };
         document.getElementById('registerBtn').onclick = () => {
             let school = document.getElementById('regSchool').value;
             let corp = document.getElementById('regCorp').value;
-            if (!/^\d+$/.test(school)) { showToast('Школа только цифры!', true); return; }
-            if (!/^\d+$/.test(corp)) { showToast('Корпус только цифры!', true); return; }
+            if (!/^\d+$/.test(school)) { showToast('❌ Школа только цифры!', true); return; }
+            if (!/^\d+$/.test(corp)) { showToast('❌ Корпус только цифры!', true); return; }
             registerUser(
                 document.getElementById('regName').value, school, corp,
                 document.getElementById('regPassword').value,
@@ -872,26 +1083,48 @@ function renderApp() {
                     <div class="search-box">🔍 <input type="text" id="adminSearch" placeholder="Поиск..." value="${adminSearchTerm}"></div>
                     <button class="refresh-btn" id="refreshUsersBtn" style="background:#3b82f6;color:white;">🔄 Обновить</button>
                     <button id="clearTasksBtn" style="background:#dc2626;color:white;">🗑️ Удалить все задания</button>
+                    <button id="showStatsBtn" style="background:#8b5cf6;color:white;">📊 Статистика</button>
+                    <button id="showReportsBtn" style="background:#ef4444;color:white;">⚠️ Жалобы (${reports.length})</button>
                 </div>
                 <div class="users-table">
                     <table>
                         <thead>
-                            <tr><th>Имя</th><th>Школа</th><th>Корпус</th><th>Основной баланс</th><th>Бонусный счёт</th><th>Статус</th><th>Управление балансом</th><th>Управление бонусами</th><th>Действия</th></tr>
+                            <tr><th>Имя</th><th>Школа</th><th>Корпус</th><th>Основной</th><th>Бонусный</th><th>Рейтинг</th><th>Заданий</th><th>Статус</th><th>Управление</th><th>Действия</th></tr>
                         </thead>
                         <tbody>
                             ${filteredUsers.map(user => {
                                 let isBanned = user.isBanned === 'true';
+                                let rating = parseFloat(user.rating) || 0;
+                                let tasksCompleted = parseInt(user.tasksCompleted) || 0;
                                 return `
                                     <tr>
-                                        <td><strong>${escapeHtml(user.name)}</strong><br><small>${escapeHtml(user.corp)}</small></td>
+                                        <td><strong>${escapeHtml(user.name)}</strong><br><small style="color:#6b7280;">ID: ${escapeHtml(user.id).slice(-8)}</small></td>
                                         <td>${escapeHtml(user.school)}</td>
                                         <td>${escapeHtml(user.corp)}</td>
-                                        <td>${(parseFloat(user.balance)||0).toFixed(2)} ₽</td>
+                                        <td style="color:#2c6e4f;">${(parseFloat(user.balance)||0).toFixed(2)} ₽</td>
                                         <td style="color:#eab308;">${(parseFloat(user.bonus_balance)||0).toFixed(2)} ₽</td>
-                                        <td>${isBanned ? '⛔ Забанен' : '✅ Активен'}${isBanned && user.banReason ? `<br><small>${escapeHtml(user.banReason)}</small>` : ''}</td>
-                                        <td><div class="balance-control"><input type="number" id="amount-${user.id}" value="100"><button class="topup-btn" data-userid="${user.id}" data-bonus="false">💰 +</button><button class="withdraw-btn" data-userid="${user.id}" data-bonus="false">💸 -</button></div></td>
-                                        <td><div class="balance-control"><input type="number" id="bonus-${user.id}" value="100"><button class="topup-btn" data-userid="${user.id}" data-bonus="true">🎁 +</button><button class="withdraw-btn" data-userid="${user.id}" data-bonus="true">🎁 -</button></div></td>
-                                        <td>${!isBanned ? `<button class="ban-btn" data-userid="${user.id}">⛔ Бан</button>` : `<button class="unban-btn" data-userid="${user.id}">✅ Разбан</button>`}</td>
+                                        <td>${getRatingStars(rating)} (${user.ratingCount||0})</td>
+                                        <td>${tasksCompleted}</td>
+                                        <td>${isBanned ? '⛔ Забанен' : '✅ Активен'}${isBanned && user.banReason ? `<br><small style="color:#dc2626;">${escapeHtml(user.banReason)}</small>` : ''}</td>
+                                        <td>
+                                            <div style="display:flex;flex-direction:column;gap:5px;">
+                                                <div style="display:flex;gap:5px;">
+                                                    <input type="number" id="amount-${user.id}" value="100" style="width:70px;padding:5px;border-radius:20px;">
+                                                    <button class="topup-btn" data-userid="${user.id}" data-bonus="false" style="background:#10b981;color:white;padding:5px 10px;">+💰</button>
+                                                    <button class="withdraw-btn" data-userid="${user.id}" data-bonus="false" style="background:#ef4444;color:white;padding:5px 10px;">-💰</button>
+                                                </div>
+                                                <div style="display:flex;gap:5px;">
+                                                    <input type="number" id="bonus-${user.id}" value="100" style="width:70px;padding:5px;border-radius:20px;">
+                                                    <button class="topup-btn" data-userid="${user.id}" data-bonus="true" style="background:#f59e0b;color:white;padding:5px 10px;">+🎁</button>
+                                                    <button class="withdraw-btn" data-userid="${user.id}" data-bonus="true" style="background:#f97316;color:white;padding:5px 10px;">-🎁</button>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            ${!isBanned ? `<button class="ban-btn" data-userid="${user.id}" style="background:#dc2626;color:white;padding:5px 10px;">⛔ Бан</button>` : `<button class="unban-btn" data-userid="${user.id}" style="background:#10b981;color:white;padding:5px 10px;">✅ Разбан</button>`}
+                                            <button class="reviews-btn" data-userid="${user.id}" style="background:#3b82f6;color:white;padding:5px 10px;margin-top:5px;">⭐ Отзывы</button>
+                                            <button class="user-tasks-btn" data-userid="${user.id}" style="background:#8b5cf6;color:white;padding:5px 10px;margin-top:5px;">📋 Задания</button>
+                                        </td>
                                     </tr>
                                 `;
                             }).join('')}
@@ -902,7 +1135,7 @@ function renderApp() {
         `;
     }
     
-    let adminEntryBtn = isAdmin ? `<button id="adminPanelBtn" style="background:#2c3e50;color:white;">🔐 Админка</button>` : '';
+    let adminEntryBtn = isAdmin ? `<button id="adminPanelBtn" style="background:#2c3e50;color:white;padding:8px 16px;">🔐 Админка</button>` : '';
     
     let openTasks = tasks.filter(t => {
         if (t.status !== 'open') return false;
@@ -924,9 +1157,15 @@ function renderApp() {
     let myExecTasks = tasks.filter(t => t.takerId === currentUser.id && t.status !== 'completed');
     let myCompletedTasks = tasks.filter(t => t.status === 'completed' && (t.creatorId === currentUser.id || t.takerId === currentUser.id));
     
+    let userRating = parseFloat(currentUser.rating) || 0;
+    let userRatingCount = parseInt(currentUser.ratingCount) || 0;
+    
     let helpBlock = `<div class="help-box">
         <h4>🎁 Бонусный счёт</h4>
         <p>Бонусы НЕ вывести, только тратить на задания. +5₽ за друга, +10₽ за выполнение, +20₽ за отзыв 5⭐, +3₽ ежедневно.</p>
+        <div style="display:flex;justify-content:center;gap:10px;margin-top:10px;">
+            <button class="btn-info" onclick="claimDailyBonus()" style="padding:5px 15px;">🎁 Забрать бонус</button>
+        </div>
         <div class="share-buttons" style="margin-top:10px;">
             <div class="share-btn share-tg" onclick="shareTelegram()" style="padding:5px 10px;font-size:12px;">📱 Telegram</div>
             <div class="share-btn share-vk" onclick="shareVK()" style="padding:5px 10px;font-size:12px;">📱 ВКонтакте</div>
@@ -951,6 +1190,9 @@ function renderApp() {
         }
         if (task.status === 'completed' && task.creatorId === currentUser.id && !reviews.some(r => r.taskId === task.id && r.fromUserId === currentUser.id)) {
             btns += `<button class="btn-info review-btn" data-id="${task.id}" data-userid="${task.takerId}">⭐ Оставить отзыв</button>`;
+        }
+        if (task.status === 'completed' && task.creatorId === currentUser.id) {
+            btns += `<button class="btn-danger report-btn" data-id="${task.id}" data-userid="${task.takerId}" style="background:#6b7280;">⚠️ Жалоба</button>`;
         }
         if (showEditDelete && task.creatorId === currentUser.id && task.status === 'open') {
             btns += `<div class="action-buttons"><button class="btn-edit edit-btn" data-id="${task.id}">✏️ Редактировать</button><button class="btn-danger delete-btn" data-id="${task.id}">🗑️ Удалить</button></div>`;
@@ -1013,10 +1255,14 @@ function renderApp() {
         <p><strong>💰 Основной баланс:</strong> ${(parseFloat(currentUser.balance)||0).toFixed(2)} ₽</p>
         <p><strong>🎁 Бонусный счёт:</strong> ${(parseFloat(currentUser.bonus_balance)||0).toFixed(2)} ₽</p>
         <p><strong>👥 Приглашено друзей:</strong> ${currentUser.referral_count || 0}</p>
-        <p><strong>⭐ Рейтинг:</strong> ${getRatingStars(parseFloat(currentUser.rating) || 0)} (${currentUser.ratingCount || 0} оценок)</p>
+        <p><strong>⭐ Рейтинг:</strong> ${getRatingStars(userRating)} (${userRatingCount} оценок)</p>
         <p><strong>📊 Выполнено заданий:</strong> ${currentUser.tasksCompleted || 0}</p>
         <p><strong>💰 Заработано:</strong> ${(parseFloat(currentUser.totalEarned)||0).toFixed(2)} ₽</p>
+        <p><strong>📅 Регистрация:</strong> ${formatDate(currentUser.registeredAt)}</p>
         <div class="referral-code" onclick="copyReferralLink()">🔗 ${getReferralLink()}</div>
+        <div style="margin-top:15px;">
+            <button class="btn-info" onclick="claimDailyBonus()" style="width:100%;">🎁 Ежедневный бонус (+3₽)</button>
+        </div>
         <p style="font-size:12px;margin-top:10px;">➕ За каждого друга, который зарегистрируется по вашей ссылке, вы получите +5₽ на бонусный счёт!</p>
     </div>`;
     
@@ -1075,6 +1321,7 @@ function renderApp() {
             </div>
             <div style="display:flex;justify-content:space-between;margin-bottom:15px;flex-wrap:wrap;gap:10px;">
                 <div>${adminEntryBtn}</div>
+                <div><button class="btn-info" onclick="claimDailyBonus()" style="padding:5px 15px;">🎁 Бонус дня</button></div>
             </div>
             ${adminPanelHtml}
             <div class="tabs">
@@ -1093,6 +1340,7 @@ function renderApp() {
         </div>
     `;
     
+    // Привязка событий
     document.querySelectorAll('.tab').forEach(tab => {
         tab.onclick = () => {
             window._activeTab = tab.getAttribute('data-tab');
@@ -1126,21 +1374,50 @@ function renderApp() {
     }
     
     if (isAdmin) {
-        if (document.getElementById('adminPanelBtn')) {
-            document.getElementById('adminPanelBtn').onclick = () => adminMode ? exitAdminMode() : requestAdminAccess();
-        }
-        if (document.getElementById('exitAdminBtn')) document.getElementById('exitAdminBtn').onclick = exitAdminMode;
-        if (document.getElementById('refreshUsersBtn')) {
-            document.getElementById('refreshUsersBtn').onclick = async () => { 
-                isDataLoaded = false;
-                await loadDataFromGoogle(); 
-                renderApp(); 
+        const adminPanelBtn = document.getElementById('adminPanelBtn');
+        if (adminPanelBtn) adminPanelBtn.onclick = () => adminMode ? exitAdminMode() : requestAdminAccess();
+        
+        const exitAdminBtn = document.getElementById('exitAdminBtn');
+        if (exitAdminBtn) exitAdminBtn.onclick = exitAdminMode;
+        
+        const refreshUsersBtn = document.getElementById('refreshUsersBtn');
+        if (refreshUsersBtn) refreshUsersBtn.onclick = async () => { isDataLoaded = false; await loadDataFromGoogle(); renderApp(); };
+        
+        const clearTasksBtn = document.getElementById('clearTasksBtn');
+        if (clearTasksBtn) clearTasksBtn.onclick = deleteAllTasks;
+        
+        const showStatsBtn = document.getElementById('showStatsBtn');
+        if (showStatsBtn) {
+            showStatsBtn.onclick = async () => {
+                const stats = await getUserStats();
+                const totalEarned = users.reduce((sum,u)=>sum+(parseFloat(u.totalEarned)||0),0);
+                const totalBonus = users.reduce((sum,u)=>sum+(parseFloat(u.bonus_balance)||0),0);
+                alert(`📊 СТАТИСТИКА SCHOOLTASK 📊\n\n👥 Всего пользователей: ${stats.totalUsers}\n📋 Всего заданий: ${stats.totalTasks}\n⭐ Всего отзывов: ${stats.totalReviews}\n💰 Всего заработано: ${totalEarned.toFixed(2)} ₽\n🎁 Всего бонусов: ${totalBonus.toFixed(2)} ₽\n🚀 Активных заданий: ${tasks.filter(t=>t.status==='open').length}\n✅ Выполненных заданий: ${tasks.filter(t=>t.status==='completed').length}`);
             };
         }
-        if (document.getElementById('clearTasksBtn')) document.getElementById('clearTasksBtn').onclick = deleteAllTasks;
-        if (document.getElementById('adminSearch')) {
-            document.getElementById('adminSearch').oninput = (e) => { adminSearchTerm = e.target.value; renderApp(); };
+        
+        const showReportsBtn = document.getElementById('showReportsBtn');
+        if (showReportsBtn) {
+            showReportsBtn.onclick = async () => {
+                if (reports.length === 0) {
+                    alert('📋 Жалоб пока нет.');
+                } else {
+                    let reportsText = '⚠️ СПИСОК ЖАЛОБ ⚠️\n\n';
+                    reports.forEach((r, i) => {
+                        const reporter = users.find(u => u.id === r.reporterId);
+                        const reported = users.find(u => u.id === r.reportedId);
+                        const task = tasks.find(t => t.id === r.taskId);
+                        reportsText += `${i+1}. От: ${reporter?.name || '?'} → На: ${reported?.name || '?'}\n`;
+                        reportsText += `   Задание: ${task?.description || '?'}\n`;
+                        reportsText += `   Причина: ${r.reason}\n   Дата: ${formatDate(r.createdAt)}\n   Статус: ${r.status || 'pending'}\n\n`;
+                    });
+                    alert(reportsText);
+                }
+            };
         }
+        
+        const adminSearch = document.getElementById('adminSearch');
+        if (adminSearch) adminSearch.oninput = (e) => { adminSearchTerm = e.target.value; renderApp(); };
         
         document.querySelectorAll('.topup-btn').forEach(btn => {
             btn.onclick = () => {
@@ -1168,6 +1445,47 @@ function renderApp() {
         
         document.querySelectorAll('.unban-btn').forEach(btn => {
             btn.onclick = () => unbanUser(btn.getAttribute('data-userid'));
+        });
+        
+        document.querySelectorAll('.reviews-btn').forEach(btn => {
+            btn.onclick = async () => {
+                const userId = btn.getAttribute('data-userid');
+                const userReviews = await getUserReviews(userId);
+                const userObj = users.find(u => u.id === userId);
+                if (userReviews.length === 0) {
+                    alert(`⭐ У пользователя ${userObj?.name} пока нет отзывов.`);
+                } else {
+                    let avgRating = userReviews.reduce((sum,r)=>sum+parseInt(r.rating),0)/userReviews.length;
+                    let reviewsText = `⭐ ОТЗЫВЫ О ПОЛЬЗОВАТЕЛЕ ${userObj?.name} ⭐\n\nСредняя оценка: ${getRatingStars(avgRating)} (${avgRating.toFixed(1)})\n\n`;
+                    userReviews.forEach(r => {
+                        const fromUser = users.find(u => u.id === r.fromUserId);
+                        reviewsText += `• ${getRatingStars(parseInt(r.rating))} - ${r.comment || 'Без комментария'}\n  от ${fromUser?.name || '?'} (${formatDate(r.createdAt)})\n\n`;
+                    });
+                    alert(reviewsText);
+                }
+            };
+        });
+        
+        document.querySelectorAll('.user-tasks-btn').forEach(btn => {
+            btn.onclick = async () => {
+                const userId = btn.getAttribute('data-userid');
+                const userTasks = await getUserTasks(userId);
+                const userObj = users.find(u => u.id === userId);
+                if (userTasks.length === 0) {
+                    alert(`📋 У пользователя ${userObj?.name} нет заданий.`);
+                } else {
+                    let tasksText = `📋 ЗАДАНИЯ ПОЛЬЗОВАТЕЛЯ ${userObj?.name} 📋\n\n`;
+                    tasksText += `📝 Создал: ${userTasks.filter(t=>t.creatorId===userId).length} заданий\n`;
+                    tasksText += `🔧 Взял в работу: ${userTasks.filter(t=>t.takerId===userId).length} заданий\n`;
+                    tasksText += `✅ Завершил: ${userTasks.filter(t=>t.status==='completed' && (t.creatorId===userId || t.takerId===userId)).length} заданий\n\n`;
+                    userTasks.slice(0, 10).forEach(t => {
+                        const status = getStatusText(t.status);
+                        tasksText += `• ${t.description.substring(0,30)}... — ${t.price}₽ (${status.text})\n`;
+                    });
+                    if (userTasks.length > 10) tasksText += `\n... и ещё ${userTasks.length-10} заданий`;
+                    alert(tasksText);
+                }
+            };
         });
     }
     
@@ -1200,8 +1518,13 @@ function renderApp() {
     document.querySelectorAll('.review-btn').forEach(btn => {
         btn.onclick = () => showReviewModal(btn.getAttribute('data-id'), btn.getAttribute('data-userid'));
     });
+    
+    document.querySelectorAll('.report-btn').forEach(btn => {
+        btn.onclick = () => showReportModal(btn.getAttribute('data-id'), btn.getAttribute('data-userid'));
+    });
 }
 
+// Экспорт глобальных функций
 window.shareTelegram = shareTelegram;
 window.shareVK = shareVK;
 window.copyReferralLink = copyReferralLink;
@@ -1209,6 +1532,9 @@ window.showBonusHelp = showBonusHelp;
 window.openWalletModal = openWalletModal;
 window.closeWalletModal = closeWalletModal;
 window.showPaymentAlert = showPaymentAlert;
+window.claimDailyBonus = claimDailyBonus;
+window.showReportModal = showReportModal;
+window.closeChat = () => {};
 
 // ===== ЗАПУСК =====
 loadDataFromGoogle().then(() => {
