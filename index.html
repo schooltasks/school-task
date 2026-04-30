@@ -94,9 +94,6 @@
         body.dark-theme .support-link { background: #334155; color: #cbd5e1; }
         
         @media (max-width: 700px) { .filter-group { flex-direction: column; } }
-        
-        .debug-console { background: #1e1e1e; color: #00ff00; font-family: monospace; font-size: 10px; padding: 8px; margin-top: 10px; border-radius: 8px; max-height: 150px; overflow-y: auto; display: none; }
-        .debug-console.show { display: block; }
     </style>
 </head>
 <body>
@@ -118,20 +115,6 @@ let filters = { scope: 'school', minPrice: '', maxPrice: '' };
 let isLoading = false;
 let reports = [];
 let dailyBonusClaimed = false;
-
-// Отладка
-function debugLog(msg, data) {
-    console.log('[DEBUG]', msg, data || '');
-    let debugDiv = document.getElementById('debugConsole');
-    if (debugDiv) {
-        let entry = document.createElement('div');
-        entry.textContent = new Date().toLocaleTimeString() + ' - ' + msg + (data ? ' ' + JSON.stringify(data) : '');
-        debugDiv.appendChild(entry);
-        debugDiv.scrollTop = debugDiv.scrollHeight;
-        // Оставляем не более 50 записей
-        while (debugDiv.children.length > 50) debugDiv.removeChild(debugDiv.firstChild);
-    }
-}
 
 // ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
 function escapeHtml(text) {
@@ -168,126 +151,37 @@ function toggleTheme() {
     renderApp(); 
 }
 
-// ===== ПРЯМОЙ ЗАПРОС К API ДЛЯ ПРОВЕРКИ =====
-async function testApiDirect() {
-    try {
-        debugLog('Тестируем прямое соединение с API...');
-        const response = await fetch(API_URL + '?action=getUsers');
-        debugLog('Ответ получен, status:', response.status);
-        const text = await response.text();
-        debugLog('Текст ответа (первые 200 символов):', text.substring(0, 200));
-        try {
-            const json = JSON.parse(text);
-            debugLog('JSON успешно разобран, тип:', Array.isArray(json) ? 'массив' : typeof json);
-            if (Array.isArray(json)) {
-                debugLog('Количество пользователей в ответе:', json.length);
-                if (json.length > 0) {
-                    debugLog('Первый пользователь:', json[0]);
-                }
-            }
-            return json;
-        } catch(e) {
-            debugLog('Ошибка парсинга JSON:', e.message);
-            return null;
-        }
-    } catch(e) {
-        debugLog('Ошибка запроса:', e.message);
-        return null;
-    }
-}
-
 // ===== ЗАГРУЗКА ДАННЫХ =====
 async function loadDataFromGoogle(force = false) {
-    debugLog('loadDataFromGoogle вызван, force=' + force);
-    
-    if (isLoading) {
-        debugLog('Уже идет загрузка, пропускаем');
-        return false;
-    }
+    if (isLoading && !force) return false;
     
     isLoading = true;
     
     try {
-        // Делаем запрос на получение пользователей
-        debugLog('Запрашиваем пользователей...');
         const usersResponse = await fetch(API_URL + '?action=getUsers');
-        debugLog('Ответ getUsers, status:', usersResponse.status);
-        
-        if (!usersResponse.ok) {
-            debugLog('Ошибка HTTP:', usersResponse.status);
-            showToast('Ошибка загрузки пользователей: ' + usersResponse.status, true);
-            isLoading = false;
-            return false;
+        if (usersResponse.ok) {
+            const usersData = await usersResponse.json();
+            if (Array.isArray(usersData)) users = usersData;
         }
         
-        const usersText = await usersResponse.text();
-        debugLog('Текст ответа getUsers (первые 300 символов):', usersText.substring(0, 300));
-        
-        let usersData;
-        try {
-            usersData = JSON.parse(usersText);
-            debugLog('JSON пользователей разобран, тип:', Array.isArray(usersData) ? 'массив' : typeof usersData);
-        } catch(e) {
-            debugLog('Ошибка парсинга JSON пользователей:', e.message);
-            showToast('Ошибка формата данных от сервера', true);
-            isLoading = false;
-            return false;
-        }
-        
-        if (Array.isArray(usersData)) {
-            users = usersData;
-            debugLog('Загружено пользователей:', users.length);
-        } else if (usersData && usersData.error) {
-            debugLog('Ошибка от сервера:', usersData.error);
-            showToast('Ошибка сервера: ' + usersData.error, true);
-        } else {
-            debugLog('Неожиданный формат данных:', usersData);
-            users = [];
-        }
-        
-        // Загружаем задачи
-        debugLog('Запрашиваем задачи...');
         const tasksResponse = await fetch(API_URL + '?action=getTasks');
         if (tasksResponse.ok) {
-            const tasksText = await tasksResponse.text();
-            try {
-                const tasksData = JSON.parse(tasksText);
-                if (Array.isArray(tasksData)) tasks = tasksData;
-                debugLog('Загружено задач:', tasks.length);
-            } catch(e) {
-                debugLog('Ошибка парсинга задач:', e.message);
-            }
+            const tasksData = await tasksResponse.json();
+            if (Array.isArray(tasksData)) tasks = tasksData;
         }
         
-        // Загружаем отзывы
-        debugLog('Запрашиваем отзывы...');
         const reviewsResponse = await fetch(API_URL + '?action=getReviews');
         if (reviewsResponse.ok) {
-            const reviewsText = await reviewsResponse.text();
-            try {
-                const reviewsData = JSON.parse(reviewsText);
-                if (Array.isArray(reviewsData)) reviews = reviewsData;
-                debugLog('Загружено отзывов:', reviews.length);
-            } catch(e) {
-                debugLog('Ошибка парсинга отзывов:', e.message);
-            }
+            const reviewsData = await reviewsResponse.json();
+            if (Array.isArray(reviewsData)) reviews = reviewsData;
         }
         
-        // Загружаем жалобы
-        debugLog('Запрашиваем жалобы...');
         const reportsResponse = await fetch(API_URL + '?action=getReports');
         if (reportsResponse.ok) {
-            const reportsText = await reportsResponse.text();
-            try {
-                const reportsData = JSON.parse(reportsText);
-                if (Array.isArray(reportsData)) reports = reportsData;
-                debugLog('Загружено жалоб:', reports.length);
-            } catch(e) {
-                debugLog('Ошибка парсинга жалоб:', e.message);
-            }
+            const reportsData = await reportsResponse.json();
+            if (Array.isArray(reportsData)) reports = reportsData;
         }
         
-        // Проверяем ежедневный бонус
         const lastBonus = localStorage.getItem('lastDailyBonus');
         if (lastBonus) {
             const lastDate = new Date(parseInt(lastBonus));
@@ -297,21 +191,18 @@ async function loadDataFromGoogle(force = false) {
             dailyBonusClaimed = false;
         }
         
-        debugLog('Загрузка завершена, пользователей:', users.length);
         isLoading = false;
         return true;
         
     } catch(e) {
-        debugLog('Критическая ошибка загрузки:', e.message);
-        console.error(e);
-        showToast('⚠️ Не удалось загрузить данные: ' + e.message, true);
+        console.error('Ошибка загрузки:', e);
+        showToast('⚠️ Не удалось загрузить данные', true);
         isLoading = false;
         return false;
     }
 }
 
 async function saveToGoogle(action, params) {
-    debugLog('saveToGoogle:', action, params);
     try {
         const formData = new URLSearchParams();
         formData.append('action', action);
@@ -328,15 +219,13 @@ async function saveToGoogle(action, params) {
         });
         
         const text = await response.text();
-        debugLog('Ответ saveToGoogle:', text.substring(0, 200));
         try {
             return JSON.parse(text);
         } catch(e) {
-            debugLog('Ошибка парсинга ответа:', e.message);
-            return { success: false, error: 'Ошибка формата ответа' };
+            return { success: false };
         }
     } catch(e) {
-        debugLog('Ошибка сохранения:', e.message);
+        console.error('Ошибка сохранения:', e);
         showToast('⚠️ Не удалось сохранить', true);
         return { success: false };
     }
@@ -350,7 +239,6 @@ function saveSession() {
             school: currentUser.school,
             corp: currentUser.corp
         })); 
-        debugLog('Сессия сохранена для:', currentUser.name);
     } else { 
         localStorage.removeItem('schooltask_session'); 
     }
@@ -361,20 +249,14 @@ async function restoreSession() {
     if (!saved) return false;
     try {
         let session = JSON.parse(saved);
-        debugLog('Восстановление сессии для:', session.name);
-        // Принудительно загружаем свежие данные
         await loadDataFromGoogle(true);
         let user = users.find(u => u.name === session.name && u.school === session.school && u.corp === session.corp);
         if (user && user.isBanned !== 'true') { 
             currentUser = user; 
-            debugLog('Сессия восстановлена успешно');
             return true; 
         }
-        debugLog('Пользователь не найден или забанен');
         localStorage.removeItem('schooltask_session');
-    } catch(e) {
-        debugLog('Ошибка восстановления сессии:', e.message);
-    }
+    } catch(e) {}
     return false;
 }
 
@@ -587,7 +469,7 @@ async function handleRegister() {
     }
 }
 
-// ===== ВХОД (ПЕРЕРАБОТАН) =====
+// ===== ВХОД =====
 async function handleLogin() {
     const nameInput = document.getElementById('loginName');
     const schoolInput = document.getElementById('loginSchool');
@@ -600,8 +482,6 @@ async function handleLogin() {
     const corp = corpInput.value.trim();
     const password = passwordInput.value.trim();
     
-    debugLog('Попытка входа:', { name, school, corp, password: '***' });
-    
     if (!name || !school || !corp || !password) {
         showToast('❌ Заполните все поля', true);
         return;
@@ -611,7 +491,6 @@ async function handleLogin() {
     btn.textContent = '⏳ Загрузка...';
     
     try {
-        // Принудительно загружаем данные с сервера
         showToast('🔄 Загружаю данные с сервера...', false);
         const loaded = await loadDataFromGoogle(true);
         
@@ -622,20 +501,6 @@ async function handleLogin() {
             return;
         }
         
-        debugLog('Загружено пользователей для поиска:', users.length);
-        
-        // Выводим список пользователей для отладки
-        if (users.length > 0) {
-            debugLog('Список пользователей в системе:', users.map(u => ({ name: u.name, school: u.school, corp: u.corp })));
-        } else {
-            debugLog('ВНИМАНИЕ: Пользователи не загружены!');
-            showToast('❌ Нет данных о пользователях. Обратитесь к администратору.', true);
-            btn.disabled = false;
-            btn.textContent = 'Войти';
-            return;
-        }
-        
-        // Ищем пользователя - сравниваем как строки, учитывая возможные пробелы
         let user = users.find(u => {
             const uName = String(u.name || '').trim();
             const uSchool = String(u.school || '').trim();
@@ -643,20 +508,14 @@ async function handleLogin() {
             return uName === name && uSchool === school && uCorp === corp;
         });
         
-        debugLog('Результат поиска пользователя:', user ? `найден ${user.name}` : 'не найден');
-        
         if (!user) {
-            showToast('❌ Пользователь не найден. Проверьте имя, школу и корпус.', true);
+            showToast('❌ Пользователь не найден', true);
             btn.disabled = false;
             btn.textContent = 'Войти';
             return;
         }
         
-        // Сравниваем пароль
-        const userPassword = String(user.password || '');
-        debugLog('Проверка пароля, введён:', password, 'из БД:', userPassword);
-        
-        if (userPassword !== password) {
+        if (user.password !== password) {
             showToast('❌ Неверный пароль', true);
             btn.disabled = false;
             btn.textContent = 'Войти';
@@ -676,8 +535,7 @@ async function handleLogin() {
         renderApp();
         
     } catch(e) {
-        debugLog('Ошибка входа:', e.message);
-        showToast('❌ Ошибка соединения с сервером: ' + e.message, true);
+        showToast('❌ Ошибка соединения с сервером', true);
     } finally {
         btn.disabled = false;
         btn.textContent = 'Войти';
@@ -992,7 +850,6 @@ function renderApp() {
                         <div class="input-hint">📌 Только цифры</div>
                         <input type="password" id="loginPassword" placeholder="Пароль">
                         <button class="btn-primary" id="loginBtn">Войти</button>
-                        <button class="btn-info" id="refreshDataBtn" style="margin-top:10px;">🔄 Обновить данные</button>
                     ` : `
                         <input type="text" id="regName" placeholder="Имя (3-10 символов, буквы)" maxlength="10">
                         <div id="regNameError" class="error-text"></div>
@@ -1010,32 +867,14 @@ function renderApp() {
                 <div class="support-link">
                     📞 Поддержка: <strong>@leshr_ak47</strong> (Telegram)
                 </div>
-                <div id="debugConsole" class="debug-console">
-                    <strong>🔍 Консоль отладки:</strong>
-                </div>
-                <button id="toggleDebugBtn" style="margin-top:10px;font-size:10px;padding:5px;">🔧 Показать отладку</button>
             </div>
         `;
-        
-        // Кнопка отладки
-        document.getElementById('toggleDebugBtn').onclick = () => {
-            const debugDiv = document.getElementById('debugConsole');
-            debugDiv.classList.toggle('show');
-        };
         
         document.getElementById('loginTab').onclick = () => { authMode = 'login'; renderApp(); };
         document.getElementById('registerTab').onclick = () => { authMode = 'register'; renderApp(); };
         
         if (document.getElementById('loginBtn')) {
             document.getElementById('loginBtn').onclick = handleLogin;
-        }
-        
-        if (document.getElementById('refreshDataBtn')) {
-            document.getElementById('refreshDataBtn').onclick = async () => {
-                await loadDataFromGoogle(true);
-                showToast(`✅ Данные обновлены. Пользователей: ${users.length}`, false);
-                renderApp();
-            };
         }
         
         if (document.getElementById('registerBtn')) {
@@ -1093,7 +932,6 @@ function renderApp() {
         
         document.getElementById('themeToggleBtn').onclick = toggleTheme;
         
-        // Автоматически запускаем загрузку данных при открытии страницы входа
         if (users.length === 0) {
             loadDataFromGoogle(false);
         }
@@ -1114,7 +952,6 @@ function renderApp() {
                 </div>
                 <div class="admin-header">
                     <div class="search-box">🔍 <input type="text" id="adminSearch" placeholder="Поиск..." value="${adminSearchTerm}"></div>
-                    <button class="refresh-btn" id="refreshUsersBtn" style="background:#3b82f6;color:white;">🔄 Обновить</button>
                     <button id="clearTasksBtn" style="background:#dc2626;color:white;">🗑️ Удалить все задания</button>
                     <button id="showStatsBtn" style="background:#8b5cf6;color:white;">📊 Статистика</button>
                     <button id="showReportsBtn" style="background:#ef4444;color:white;">⚠️ Жалобы (${reports.length})</button>
@@ -1165,7 +1002,7 @@ function renderApp() {
                                             ${!isBanned ? `<button class="ban-btn" data-userid="${user.id}" style="background:#dc2626;color:white;padding:5px 10px;">⛔ Бан</button>` : `<button class="unban-btn" data-userid="${user.id}" style="background:#10b981;color:white;padding:5px 10px;">✅ Разбан</button>`}
                                             <button class="reviews-btn" data-userid="${user.id}" style="background:#3b82f6;color:white;padding:5px 10px;margin-top:5px;">⭐ Отзывы</button>
                                             <button class="user-tasks-btn" data-userid="${user.id}" style="background:#8b5cf6;color:white;padding:5px 10px;margin-top:5px;">📋 Задания</button>
-                                         </td>
+                                        </td>
                                     </tr>`;
                             }).join('')}
                         </tbody>
@@ -1377,18 +1214,8 @@ function renderApp() {
             <div class="support-link">
                 📞 Поддержка: <strong>@leshr_ak47</strong> (Telegram)
             </div>
-            <div id="debugConsole" class="debug-console">
-                <strong>🔍 Консоль отладки:</strong>
-            </div>
-            <button id="toggleDebugBtn" style="margin-top:10px;font-size:10px;padding:5px;">🔧 Скрыть отладку</button>
         </div>
     `;
-    
-    // Кнопка отладки
-    document.getElementById('toggleDebugBtn').onclick = () => {
-        const debugDiv = document.getElementById('debugConsole');
-        debugDiv.classList.toggle('show');
-    };
     
     document.querySelectorAll('.tab').forEach(tab => {
         tab.onclick = () => {
@@ -1427,9 +1254,6 @@ function renderApp() {
             document.getElementById('adminPanelBtn').onclick = () => adminMode ? exitAdminMode() : requestAdminAccess();
         }
         if (document.getElementById('exitAdminBtn')) document.getElementById('exitAdminBtn').onclick = exitAdminMode;
-        if (document.getElementById('refreshUsersBtn')) {
-            document.getElementById('refreshUsersBtn').onclick = async () => { await loadDataFromGoogle(true); renderApp(); };
-        }
         if (document.getElementById('clearTasksBtn')) document.getElementById('clearTasksBtn').onclick = deleteAllTasks;
         if (document.getElementById('showStatsBtn')) {
             document.getElementById('showStatsBtn').onclick = async () => {
@@ -1565,10 +1389,8 @@ window.claimDailyBonus = claimDailyBonus;
 
 // Запуск приложения
 (async function init() {
-    debugLog('Инициализация приложения...');
     await loadDataFromGoogle(false);
     const restored = await restoreSession();
-    debugLog('Сессия восстановлена:', restored);
     renderApp();
 })();
 </script>
