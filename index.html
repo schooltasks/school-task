@@ -50,7 +50,6 @@
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
         .announcement h2 { font-size: 1.8rem; color: #1e293b; margin-bottom: 10px; }
         .announcement p { color: #1e293b; margin-bottom: 15px; }
-        .announcement .bonus-highlight { background: #dc2626; color: white; display: inline-block; padding: 5px 15px; border-radius: 40px; margin: 10px 0; }
         .share-buttons { display: flex; gap: 15px; justify-content: center; margin-top: 15px; flex-wrap: wrap; }
         .share-btn { padding: 10px 20px; border-radius: 40px; font-weight: bold; cursor: pointer; }
         .share-tg { background: #0088cc; color: white; }
@@ -95,6 +94,9 @@
         body.dark-theme .support-link { background: #334155; color: #cbd5e1; }
         
         @media (max-width: 700px) { .filter-group { flex-direction: column; } }
+        
+        .debug-console { background: #1e1e1e; color: #00ff00; font-family: monospace; font-size: 10px; padding: 8px; margin-top: 10px; border-radius: 8px; max-height: 150px; overflow-y: auto; display: none; }
+        .debug-console.show { display: block; }
     </style>
 </head>
 <body>
@@ -114,11 +116,22 @@ let reviews = [];
 let isDarkTheme = localStorage.getItem('darkTheme') === 'true';
 let filters = { scope: 'school', minPrice: '', maxPrice: '' };
 let isLoading = false;
-let isDataLoaded = false;
-let isDeleting = false;
-let pendingDeleteTasks = new Set();
 let reports = [];
 let dailyBonusClaimed = false;
+
+// Отладка
+function debugLog(msg, data) {
+    console.log('[DEBUG]', msg, data || '');
+    let debugDiv = document.getElementById('debugConsole');
+    if (debugDiv) {
+        let entry = document.createElement('div');
+        entry.textContent = new Date().toLocaleTimeString() + ' - ' + msg + (data ? ' ' + JSON.stringify(data) : '');
+        debugDiv.appendChild(entry);
+        debugDiv.scrollTop = debugDiv.scrollHeight;
+        // Оставляем не более 50 записей
+        while (debugDiv.children.length > 50) debugDiv.removeChild(debugDiv.firstChild);
+    }
+}
 
 // ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
 function escapeHtml(text) {
@@ -155,37 +168,126 @@ function toggleTheme() {
     renderApp(); 
 }
 
+// ===== ПРЯМОЙ ЗАПРОС К API ДЛЯ ПРОВЕРКИ =====
+async function testApiDirect() {
+    try {
+        debugLog('Тестируем прямое соединение с API...');
+        const response = await fetch(API_URL + '?action=getUsers');
+        debugLog('Ответ получен, status:', response.status);
+        const text = await response.text();
+        debugLog('Текст ответа (первые 200 символов):', text.substring(0, 200));
+        try {
+            const json = JSON.parse(text);
+            debugLog('JSON успешно разобран, тип:', Array.isArray(json) ? 'массив' : typeof json);
+            if (Array.isArray(json)) {
+                debugLog('Количество пользователей в ответе:', json.length);
+                if (json.length > 0) {
+                    debugLog('Первый пользователь:', json[0]);
+                }
+            }
+            return json;
+        } catch(e) {
+            debugLog('Ошибка парсинга JSON:', e.message);
+            return null;
+        }
+    } catch(e) {
+        debugLog('Ошибка запроса:', e.message);
+        return null;
+    }
+}
+
 // ===== ЗАГРУЗКА ДАННЫХ =====
-async function loadDataFromGoogle() {
-    if (isLoading) return isDataLoaded;
+async function loadDataFromGoogle(force = false) {
+    debugLog('loadDataFromGoogle вызван, force=' + force);
+    
+    if (isLoading) {
+        debugLog('Уже идет загрузка, пропускаем');
+        return false;
+    }
+    
     isLoading = true;
     
     try {
-        const usersRes = await fetch(API_URL + '?action=getUsers');
-        if (usersRes.ok) {
-            const data = await usersRes.json();
-            if (Array.isArray(data)) users = data;
-            console.log('Загружено пользователей:', users.length);
+        // Делаем запрос на получение пользователей
+        debugLog('Запрашиваем пользователей...');
+        const usersResponse = await fetch(API_URL + '?action=getUsers');
+        debugLog('Ответ getUsers, status:', usersResponse.status);
+        
+        if (!usersResponse.ok) {
+            debugLog('Ошибка HTTP:', usersResponse.status);
+            showToast('Ошибка загрузки пользователей: ' + usersResponse.status, true);
+            isLoading = false;
+            return false;
         }
         
-        const tasksRes = await fetch(API_URL + '?action=getTasks');
-        if (tasksRes.ok) {
-            const data = await tasksRes.json();
-            if (Array.isArray(data)) tasks = data;
+        const usersText = await usersResponse.text();
+        debugLog('Текст ответа getUsers (первые 300 символов):', usersText.substring(0, 300));
+        
+        let usersData;
+        try {
+            usersData = JSON.parse(usersText);
+            debugLog('JSON пользователей разобран, тип:', Array.isArray(usersData) ? 'массив' : typeof usersData);
+        } catch(e) {
+            debugLog('Ошибка парсинга JSON пользователей:', e.message);
+            showToast('Ошибка формата данных от сервера', true);
+            isLoading = false;
+            return false;
         }
         
-        const reviewsRes = await fetch(API_URL + '?action=getReviews');
-        if (reviewsRes.ok) {
-            const data = await reviewsRes.json();
-            if (Array.isArray(data)) reviews = data;
+        if (Array.isArray(usersData)) {
+            users = usersData;
+            debugLog('Загружено пользователей:', users.length);
+        } else if (usersData && usersData.error) {
+            debugLog('Ошибка от сервера:', usersData.error);
+            showToast('Ошибка сервера: ' + usersData.error, true);
+        } else {
+            debugLog('Неожиданный формат данных:', usersData);
+            users = [];
         }
         
-        const reportsRes = await fetch(API_URL + '?action=getReports');
-        if (reportsRes.ok) {
-            const data = await reportsRes.json();
-            if (Array.isArray(data)) reports = data;
+        // Загружаем задачи
+        debugLog('Запрашиваем задачи...');
+        const tasksResponse = await fetch(API_URL + '?action=getTasks');
+        if (tasksResponse.ok) {
+            const tasksText = await tasksResponse.text();
+            try {
+                const tasksData = JSON.parse(tasksText);
+                if (Array.isArray(tasksData)) tasks = tasksData;
+                debugLog('Загружено задач:', tasks.length);
+            } catch(e) {
+                debugLog('Ошибка парсинга задач:', e.message);
+            }
         }
         
+        // Загружаем отзывы
+        debugLog('Запрашиваем отзывы...');
+        const reviewsResponse = await fetch(API_URL + '?action=getReviews');
+        if (reviewsResponse.ok) {
+            const reviewsText = await reviewsResponse.text();
+            try {
+                const reviewsData = JSON.parse(reviewsText);
+                if (Array.isArray(reviewsData)) reviews = reviewsData;
+                debugLog('Загружено отзывов:', reviews.length);
+            } catch(e) {
+                debugLog('Ошибка парсинга отзывов:', e.message);
+            }
+        }
+        
+        // Загружаем жалобы
+        debugLog('Запрашиваем жалобы...');
+        const reportsResponse = await fetch(API_URL + '?action=getReports');
+        if (reportsResponse.ok) {
+            const reportsText = await reportsResponse.text();
+            try {
+                const reportsData = JSON.parse(reportsText);
+                if (Array.isArray(reportsData)) reports = reportsData;
+                debugLog('Загружено жалоб:', reports.length);
+            } catch(e) {
+                debugLog('Ошибка парсинга жалоб:', e.message);
+            }
+        }
+        
+        // Проверяем ежедневный бонус
         const lastBonus = localStorage.getItem('lastDailyBonus');
         if (lastBonus) {
             const lastDate = new Date(parseInt(lastBonus));
@@ -195,18 +297,21 @@ async function loadDataFromGoogle() {
             dailyBonusClaimed = false;
         }
         
-        isDataLoaded = true;
-        return true;
-    } catch(e) {
-        console.error('Ошибка загрузки:', e);
-        showToast('⚠️ Не удалось загрузить данные', true);
-        return false;
-    } finally {
+        debugLog('Загрузка завершена, пользователей:', users.length);
         isLoading = false;
+        return true;
+        
+    } catch(e) {
+        debugLog('Критическая ошибка загрузки:', e.message);
+        console.error(e);
+        showToast('⚠️ Не удалось загрузить данные: ' + e.message, true);
+        isLoading = false;
+        return false;
     }
 }
 
 async function saveToGoogle(action, params) {
+    debugLog('saveToGoogle:', action, params);
     try {
         const formData = new URLSearchParams();
         formData.append('action', action);
@@ -222,31 +327,54 @@ async function saveToGoogle(action, params) {
             body: formData.toString()
         });
         
-        return await response.json();
+        const text = await response.text();
+        debugLog('Ответ saveToGoogle:', text.substring(0, 200));
+        try {
+            return JSON.parse(text);
+        } catch(e) {
+            debugLog('Ошибка парсинга ответа:', e.message);
+            return { success: false, error: 'Ошибка формата ответа' };
+        }
     } catch(e) {
-        console.error('Ошибка сохранения:', e);
+        debugLog('Ошибка сохранения:', e.message);
         showToast('⚠️ Не удалось сохранить', true);
         return { success: false };
     }
 }
 
 function saveSession() { 
-    if (currentUser) localStorage.setItem('schooltask_session', JSON.stringify({ id: currentUser.id, name: currentUser.name })); 
-    else localStorage.removeItem('schooltask_session'); 
+    if (currentUser) {
+        localStorage.setItem('schooltask_session', JSON.stringify({ 
+            id: currentUser.id, 
+            name: currentUser.name,
+            school: currentUser.school,
+            corp: currentUser.corp
+        })); 
+        debugLog('Сессия сохранена для:', currentUser.name);
+    } else { 
+        localStorage.removeItem('schooltask_session'); 
+    }
 }
 
-function restoreSession() {
+async function restoreSession() {
     let saved = localStorage.getItem('schooltask_session');
     if (!saved) return false;
     try {
         let session = JSON.parse(saved);
-        let user = users.find(u => u.id === session.id);
+        debugLog('Восстановление сессии для:', session.name);
+        // Принудительно загружаем свежие данные
+        await loadDataFromGoogle(true);
+        let user = users.find(u => u.name === session.name && u.school === session.school && u.corp === session.corp);
         if (user && user.isBanned !== 'true') { 
             currentUser = user; 
+            debugLog('Сессия восстановлена успешно');
             return true; 
         }
+        debugLog('Пользователь не найден или забанен');
         localStorage.removeItem('schooltask_session');
-    } catch(e) { return false; }
+    } catch(e) {
+        debugLog('Ошибка восстановления сессии:', e.message);
+    }
     return false;
 }
 
@@ -359,7 +487,7 @@ async function addReport(reportedId, taskId, reason) {
     
     if (result && result.success) {
         showToast('✅ Жалоба отправлена! Администратор рассмотрит её в ближайшее время.', false);
-        await loadDataFromGoogle();
+        await loadDataFromGoogle(true);
         renderApp();
     } else {
         showToast('❌ Ошибка при отправке жалобы', true);
@@ -440,8 +568,7 @@ async function handleRegister() {
         });
         
         if (result && result.success) {
-            isDataLoaded = false;
-            await loadDataFromGoogle();
+            await loadDataFromGoogle(true);
             currentUser = users.find(u => u.id === id) || users.find(u => u.name === name);
             if (currentUser) {
                 saveSession();
@@ -460,7 +587,7 @@ async function handleRegister() {
     }
 }
 
-// ===== ВХОД (ПРИНУДИТЕЛЬНЫЙ) =====
+// ===== ВХОД (ПЕРЕРАБОТАН) =====
 async function handleLogin() {
     const nameInput = document.getElementById('loginName');
     const schoolInput = document.getElementById('loginSchool');
@@ -473,49 +600,88 @@ async function handleLogin() {
     const corp = corpInput.value.trim();
     const password = passwordInput.value.trim();
     
+    debugLog('Попытка входа:', { name, school, corp, password: '***' });
+    
     if (!name || !school || !corp || !password) {
         showToast('❌ Заполните все поля', true);
         return;
     }
     
     btn.disabled = true;
-    btn.textContent = '⏳ Вход...';
+    btn.textContent = '⏳ Загрузка...';
     
-    // Принудительно загружаем данные перед входом
-    if (!isDataLoaded || users.length === 0) {
-        await loadDataFromGoogle();
-    }
-    
-    // Ищем пользователя
-    let user = users.find(u => u.name === name && u.school === school && u.corp === corp);
-    
-    if (!user) {
-        showToast('❌ Пользователь не найден. Проверьте имя, школу и корпус.', true);
+    try {
+        // Принудительно загружаем данные с сервера
+        showToast('🔄 Загружаю данные с сервера...', false);
+        const loaded = await loadDataFromGoogle(true);
+        
+        if (!loaded) {
+            showToast('❌ Не удалось загрузить данные с сервера', true);
+            btn.disabled = false;
+            btn.textContent = 'Войти';
+            return;
+        }
+        
+        debugLog('Загружено пользователей для поиска:', users.length);
+        
+        // Выводим список пользователей для отладки
+        if (users.length > 0) {
+            debugLog('Список пользователей в системе:', users.map(u => ({ name: u.name, school: u.school, corp: u.corp })));
+        } else {
+            debugLog('ВНИМАНИЕ: Пользователи не загружены!');
+            showToast('❌ Нет данных о пользователях. Обратитесь к администратору.', true);
+            btn.disabled = false;
+            btn.textContent = 'Войти';
+            return;
+        }
+        
+        // Ищем пользователя - сравниваем как строки, учитывая возможные пробелы
+        let user = users.find(u => {
+            const uName = String(u.name || '').trim();
+            const uSchool = String(u.school || '').trim();
+            const uCorp = String(u.corp || '').trim();
+            return uName === name && uSchool === school && uCorp === corp;
+        });
+        
+        debugLog('Результат поиска пользователя:', user ? `найден ${user.name}` : 'не найден');
+        
+        if (!user) {
+            showToast('❌ Пользователь не найден. Проверьте имя, школу и корпус.', true);
+            btn.disabled = false;
+            btn.textContent = 'Войти';
+            return;
+        }
+        
+        // Сравниваем пароль
+        const userPassword = String(user.password || '');
+        debugLog('Проверка пароля, введён:', password, 'из БД:', userPassword);
+        
+        if (userPassword !== password) {
+            showToast('❌ Неверный пароль', true);
+            btn.disabled = false;
+            btn.textContent = 'Войти';
+            return;
+        }
+        
+        if (user.isBanned === 'true') {
+            showToast('⛔ Аккаунт заблокирован', true);
+            btn.disabled = false;
+            btn.textContent = 'Войти';
+            return;
+        }
+        
+        currentUser = user;
+        saveSession();
+        showToast(`✅ С возвращением, ${user.name}!`, false);
+        renderApp();
+        
+    } catch(e) {
+        debugLog('Ошибка входа:', e.message);
+        showToast('❌ Ошибка соединения с сервером: ' + e.message, true);
+    } finally {
         btn.disabled = false;
         btn.textContent = 'Войти';
-        return;
     }
-    
-    if (user.password !== password) {
-        showToast('❌ Неверный пароль', true);
-        btn.disabled = false;
-        btn.textContent = 'Войти';
-        return;
-    }
-    
-    if (user.isBanned === 'true') {
-        showToast('⛔ Аккаунт заблокирован', true);
-        btn.disabled = false;
-        btn.textContent = 'Войти';
-        return;
-    }
-    
-    currentUser = user;
-    saveSession();
-    showToast(`✅ С возвращением, ${user.name}!`, false);
-    renderApp();
-    btn.disabled = false;
-    btn.textContent = 'Войти';
 }
 
 function logout() { 
@@ -566,8 +732,7 @@ async function createTask(desc, price, loc, paymentType, scope, btn) {
     }
     
     await saveToGoogle('updateUser', { id: currentUser.id, balance: currentUser.balance, bonus_balance: currentUser.bonus_balance });
-    isDataLoaded = false;
-    await loadDataFromGoogle();
+    await loadDataFromGoogle(true);
     currentUser = users.find(u => u.id === currentUser.id);
     showToast('✅ Задание создано!', false);
     if(btn) btn.disabled=false;
@@ -581,8 +746,8 @@ async function takeTask(taskId, btn) {
     if (task.creatorId === currentUser.id) { showToast('❌ Нельзя взять своё задание', true); if(btn) btn.disabled=false; return; }
     
     await saveToGoogle('updateTask', { id: task.id, status: 'in_progress', takerId: currentUser.id });
-    isDataLoaded = false;
-    await loadDataFromGoogle();
+    await loadDataFromGoogle(true);
+    currentUser = users.find(u => u.id === currentUser.id);
     showToast('📢 Вы взяли задание!', false);
     if(btn) btn.disabled=false;
     renderApp();
@@ -596,8 +761,8 @@ async function confirmCompletion(taskId, btn) {
     
     showToast('🎥 Не забудьте записать видео выполнения!', false);
     await saveToGoogle('updateTask', { id: task.id, status: 'awaiting_confirmation' });
-    isDataLoaded = false;
-    await loadDataFromGoogle();
+    await loadDataFromGoogle(true);
+    currentUser = users.find(u => u.id === currentUser.id);
     showToast('✅ Задание выполнено! Ожидайте подтверждения', false);
     if(btn) btn.disabled=false;
     renderApp();
@@ -619,8 +784,8 @@ async function confirmReceipt(taskId, btn) {
         await saveToGoogle('addTaskCompleteBonus', { userId: executor.id });
     }
     await saveToGoogle('updateTask', { id: task.id, status: 'completed' });
-    isDataLoaded = false;
-    await loadDataFromGoogle();
+    await loadDataFromGoogle(true);
+    currentUser = users.find(u => u.id === currentUser.id);
     showToast(`💰 Подтверждено! Исполнитель получил ${gain.toFixed(2)} ₽`, false);
     if(btn) btn.disabled=false;
     renderApp();
@@ -636,8 +801,7 @@ async function rejectReceipt(taskId, btn) {
     else currentUser.balance += parseFloat(task.price);
     await saveToGoogle('updateUser', { id: currentUser.id, balance: currentUser.balance, bonus_balance: currentUser.bonus_balance });
     await saveToGoogle('updateTask', { id: task.id, status: 'disputed' });
-    isDataLoaded = false;
-    await loadDataFromGoogle();
+    await loadDataFromGoogle(true);
     currentUser = users.find(u => u.id === currentUser.id);
     showToast('⚠️ Деньги возвращены', false);
     if(btn) btn.disabled=false;
@@ -660,8 +824,7 @@ async function deleteTask(taskId, btn) {
     }
     
     await saveToGoogle('deleteTask', { id: taskId });
-    isDataLoaded = false;
-    await loadDataFromGoogle();
+    await loadDataFromGoogle(true);
     currentUser = users.find(u => u.id === currentUser.id);
     showToast('🗑️ Задание удалено', false);
     if(btn) btn.disabled=false;
@@ -678,8 +841,7 @@ function showEditModal(task) {
     let newScope = confirm('Для всех участников?') ? 'all' : 'school';
     
     saveToGoogle('updateTask', { id: task.id, description: newDesc, price: newPrice, location: newLoc, scope: newScope }).then(async () => {
-        isDataLoaded = false;
-        await loadDataFromGoogle();
+        await loadDataFromGoogle(true);
         currentUser = users.find(u => u.id === currentUser.id);
         showToast('✅ Задание обновлено', false);
         renderApp();
@@ -694,8 +856,7 @@ async function addReview(toUserId, taskId, rating, comment) {
     });
     if (result && result.success) {
         showToast('✅ Отзыв добавлен!', false);
-        isDataLoaded = false;
-        await loadDataFromGoogle();
+        await loadDataFromGoogle(true);
         renderApp();
     } else {
         showToast('❌ Ошибка при добавлении отзыва', true);
@@ -724,8 +885,7 @@ async function adminChangeBalance(userId, amount, isBonus) {
     }
     showToast((amount > 0 ? '+' : '') + amount + ' ₽ для ' + user.name, false);
     await saveToGoogle('updateUser', { id: userId, balance: user.balance, bonus_balance: user.bonus_balance });
-    isDataLoaded = false;
-    await loadDataFromGoogle();
+    await loadDataFromGoogle(true);
     renderApp();
 }
 
@@ -735,8 +895,7 @@ function showBanModal(userId) {
     let reason = prompt('Причина блокировки:', 'Нарушение правил');
     if (!reason) return;
     saveToGoogle('updateUser', { id: userId, isBanned: 'true', banReason: reason }).then(async () => {
-        isDataLoaded = false;
-        await loadDataFromGoogle();
+        await loadDataFromGoogle(true);
         if (currentUser && currentUser.id === userId) logout();
         else showToast('⛔ ' + user.name + ' заблокирован', false);
         renderApp();
@@ -745,8 +904,7 @@ function showBanModal(userId) {
 
 function unbanUser(userId) {
     saveToGoogle('updateUser', { id: userId, isBanned: 'false', banReason: '' }).then(async () => {
-        isDataLoaded = false;
-        await loadDataFromGoogle();
+        await loadDataFromGoogle(true);
         showToast('✅ Пользователь разблокирован', false);
         renderApp();
     });
@@ -766,8 +924,7 @@ function exitAdminMode() { adminMode = false; renderApp(); }
 function deleteAllTasks() {
     if (confirm('Удалить ВСЕ задания? Это действие необратимо!')) {
         Promise.all(tasks.map(task => saveToGoogle('deleteTask', { id: task.id }))).then(async () => {
-            isDataLoaded = false;
-            await loadDataFromGoogle();
+            await loadDataFromGoogle(true);
             showToast('✅ Все задания удалены', false);
             renderApp();
         });
@@ -853,8 +1010,18 @@ function renderApp() {
                 <div class="support-link">
                     📞 Поддержка: <strong>@leshr_ak47</strong> (Telegram)
                 </div>
+                <div id="debugConsole" class="debug-console">
+                    <strong>🔍 Консоль отладки:</strong>
+                </div>
+                <button id="toggleDebugBtn" style="margin-top:10px;font-size:10px;padding:5px;">🔧 Показать отладку</button>
             </div>
         `;
+        
+        // Кнопка отладки
+        document.getElementById('toggleDebugBtn').onclick = () => {
+            const debugDiv = document.getElementById('debugConsole');
+            debugDiv.classList.toggle('show');
+        };
         
         document.getElementById('loginTab').onclick = () => { authMode = 'login'; renderApp(); };
         document.getElementById('registerTab').onclick = () => { authMode = 'register'; renderApp(); };
@@ -865,8 +1032,7 @@ function renderApp() {
         
         if (document.getElementById('refreshDataBtn')) {
             document.getElementById('refreshDataBtn').onclick = async () => {
-                isDataLoaded = false;
-                await loadDataFromGoogle();
+                await loadDataFromGoogle(true);
                 showToast(`✅ Данные обновлены. Пользователей: ${users.length}`, false);
                 renderApp();
             };
@@ -876,7 +1042,6 @@ function renderApp() {
             document.getElementById('registerBtn').onclick = handleRegister;
         }
         
-        // ВАЛИДАЦИЯ ПРИ ВВОДЕ
         let regName = document.getElementById('regName');
         let regNameError = document.getElementById('regNameError');
         if (regName) {
@@ -927,6 +1092,11 @@ function renderApp() {
         }
         
         document.getElementById('themeToggleBtn').onclick = toggleTheme;
+        
+        // Автоматически запускаем загрузку данных при открытии страницы входа
+        if (users.length === 0) {
+            loadDataFromGoogle(false);
+        }
         return;
     }
     
@@ -962,40 +1132,41 @@ function renderApp() {
                                 <th style="padding:10px;">Статус</th>
                                 <th style="padding:10px;">Управление</th>
                                 <th style="padding:10px;">Действия</th>
-                             </tr>
+                              </tr>
                         </thead>
                         <tbody>
                             ${filteredUsers.map(user => {
                                 let isBanned = user.isBanned === 'true';
                                 let rating = parseFloat(user.rating) || 0;
-                                return `<tr>
-                                    <td style="padding:10px;"><strong>${escapeHtml(user.name)}</strong><br><small style="color:#6b7280;">ID: ${escapeHtml(user.id).slice(-8)}</small></td>
-                                    <td style="padding:10px;">${escapeHtml(user.school)}</td>
-                                    <td style="padding:10px;">${escapeHtml(user.corp)}</td>
-                                    <td style="padding:10px;color:#2c6e4f;">${(parseFloat(user.balance)||0).toFixed(2)} ₽</td>
-                                    <td style="padding:10px;color:#eab308;">${(parseFloat(user.bonus_balance)||0).toFixed(2)} ₽</td>
-                                    <td style="padding:10px;">${getRatingStars(rating)} (${user.ratingCount||0})</td>
-                                    <td style="padding:10px;">${isBanned ? '⛔ Забанен' : '✅ Активен'}${isBanned && user.banReason ? `<br><small style="color:#dc2626;">${escapeHtml(user.banReason)}</small>` : ''}</td>
-                                    <td style="padding:10px;">
-                                        <div style="display:flex;flex-direction:column;gap:5px;">
-                                            <div style="display:flex;gap:5px;">
-                                                <input type="number" id="amount-${user.id}" value="100" style="width:70px;padding:5px;border-radius:20px;">
-                                                <button class="topup-btn" data-userid="${user.id}" data-bonus="false" style="background:#10b981;color:white;padding:5px 10px;">+💰</button>
-                                                <button class="withdraw-btn" data-userid="${user.id}" data-bonus="false" style="background:#ef4444;color:white;padding:5px 10px;">-💰</button>
+                                return `
+                                    <tr>
+                                        <td style="padding:10px;"><strong>${escapeHtml(user.name)}</strong><br><small style="color:#6b7280;">ID: ${escapeHtml(user.id).slice(-8)}</small></td>
+                                        <td style="padding:10px;">${escapeHtml(user.school)}</td>
+                                        <td style="padding:10px;">${escapeHtml(user.corp)}</td>
+                                        <td style="padding:10px;color:#2c6e4f;">${(parseFloat(user.balance)||0).toFixed(2)} ₽</td>
+                                        <td style="padding:10px;color:#eab308;">${(parseFloat(user.bonus_balance)||0).toFixed(2)} ₽</td>
+                                        <td style="padding:10px;">${getRatingStars(rating)} (${user.ratingCount||0})</td>
+                                        <td style="padding:10px;">${isBanned ? '⛔ Забанен' : '✅ Активен'}${isBanned && user.banReason ? `<br><small style="color:#dc2626;">${escapeHtml(user.banReason)}</small>` : ''}</td>
+                                        <td style="padding:10px;">
+                                            <div style="display:flex;flex-direction:column;gap:5px;">
+                                                <div style="display:flex;gap:5px;">
+                                                    <input type="number" id="amount-${user.id}" value="100" style="width:70px;padding:5px;border-radius:20px;">
+                                                    <button class="topup-btn" data-userid="${user.id}" data-bonus="false" style="background:#10b981;color:white;padding:5px 10px;">+💰</button>
+                                                    <button class="withdraw-btn" data-userid="${user.id}" data-bonus="false" style="background:#ef4444;color:white;padding:5px 10px;">-💰</button>
+                                                </div>
+                                                <div style="display:flex;gap:5px;">
+                                                    <input type="number" id="bonus-${user.id}" value="100" style="width:70px;padding:5px;border-radius:20px;">
+                                                    <button class="topup-btn" data-userid="${user.id}" data-bonus="true" style="background:#f59e0b;color:white;padding:5px 10px;">+🎁</button>
+                                                    <button class="withdraw-btn" data-userid="${user.id}" data-bonus="true" style="background:#f97316;color:white;padding:5px 10px;">-🎁</button>
+                                                </div>
                                             </div>
-                                            <div style="display:flex;gap:5px;">
-                                                <input type="number" id="bonus-${user.id}" value="100" style="width:70px;padding:5px;border-radius:20px;">
-                                                <button class="topup-btn" data-userid="${user.id}" data-bonus="true" style="background:#f59e0b;color:white;padding:5px 10px;">+🎁</button>
-                                                <button class="withdraw-btn" data-userid="${user.id}" data-bonus="true" style="background:#f97316;color:white;padding:5px 10px;">-🎁</button>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td style="padding:10px;">
-                                        ${!isBanned ? `<button class="ban-btn" data-userid="${user.id}" style="background:#dc2626;color:white;padding:5px 10px;">⛔ Бан</button>` : `<button class="unban-btn" data-userid="${user.id}" style="background:#10b981;color:white;padding:5px 10px;">✅ Разбан</button>`}
-                                        <button class="reviews-btn" data-userid="${user.id}" style="background:#3b82f6;color:white;padding:5px 10px;margin-top:5px;">⭐ Отзывы</button>
-                                        <button class="user-tasks-btn" data-userid="${user.id}" style="background:#8b5cf6;color:white;padding:5px 10px;margin-top:5px;">📋 Задания</button>
-                                    </td>
-                                </tr>`;
+                                        </td>
+                                        <td style="padding:10px;">
+                                            ${!isBanned ? `<button class="ban-btn" data-userid="${user.id}" style="background:#dc2626;color:white;padding:5px 10px;">⛔ Бан</button>` : `<button class="unban-btn" data-userid="${user.id}" style="background:#10b981;color:white;padding:5px 10px;">✅ Разбан</button>`}
+                                            <button class="reviews-btn" data-userid="${user.id}" style="background:#3b82f6;color:white;padding:5px 10px;margin-top:5px;">⭐ Отзывы</button>
+                                            <button class="user-tasks-btn" data-userid="${user.id}" style="background:#8b5cf6;color:white;padding:5px 10px;margin-top:5px;">📋 Задания</button>
+                                         </td>
+                                    </tr>`;
                             }).join('')}
                         </tbody>
                     </table>
@@ -1206,8 +1377,18 @@ function renderApp() {
             <div class="support-link">
                 📞 Поддержка: <strong>@leshr_ak47</strong> (Telegram)
             </div>
+            <div id="debugConsole" class="debug-console">
+                <strong>🔍 Консоль отладки:</strong>
+            </div>
+            <button id="toggleDebugBtn" style="margin-top:10px;font-size:10px;padding:5px;">🔧 Скрыть отладку</button>
         </div>
     `;
+    
+    // Кнопка отладки
+    document.getElementById('toggleDebugBtn').onclick = () => {
+        const debugDiv = document.getElementById('debugConsole');
+        debugDiv.classList.toggle('show');
+    };
     
     document.querySelectorAll('.tab').forEach(tab => {
         tab.onclick = () => {
@@ -1247,7 +1428,7 @@ function renderApp() {
         }
         if (document.getElementById('exitAdminBtn')) document.getElementById('exitAdminBtn').onclick = exitAdminMode;
         if (document.getElementById('refreshUsersBtn')) {
-            document.getElementById('refreshUsersBtn').onclick = async () => { isDataLoaded = false; await loadDataFromGoogle(); renderApp(); };
+            document.getElementById('refreshUsersBtn').onclick = async () => { await loadDataFromGoogle(true); renderApp(); };
         }
         if (document.getElementById('clearTasksBtn')) document.getElementById('clearTasksBtn').onclick = deleteAllTasks;
         if (document.getElementById('showStatsBtn')) {
@@ -1382,10 +1563,14 @@ window.closeWalletModal = closeWalletModal;
 window.showPaymentAlert = showPaymentAlert;
 window.claimDailyBonus = claimDailyBonus;
 
-loadDataFromGoogle().then(() => {
-    restoreSession();
+// Запуск приложения
+(async function init() {
+    debugLog('Инициализация приложения...');
+    await loadDataFromGoogle(false);
+    const restored = await restoreSession();
+    debugLog('Сессия восстановлена:', restored);
     renderApp();
-});
+})();
 </script>
 </body>
 </html>
