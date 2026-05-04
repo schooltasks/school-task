@@ -61,7 +61,7 @@
             color: #e2e8f0;
         }
 
-        /* ---------- ЭКРАН ЗАГРУЗКИ (СПЛЕШ) ---------- */
+        /* ---------- ЭКРАН ЗАГРУЗКИ (СПЛЕШ) - СКЕЛЕТ С МЕЧОМ И ЩИТОМ ---------- */
         .splash-screen {
             position: fixed;
             top: 0;
@@ -82,53 +82,33 @@
             visibility: hidden;
         }
 
-        .splash-image {
-            width: 160px;
-            height: 160px;
-            border-radius: 50%;
-            object-fit: cover;
-            box-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
-            animation: splashPulse 1s ease-in-out infinite;
-            margin-bottom: 30px;
+        /* SVG скелета с мечом и щитом */
+        .skeleton-svg {
+            width: 200px;
+            height: 200px;
+            animation: skeletonFloat 1.2s ease-in-out infinite;
+            filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.5));
         }
 
-        @keyframes splashPulse {
-            0%, 100% {
-                transform: scale(1);
-                box-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
-            }
-            50% {
-                transform: scale(1.05);
-                box-shadow: 0 0 50px rgba(255, 215, 0, 0.9);
-            }
-        }
-
-        .splash-title {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #ffd966;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-            margin-bottom: 15px;
+        @keyframes skeletonFloat {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
         }
 
         .splash-text {
             color: #ffd700;
-            font-size: 1.3rem;
+            font-size: 1.4rem;
             font-weight: bold;
-            animation: textGlow 1.2s ease-in-out infinite;
             text-align: center;
+            margin-top: 20px;
+            animation: textBeat 0.8s ease-in-out infinite;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
             padding: 0 20px;
         }
 
-        @keyframes textGlow {
-            0%, 100% {
-                opacity: 1;
-                text-shadow: 0 0 5px #ffd700;
-            }
-            50% {
-                opacity: 0.8;
-                text-shadow: 0 0 15px #ffaa00;
-            }
+        @keyframes textBeat {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.03); opacity: 0.9; }
         }
 
         .splash-loader {
@@ -142,9 +122,7 @@
         }
 
         @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
+            to { transform: rotate(360deg); }
         }
 
         /* ---------- АНИМАЦИИ ДЛЯ ВСЕХ ЭЛЕМЕНТОВ ---------- */
@@ -716,20 +694,48 @@
 
         if (isDarkTheme) document.body.classList.add('dark-theme');
 
-        // ========== ЭКРАН ЗАГРУЗКИ (СПЛЕШ) ==========
+        // ========== ЭКРАН ЗАГРУЗКИ (СПЛЕШ) - СКЕЛЕТ С МЕЧОМ И ЩИТОМ ==========
         function showSplash() {
             const splash = document.createElement('div');
             splash.className = 'splash-screen';
             splash.id = 'splashScreen';
             splash.innerHTML = `
-            <img class="splash-image" src="https://avatars.mds.yandex.net/i?id=4a9764bfb8c6affc2f8a723808aa8390_l-10650801-images-thumbs&n=13" alt="SchoolTask">
-            <div class="splash-title">🏫 SchoolTask</div>
+            <svg class="skeleton-svg" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Тело скелета -->
+                <rect x="85" y="70" width="30" height="50" rx="5" fill="#e2e8f0" stroke="#94a3b8" stroke-width="2"/>
+                <!-- Голова -->
+                <circle cx="100" cy="55" r="18" fill="#e2e8f0" stroke="#94a3b8" stroke-width="2"/>
+                <!-- Глаза -->
+                <circle cx="93" cy="52" r="2" fill="#1e293b"/>
+                <circle cx="107" cy="52" r="2" fill="#1e293b"/>
+                <!-- Улыбка -->
+                <path d="M94 60 Q100 66 106 60" stroke="#1e293b" stroke-width="1.5" fill="none"/>
+                <!-- Левая рука (держит щит) -->
+                <rect x="55" y="80" width="30" height="10" rx="3" fill="#e2e8f0" stroke="#94a3b8" stroke-width="2" transform="rotate(-30 70 85)"/>
+                <!-- ЩИТ в левой руке -->
+                <path d="M35 65 L50 50 L65 65 L65 90 L50 105 L35 90 Z" fill="#cbd5e1" stroke="#475569" stroke-width="2"/>
+                <path d="M50 55 L50 100" stroke="#475569" stroke-width="1.5"/>
+                <path d="M38 72 L62 72" stroke="#475569" stroke-width="1.5"/>
+                <!-- Правая рука (держит меч) -->
+                <rect x="115" y="75" width="35" height="10" rx="3" fill="#e2e8f0" stroke="#94a3b8" stroke-width="2" transform="rotate(25 132 80)"/>
+                <!-- МЕЧ в правой руке -->
+                <rect x="140" y="40" width="6" height="55" rx="2" fill="#94a3b8"/>
+                <rect x="136" y="35" width="14" height="10" rx="2" fill="#eab308"/>
+                <path d="M143 40 L143 90" stroke="#475569" stroke-width="1"/>
+                <!-- Ноги -->
+                <rect x="85" y="120" width="10" height="30" rx="3" fill="#e2e8f0" stroke="#94a3b8" stroke-width="2"/>
+                <rect x="105" y="120" width="10" height="30" rx="3" fill="#e2e8f0" stroke="#94a3b8" stroke-width="2"/>
+                <!-- Бонус: звёздочки вокруг -->
+                <text x="25" y="30" font-size="14" fill="#ffd700">⚔️</text>
+                <text x="165" y="25" font-size="14" fill="#ffd700">🛡️</text>
+                <text x="170" y="170" font-size="12" fill="#ffd700">⭐</text>
+                <text x="15" y="175" font-size="12" fill="#ffd700">⚡</text>
+            </svg>
             <div class="splash-text">🥁 стучим по щиту, ускоряем загрузку...</div>
             <div class="splash-loader"></div>
         `;
             document.body.appendChild(splash);
 
-            // Автоматически скрываем через 0.9 сек (анимация + переход)
             setTimeout(() => {
                 const splashEl = document.getElementById('splashScreen');
                 if (splashEl) {
@@ -739,7 +745,7 @@
                         document.body.classList.add('loaded');
                     }, 500);
                 }
-            }, 900);
+            }, 1100);
         }
 
         // ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
