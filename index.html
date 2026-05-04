@@ -82,7 +82,6 @@
             visibility: hidden;
         }
 
-        /* SVG скелета с мечом и щитом */
         .skeleton-svg {
             width: 200px;
             height: 200px;
@@ -690,7 +689,6 @@
             maxPrice: ''
         };
         let isLoading = false;
-        let dailyBonusClaimed = false;
 
         if (isDarkTheme) document.body.classList.add('dark-theme');
 
@@ -701,31 +699,21 @@
             splash.id = 'splashScreen';
             splash.innerHTML = `
             <svg class="skeleton-svg" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <!-- Тело скелета -->
                 <rect x="85" y="70" width="30" height="50" rx="5" fill="#e2e8f0" stroke="#94a3b8" stroke-width="2"/>
-                <!-- Голова -->
                 <circle cx="100" cy="55" r="18" fill="#e2e8f0" stroke="#94a3b8" stroke-width="2"/>
-                <!-- Глаза -->
                 <circle cx="93" cy="52" r="2" fill="#1e293b"/>
                 <circle cx="107" cy="52" r="2" fill="#1e293b"/>
-                <!-- Улыбка -->
                 <path d="M94 60 Q100 66 106 60" stroke="#1e293b" stroke-width="1.5" fill="none"/>
-                <!-- Левая рука (держит щит) -->
                 <rect x="55" y="80" width="30" height="10" rx="3" fill="#e2e8f0" stroke="#94a3b8" stroke-width="2" transform="rotate(-30 70 85)"/>
-                <!-- ЩИТ в левой руке -->
                 <path d="M35 65 L50 50 L65 65 L65 90 L50 105 L35 90 Z" fill="#cbd5e1" stroke="#475569" stroke-width="2"/>
                 <path d="M50 55 L50 100" stroke="#475569" stroke-width="1.5"/>
                 <path d="M38 72 L62 72" stroke="#475569" stroke-width="1.5"/>
-                <!-- Правая рука (держит меч) -->
                 <rect x="115" y="75" width="35" height="10" rx="3" fill="#e2e8f0" stroke="#94a3b8" stroke-width="2" transform="rotate(25 132 80)"/>
-                <!-- МЕЧ в правой руке -->
                 <rect x="140" y="40" width="6" height="55" rx="2" fill="#94a3b8"/>
                 <rect x="136" y="35" width="14" height="10" rx="2" fill="#eab308"/>
                 <path d="M143 40 L143 90" stroke="#475569" stroke-width="1"/>
-                <!-- Ноги -->
                 <rect x="85" y="120" width="10" height="30" rx="3" fill="#e2e8f0" stroke="#94a3b8" stroke-width="2"/>
                 <rect x="105" y="120" width="10" height="30" rx="3" fill="#e2e8f0" stroke="#94a3b8" stroke-width="2"/>
-                <!-- Бонус: звёздочки вокруг -->
                 <text x="25" y="30" font-size="14" fill="#ffd700">⚔️</text>
                 <text x="165" y="25" font-size="14" fill="#ffd700">🛡️</text>
                 <text x="170" y="170" font-size="12" fill="#ffd700">⭐</text>
@@ -802,15 +790,6 @@
                 if (Array.isArray(reviewsRes)) reviews = reviewsRes;
                 if (Array.isArray(reportsRes)) reports = reportsRes;
 
-                const lastBonus = localStorage.getItem('lastDailyBonus');
-                if (lastBonus) {
-                    const lastDate = new Date(parseInt(lastBonus));
-                    const today = new Date();
-                    dailyBonusClaimed = lastDate.toDateString() === today.toDateString();
-                } else {
-                    dailyBonusClaimed = false;
-                }
-
                 isLoading = false;
                 return true;
             } catch (e) {
@@ -873,9 +852,6 @@
                 let user = users.find(u => u.name === session.name && u.school === session.school && u.corp === session.corp);
                 if (user && user.isBanned !== 'true') {
                     currentUser = user;
-                    await saveToGoogle('restoreSession', {
-                        userId: currentUser.id
-                    });
                     return true;
                 }
                 localStorage.removeItem('schooltask_session');
@@ -903,29 +879,7 @@
         }
 
         function showBonusHelp() {
-            alert('🎁 Бонусный счёт\n\nБонусы НЕЛЬЗЯ вывести, только тратить на создание заданий!\n\n✨ Как получить:\n• +5₽ за каждого приглашённого друга\n• +10₽ за выполнение задания\n• +20₽ за отзыв 5 звёзд\n• +3₽ ежедневный бонус за вход');
-        }
-
-        // ========== ЕЖЕДНЕВНЫЙ БОНУС ==========
-        async function claimDailyBonus() {
-            if (!currentUser) return;
-            if (dailyBonusClaimed) {
-                showToast('❌ Вы уже получали сегодняшний бонус! Завтра будет новый.', false);
-                return;
-            }
-
-            const result = await saveToGoogle('addDailyBonus', {
-                userId: currentUser.id
-            });
-            if (result && result.success) {
-                currentUser.bonus_balance = (parseFloat(currentUser.bonus_balance) || 0) + 3;
-                dailyBonusClaimed = true;
-                localStorage.setItem('lastDailyBonus', Date.now().toString());
-                showToast('🎁 +3₽ на бонусный счёт! Заходите завтра за новым бонусом!', false);
-                renderApp();
-            } else {
-                showToast('❌ Ошибка при получении бонуса', true);
-            }
+            alert('🎁 Бонусный счёт\n\nБонусы НЕЛЬЗЯ вывести, только тратить на создание заданий!\n\n✨ Как получить:\n• +5₽ за каждого приглашённого друга\n• +10₽ за выполнение задания\n• +20₽ за отзыв 5 звёзд');
         }
 
         // ========== МЕНЮ КОШЕЛЬКА ==========
@@ -957,7 +911,6 @@
                 <div style="display:flex;flex-direction:column;gap:10px;">
                     <button class="btn-success" onclick="showPaymentAlert('deposit')">💰 Пополнить</button>
                     <button class="btn-primary" onclick="showPaymentAlert('withdraw')">💸 Вывод</button>
-                    <button class="btn-info" onclick="claimDailyBonus()">🎁 Ежедневный бонус (+3₽)</button>
                 </div>
                 <button class="btn-danger" onclick="closeWalletModal()" style="margin-top:15px;width:100%">Закрыть</button>
             </div>
@@ -1140,9 +1093,6 @@
 
             currentUser = user;
             saveSession();
-            await saveToGoogle('restoreSession', {
-                userId: currentUser.id
-            });
             showToast(`✅ С возвращением, ${user.name}!`, false);
             renderApp();
             btn.disabled = false;
@@ -1556,7 +1506,7 @@
                     </div>
                     <div class="help-box">
                         <h4>🎁 Бонусный счёт</h4>
-                        <p>Бонусы НЕЛЬЗЯ вывести, только тратить на задания! +5₽ за друга, +10₽ за выполнение, +20₽ за отзыв 5⭐, +3₽ ежедневно!</p>
+                        <p>Бонусы НЕЛЬЗЯ вывести, только тратить на задания! +5₽ за друга, +10₽ за выполнение, +20₽ за отзыв 5⭐!</p>
                     </div>
                     <div class="video-rule">
                         <h4>🎥 ВАЖНОЕ ПРАВИЛО!</h4>
@@ -1731,7 +1681,7 @@
             let userRating = parseFloat(currentUser.rating) || 0;
             let userRatingCount = parseInt(currentUser.ratingCount) || 0;
 
-            let helpBlock = `<div class="help-box"><h4>🎁 Бонусный счёт</h4><p>Бонусы НЕ вывести, только тратить на задания. +5₽ за друга, +10₽ за выполнение, +20₽ за отзыв 5⭐, +3₽ ежедневно.</p><div><button class="btn-info" onclick="claimDailyBonus()">🎁 Забрать бонус</button></div><div class="share-buttons"><div class="share-btn share-tg" onclick="shareTelegram()">📱 Telegram</div><div class="share-btn share-vk" onclick="shareVK()">📱 ВКонтакте</div><div class="share-btn copy-link" onclick="copyReferralLink()">🔗 Скопировать ссылку</div></div></div>`;
+            let helpBlock = `<div class="help-box"><h4>🎁 Бонусный счёт</h4><p>Бонусы НЕ вывести, только тратить на задания. +5₽ за друга, +10₽ за выполнение, +20₽ за отзыв 5⭐!</p><div class="share-buttons"><div class="share-btn share-tg" onclick="shareTelegram()">📱 Telegram</div><div class="share-btn share-vk" onclick="shareVK()">📱 ВКонтакте</div><div class="share-btn copy-link" onclick="copyReferralLink()">🔗 Скопировать ссылку</div></div></div>`;
 
             let taskCard = (task, showTakeBtn = true, showEditDelete = false) => {
                 let creator = users.find(u => u.id === task.creatorId);
@@ -1748,7 +1698,7 @@
             };
 
             let createForm = `<div class="card"><h3>📝 Создать задание</h3><textarea id="taskDesc" rows="2" placeholder="Что нужно сделать?"></textarea><input type="number" id="taskPrice" placeholder="Цена (руб)"><input type="text" id="taskLocation" placeholder="Место"><select id="paymentType"><option value="main">💰 Основной (${(parseFloat(currentUser.balance) || 0).toFixed(2)} ₽)</option><option value="bonus">🎁 Бонусный (${(parseFloat(currentUser.bonus_balance) || 0).toFixed(2)} ₽)</option></select><select id="taskScope"><option value="school">🏫 Только моя школа</option><option value="all">🌍 Для всех</option></select><button class="btn-primary" id="createBtn">Создать</button></div>`;
-            let profileHtml = `<div class="card"><h3>👤 Профиль</h3><p><strong>Имя:</strong> ${escapeHtml(currentUser.name)}</p><p><strong>Школа/Корпус:</strong> ${escapeHtml(currentUser.school)} / ${escapeHtml(currentUser.corp)}</p><p><strong>💰 Основной:</strong> ${(parseFloat(currentUser.balance) || 0).toFixed(2)} ₽</p><p><strong>🎁 Бонусный:</strong> ${(parseFloat(currentUser.bonus_balance) || 0).toFixed(2)} ₽</p><p><strong>👥 Приглашено:</strong> ${currentUser.referral_count || 0}</p><p><strong>⭐ Рейтинг:</strong> ${getRatingStars(userRating)} (${userRatingCount})</p><p><strong>📊 Выполнено:</strong> ${currentUser.tasksCompleted || 0}</p><div class="referral-code" onclick="copyReferralLink()">🔗 ${getReferralLink()}</div><button class="btn-info" onclick="claimDailyBonus()" style="margin-top:15px;">🎁 Бонус дня (+3₽)</button></div>`;
+            let profileHtml = `<div class="card"><h3>👤 Профиль</h3><p><strong>Имя:</strong> ${escapeHtml(currentUser.name)}</p><p><strong>Школа/Корпус:</strong> ${escapeHtml(currentUser.school)} / ${escapeHtml(currentUser.corp)}</p><p><strong>💰 Основной:</strong> ${(parseFloat(currentUser.balance) || 0).toFixed(2)} ₽</p><p><strong>🎁 Бонусный:</strong> ${(parseFloat(currentUser.bonus_balance) || 0).toFixed(2)} ₽</p><p><strong>👥 Приглашено:</strong> ${currentUser.referral_count || 0}</p><p><strong>⭐ Рейтинг:</strong> ${getRatingStars(userRating)} (${userRatingCount})</p><p><strong>📊 Выполнено:</strong> ${currentUser.tasksCompleted || 0}</p><div class="referral-code" onclick="copyReferralLink()">🔗 ${getReferralLink()}</div></div>`;
 
             let activeTab = window._activeTab || 'allTasks';
             let content = '';
@@ -1890,7 +1840,6 @@
         window.openWalletModal = openWalletModal;
         window.closeWalletModal = closeWalletModal;
         window.showPaymentAlert = showPaymentAlert;
-        window.claimDailyBonus = claimDailyBonus;
 
         // СТАРТ ПРИЛОЖЕНИЯ: сплеш → загрузка данных → восстановление сессии → рендер
         showSplash();
