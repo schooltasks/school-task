@@ -15,24 +15,31 @@
         body.dark-theme input, body.dark-theme textarea, body.dark-theme select { background: #334155; border-color: #475569; color: #e2e8f0; }
         
         .container { max-width: 1300px; margin: 0 auto; }
-        .header, .card, .task-card { background: white; border-radius: 32px; padding: 20px; margin-bottom: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
+        .header, .card, .task-card { background: white; border-radius: 32px; padding: 20px; margin-bottom: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); transition: transform 0.1s ease, box-shadow 0.1s ease; }
+        .header:active, .card:active, .task-card:active, button:active { transform: scale(0.98); }
+        button { transition: transform 0.08s linear, background 0.2s; }
+        button:active { transform: scale(0.95); }
         .header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
         .logo h1 { background: linear-gradient(135deg, #1e2b3c, #2c4c6e); -webkit-background-clip: text; background-clip: text; color: transparent; font-size: 1.6rem; }
         .user-info { display: flex; align-items: center; gap: 20px; background: #f8fafc; padding: 8px 20px; border-radius: 60px; flex-wrap: wrap; }
-        .balance-card { background: #eef2ff; padding: 6px 16px; border-radius: 40px; font-weight: bold; cursor: pointer; }
-        .bonus-card { background: linear-gradient(135deg, #fef3c7, #fde68a); color: #92400e; padding: 6px 16px; border-radius: 40px; font-weight: bold; cursor: pointer; }
-        button { cursor: pointer; border: none; border-radius: 40px; padding: 10px 20px; font-weight: bold; transition: 0.2s; }
-        button:disabled { opacity: 0.6; cursor: not-allowed; }
+        .balance-card { background: #eef2ff; padding: 6px 16px; border-radius: 40px; font-weight: bold; cursor: pointer; transition: transform 0.08s linear; }
+        .balance-card:active { transform: scale(0.95); }
+        .bonus-card { background: linear-gradient(135deg, #fef3c7, #fde68a); color: #92400e; padding: 6px 16px; border-radius: 40px; font-weight: bold; cursor: pointer; transition: transform 0.08s linear; }
+        .bonus-card:active { transform: scale(0.95); }
+        button { cursor: pointer; border: none; border-radius: 40px; padding: 10px 20px; font-weight: bold; transition: 0.2s, transform 0.08s linear; }
+        button:disabled { opacity: 0.6; cursor: not-allowed; transform: none !important; }
         .btn-primary { background: #2c6e4f; color: white; }
         .btn-success { background: #10b981; color: white; }
         .btn-danger { background: #dc2626; color: white; }
         .btn-edit { background: #8b5cf6; color: white; }
         .btn-info { background: #3b82f6; color: white; }
         .theme-toggle { background: #334155; color: white; padding: 8px 16px; border-radius: 60px; cursor: pointer; }
-        input, textarea, select { width: 100%; padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 28px; margin-bottom: 12px; font-size: 1rem; }
+        input, textarea, select { width: 100%; padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 28px; margin-bottom: 12px; font-size: 1rem; transition: border 0.2s, transform 0.08s linear; }
+        input:focus, textarea:focus, select:focus { outline: none; border-color: #3b82f6; transform: scale(1.01); }
         .input-hint { font-size: 0.75rem; color: #6b7280; margin-top: -8px; margin-bottom: 12px; }
         .tabs { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
-        .tab { background: white; padding: 10px 24px; border-radius: 60px; cursor: pointer; font-weight: 600; }
+        .tab { background: white; padding: 10px 24px; border-radius: 60px; cursor: pointer; font-weight: 600; transition: transform 0.08s linear; }
+        .tab:active { transform: scale(0.95); }
         .tab.active { background: #1e4a6e; color: white; }
         .tasks-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px; }
         
@@ -47,23 +54,19 @@
         .balance-control input { width: 80px; margin: 0; padding: 6px; border-radius: 30px; }
         
         .announcement { background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%); border-radius: 32px; padding: 20px; margin-bottom: 20px; text-align: center; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
-        .announcement h2 { font-size: 1.8rem; color: #1e293b; margin-bottom: 10px; }
-        .announcement p { color: #1e293b; margin-bottom: 15px; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.01); } 100% { transform: scale(1); } }
         .share-buttons { display: flex; gap: 15px; justify-content: center; margin-top: 15px; flex-wrap: wrap; }
-        .share-btn { padding: 10px 20px; border-radius: 40px; font-weight: bold; cursor: pointer; }
+        .share-btn { padding: 10px 20px; border-radius: 40px; font-weight: bold; cursor: pointer; transition: transform 0.08s linear; }
+        .share-btn:active { transform: scale(0.95); }
         .share-tg { background: #0088cc; color: white; }
         .share-vk { background: #0077ff; color: white; }
         .copy-link { background: #6b7280; color: white; }
         
         .help-box { background: #e0f2fe; border-radius: 20px; padding: 15px; margin-bottom: 20px; text-align: center; border-left: 5px solid #0284c7; }
-        .help-box h4 { color: #0284c7; margin-bottom: 8px; }
-        .help-box p { font-size: 0.9rem; color: #075985; }
         body.dark-theme .help-box { background: #0c4a6e; border-left-color: #38bdf8; }
-        body.dark-theme .help-box h4 { color: #38bdf8; }
-        body.dark-theme .help-box p { color: #bae6fd; }
         
-        .referral-code { background: #e2e8f0; padding: 10px; border-radius: 40px; font-family: monospace; cursor: pointer; text-align: center; margin-top: 15px; }
+        .referral-code { background: #e2e8f0; padding: 10px; border-radius: 40px; font-family: monospace; cursor: pointer; text-align: center; margin-top: 15px; transition: transform 0.08s linear; }
+        .referral-code:active { transform: scale(0.98); }
         
         .task-header { display: flex; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; }
         .task-price { font-size: 1.6rem; font-weight: 800; color: #2b6e4f; }
@@ -81,23 +84,23 @@
         .loading { text-align: center; padding: 40px; color: #6b7280; }
         .error-text { color: #dc2626; font-size: 0.8rem; display: none; margin-top: -8px; margin-bottom: 12px; }
         
-        .wallet-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 2000; }
+        .wallet-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 2000; animation: fadein 0.2s; }
         .wallet-container { background: white; border-radius: 32px; width: 90%; max-width: 400px; padding: 20px; }
         
         .video-rule { background: #fef3c7; border-left: 5px solid #f59e0b; padding: 15px; margin-bottom: 20px; border-radius: 16px; }
         body.dark-theme .video-rule { background: #451a03; border-left-color: #f59e0b; }
-        .video-rule h4 { color: #d97706; margin-bottom: 8px; }
-        .video-rule p { font-size: 0.9rem; color: #92400e; }
-        body.dark-theme .video-rule p { color: #fde68a; }
         
         .support-link { margin-top: 20px; padding: 10px; background: #f1f5f9; border-radius: 20px; text-align: center; font-size: 12px; color: #475569; }
         body.dark-theme .support-link { background: #334155; color: #cbd5e1; }
+        
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid white; border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; margin-right: 8px; vertical-align: middle; }
         
         @media (max-width: 700px) { .filter-group { flex-direction: column; } }
     </style>
 </head>
 <body>
-<div id="app"><div class="loading">⏳ Загрузка...</div></div>
+<div id="app"><div class="loading">⏳ Загрузка платформы...</div></div>
 
 <script>
 // ========== НАСТРОЙКИ ==========
@@ -110,11 +113,14 @@ let adminSearchTerm = '';
 let users = [];
 let tasks = [];
 let reviews = [];
+let reports = [];
 let isDarkTheme = localStorage.getItem('darkTheme') === 'true';
 let filters = { scope: 'school', minPrice: '', maxPrice: '' };
 let isLoading = false;
-let reports = [];
 let dailyBonusClaimed = false;
+let favorites = [];
+
+if (isDarkTheme) document.body.classList.add('dark-theme');
 
 // ===== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =====
 function escapeHtml(text) {
@@ -127,7 +133,7 @@ function escapeHtml(text) {
 function showToast(msg, isError, duration = 3000) {
     let toast = document.createElement('div');
     toast.className = 'toast';
-    toast.innerText = msg;
+    toast.innerHTML = msg;
     if (isError) toast.style.background = '#b91c1c';
     document.body.appendChild(toast);
     setTimeout(() => toast.remove(), duration);
@@ -141,7 +147,17 @@ function formatDate(date) {
     });
 }
 
-if (isDarkTheme) document.body.classList.add('dark-theme');
+function timeAgo(date) {
+    const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+    if (seconds < 60) return 'только что';
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes} мин назад`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours} ч назад`;
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `${days} дн назад`;
+    return formatDate(date);
+}
 
 function toggleTheme() { 
     isDarkTheme = !isDarkTheme; 
@@ -151,35 +167,43 @@ function toggleTheme() {
     renderApp(); 
 }
 
-// ===== ЗАГРУЗКА ДАННЫХ =====
+// ===== ЗАГРУЗКА ДАННЫХ С ПОВТОРАМИ =====
+async function fetchWithRetry(url, maxRetries = 3) {
+    for (let i = 0; i < maxRetries; i++) {
+        try {
+            const response = await fetch(url);
+            if (response.ok) return await response.json();
+        } catch(e) {
+            console.log(`Попытка ${i+1} не удалась`);
+            if (i === maxRetries - 1) throw e;
+            await new Promise(r => setTimeout(r, 1000));
+        }
+    }
+}
+
 async function loadDataFromGoogle(force = false) {
-    if (isLoading && !force) return false;
+    if (isLoading && !force) return users.length > 0;
     
     isLoading = true;
+    showToast('🔄 Загрузка данных...', false, 1000);
     
     try {
-        const usersResponse = await fetch(API_URL + '?action=getUsers');
-        if (usersResponse.ok) {
-            const usersData = await usersResponse.json();
-            if (Array.isArray(usersData)) users = usersData;
-        }
+        const usersData = await fetchWithRetry(API_URL + '?action=getUsers');
+        if (Array.isArray(usersData)) users = usersData;
         
-        const tasksResponse = await fetch(API_URL + '?action=getTasks');
-        if (tasksResponse.ok) {
-            const tasksData = await tasksResponse.json();
-            if (Array.isArray(tasksData)) tasks = tasksData;
-        }
+        const tasksData = await fetchWithRetry(API_URL + '?action=getTasks');
+        if (Array.isArray(tasksData)) tasks = tasksData;
         
-        const reviewsResponse = await fetch(API_URL + '?action=getReviews');
-        if (reviewsResponse.ok) {
-            const reviewsData = await reviewsResponse.json();
-            if (Array.isArray(reviewsData)) reviews = reviewsData;
-        }
+        const reviewsData = await fetchWithRetry(API_URL + '?action=getReviews');
+        if (Array.isArray(reviewsData)) reviews = reviewsData;
         
-        const reportsResponse = await fetch(API_URL + '?action=getReports');
-        if (reportsResponse.ok) {
-            const reportsData = await reportsResponse.json();
-            if (Array.isArray(reportsData)) reports = reportsData;
+        const reportsData = await fetchWithRetry(API_URL + '?action=getReports');
+        if (Array.isArray(reportsData)) reports = reportsData;
+        
+        // Загружаем избранное
+        if (currentUser) {
+            const favData = await fetchWithRetry(API_URL + '?action=getFavorites&userId=' + currentUser.id);
+            if (Array.isArray(favData)) favorites = favData;
         }
         
         const lastBonus = localStorage.getItem('lastDailyBonus');
@@ -191,12 +215,12 @@ async function loadDataFromGoogle(force = false) {
             dailyBonusClaimed = false;
         }
         
+        console.log(`Загружено: ${users.length} пользователей, ${tasks.length} заданий`);
         isLoading = false;
         return true;
-        
     } catch(e) {
         console.error('Ошибка загрузки:', e);
-        showToast('⚠️ Не удалось загрузить данные', true);
+        showToast('⚠️ Не удалось загрузить данные. Проверьте интернет.', true);
         isLoading = false;
         return false;
     }
@@ -253,6 +277,7 @@ async function restoreSession() {
         let user = users.find(u => u.name === session.name && u.school === session.school && u.corp === session.corp);
         if (user && user.isBanned !== 'true') { 
             currentUser = user; 
+            await saveToGoogle('restoreSession', { userId: currentUser.id });
             return true; 
         }
         localStorage.removeItem('schooltask_session');
@@ -312,7 +337,6 @@ function openWalletModal() {
     
     walletModal = document.createElement('div');
     walletModal.className = 'wallet-modal';
-    walletModal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:2000;';
     walletModal.innerHTML = `
         <div class="wallet-container">
             <div style="display:flex;justify-content:space-between;margin-bottom:20px;">
@@ -377,7 +401,7 @@ async function addReport(reportedId, taskId, reason) {
 }
 
 function showReportModal(taskId, reportedId) {
-    let reason = prompt('Опишите причину жалобы (мошенничество, нарушение правил и т.д.):', 'Нарушение правил');
+    let reason = prompt('Опишите причину жалобы:', 'Нарушение правил');
     if (reason && reason.trim()) {
         addReport(reportedId, taskId, reason.trim());
     } else if (reason !== null) {
@@ -414,20 +438,12 @@ async function handleRegister() {
         return;
     }
     
-    if (!school) {
-        showToast('❌ Введите школу', true);
+    if (!school || !/^\d+$/.test(school)) {
+        showToast('❌ Введите школу (только цифры)', true);
         return;
     }
-    if (!/^\d+$/.test(school)) {
-        showToast('❌ Школа должна содержать только цифры', true);
-        return;
-    }
-    if (!corp) {
-        showToast('❌ Введите корпус', true);
-        return;
-    }
-    if (!/^\d+$/.test(corp)) {
-        showToast('❌ Корпус должен содержать только цифры', true);
+    if (!corp || !/^\d+$/.test(corp)) {
+        showToast('❌ Введите корпус (только цифры)', true);
         return;
     }
     if (password.length < 3) {
@@ -436,7 +452,7 @@ async function handleRegister() {
     }
     
     btn.disabled = true;
-    btn.textContent = '⏳ Регистрация...';
+    btn.innerHTML = '<span class="spinner"></span> Регистрация...';
     
     const id = 'u' + Date.now();
     const referralCode = 'REF' + Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -461,15 +477,14 @@ async function handleRegister() {
         }
         showToast('❌ Ошибка регистрации', true);
     } catch(e) {
-        console.error(e);
         showToast('❌ Ошибка соединения', true);
     } finally {
         btn.disabled = false;
-        btn.textContent = 'Зарегистрироваться';
+        btn.innerHTML = 'Зарегистрироваться';
     }
 }
 
-// ===== ВХОД =====
+// ===== ВХОД (ИСПРАВЛЕННЫЙ) =====
 async function handleLogin() {
     const nameInput = document.getElementById('loginName');
     const schoolInput = document.getElementById('loginSchool');
@@ -488,57 +503,60 @@ async function handleLogin() {
     }
     
     btn.disabled = true;
-    btn.textContent = '⏳ Загрузка...';
+    btn.innerHTML = '<span class="spinner"></span> Вход...';
     
     try {
-        showToast('🔄 Загружаю данные с сервера...', false);
+        // ПРИНУДИТЕЛЬНАЯ ЗАГРУЗКА ДАННЫХ
         const loaded = await loadDataFromGoogle(true);
         
-        if (!loaded) {
-            showToast('❌ Не удалось загрузить данные с сервера', true);
+        if (!loaded || users.length === 0) {
+            showToast('❌ Не удалось загрузить данные. Проверьте интернет и попробуйте снова.', true);
             btn.disabled = false;
-            btn.textContent = 'Войти';
+            btn.innerHTML = 'Войти';
             return;
         }
         
-        let user = users.find(u => {
-            const uName = String(u.name || '').trim();
-            const uSchool = String(u.school || '').trim();
-            const uCorp = String(u.corp || '').trim();
-            return uName === name && uSchool === school && uCorp === corp;
-        });
+        // Ищем пользователя
+        let user = users.find(u => 
+            String(u.name || '').trim().toLowerCase() === name.toLowerCase() &&
+            String(u.school || '').trim() === school &&
+            String(u.corp || '').trim() === corp
+        );
         
         if (!user) {
-            showToast('❌ Пользователь не найден', true);
+            showToast('❌ Пользователь не найден. Проверьте имя, школу и корпус.', true);
             btn.disabled = false;
-            btn.textContent = 'Войти';
+            btn.innerHTML = 'Войти';
             return;
         }
         
-        if (user.password !== password) {
+        // Сравниваем пароль
+        if (String(user.password) !== password) {
             showToast('❌ Неверный пароль', true);
             btn.disabled = false;
-            btn.textContent = 'Войти';
+            btn.innerHTML = 'Войти';
             return;
         }
         
         if (user.isBanned === 'true') {
             showToast('⛔ Аккаунт заблокирован', true);
             btn.disabled = false;
-            btn.textContent = 'Войти';
+            btn.innerHTML = 'Войти';
             return;
         }
         
         currentUser = user;
         saveSession();
+        await saveToGoogle('restoreSession', { userId: currentUser.id });
         showToast(`✅ С возвращением, ${user.name}!`, false);
         renderApp();
         
     } catch(e) {
+        console.error('Ошибка входа:', e);
         showToast('❌ Ошибка соединения с сервером', true);
     } finally {
         btn.disabled = false;
-        btn.textContent = 'Войти';
+        btn.innerHTML = 'Войти';
     }
 }
 
@@ -551,7 +569,11 @@ function logout() {
 
 // ===== ЗАДАНИЯ =====
 async function createTask(desc, price, loc, paymentType, scope, btn) {
-    if (!currentUser) return;
+    if (!currentUser || !desc || !price || !loc) {
+        showToast('❌ Заполните все поля', true);
+        if(btn) btn.disabled=false;
+        return;
+    }
     if (btn) btn.disabled = true;
     
     let priceNum = parseFloat(price);
@@ -599,14 +621,16 @@ async function createTask(desc, price, loc, paymentType, scope, btn) {
 
 async function takeTask(taskId, btn) {
     if (btn) btn.disabled = true;
-    let task = tasks.find(t => t.id == taskId);
-    if (!task || task.status !== 'open') { if(btn) btn.disabled=false; return; }
-    if (task.creatorId === currentUser.id) { showToast('❌ Нельзя взять своё задание', true); if(btn) btn.disabled=false; return; }
     
-    await saveToGoogle('updateTask', { id: task.id, status: 'in_progress', takerId: currentUser.id });
-    await loadDataFromGoogle(true);
-    currentUser = users.find(u => u.id === currentUser.id);
-    showToast('📢 Вы взяли задание!', false);
+    const result = await saveToGoogle('takeTaskSafe', { taskId: taskId, userId: currentUser.id });
+    
+    if (result && result.success) {
+        await loadDataFromGoogle(true);
+        currentUser = users.find(u => u.id === currentUser.id);
+        showToast('📢 Вы взяли задание!', false);
+    } else {
+        showToast(result?.error || '❌ Не удалось взять задание', true);
+    }
     if(btn) btn.disabled=false;
     renderApp();
 }
@@ -636,12 +660,14 @@ async function confirmReceipt(taskId, btn) {
     let total = parseFloat(task.price);
     let gain = total * 0.95;
     if (executor) {
-        executor.balance += gain;
-        executor.bonus_balance += 10;
+        executor.balance = (parseFloat(executor.balance) || 0) + gain;
+        executor.bonus_balance = (parseFloat(executor.bonus_balance) || 0) + 10;
+        executor.totalEarned = (parseFloat(executor.totalEarned) || 0) + gain;
+        executor.tasksCompleted = (parseInt(executor.tasksCompleted) || 0) + 1;
         await saveToGoogle('updateUser', { id: executor.id, balance: executor.balance, bonus_balance: executor.bonus_balance });
         await saveToGoogle('addTaskCompleteBonus', { userId: executor.id });
     }
-    await saveToGoogle('updateTask', { id: task.id, status: 'completed' });
+    await saveToGoogle('updateTask', { id: task.id, status: 'completed', completedAt: new Date().toISOString() });
     await loadDataFromGoogle(true);
     currentUser = users.find(u => u.id === currentUser.id);
     showToast(`💰 Подтверждено! Исполнитель получил ${gain.toFixed(2)} ₽`, false);
@@ -881,6 +907,7 @@ function renderApp() {
             document.getElementById('registerBtn').onclick = handleRegister;
         }
         
+        // Валидация регистрации
         let regName = document.getElementById('regName');
         let regNameError = document.getElementById('regNameError');
         if (regName) {
@@ -932,6 +959,7 @@ function renderApp() {
         
         document.getElementById('themeToggleBtn').onclick = toggleTheme;
         
+        // Автозагрузка данных
         if (users.length === 0) {
             loadDataFromGoogle(false);
         }
@@ -957,19 +985,11 @@ function renderApp() {
                     <button id="showReportsBtn" style="background:#ef4444;color:white;">⚠️ Жалобы (${reports.length})</button>
                 </div>
                 <div class="users-table">
-                    <table style="width:100%;border-collapse:collapse;">
+                    <table>
                         <thead>
                             <tr style="background:#f1f5f9;">
-                                <th style="padding:10px;">Имя</th>
-                                <th style="padding:10px;">Школа</th>
-                                <th style="padding:10px;">Корпус</th>
-                                <th style="padding:10px;">Основной</th>
-                                <th style="padding:10px;">Бонусный</th>
-                                <th style="padding:10px;">Рейтинг</th>
-                                <th style="padding:10px;">Статус</th>
-                                <th style="padding:10px;">Управление</th>
-                                <th style="padding:10px;">Действия</th>
-                              </tr>
+                                <th>Имя</th><th>Школа</th><th>Корпус</th><th>Основной</th><th>Бонусный</th><th>Рейтинг</th><th>Статус</th><th>Управление</th><th>Действия</th>
+                            </tr>
                         </thead>
                         <tbody>
                             ${filteredUsers.map(user => {
@@ -977,14 +997,14 @@ function renderApp() {
                                 let rating = parseFloat(user.rating) || 0;
                                 return `
                                     <tr>
-                                        <td style="padding:10px;"><strong>${escapeHtml(user.name)}</strong><br><small style="color:#6b7280;">ID: ${escapeHtml(user.id).slice(-8)}</small></td>
-                                        <td style="padding:10px;">${escapeHtml(user.school)}</td>
-                                        <td style="padding:10px;">${escapeHtml(user.corp)}</td>
-                                        <td style="padding:10px;color:#2c6e4f;">${(parseFloat(user.balance)||0).toFixed(2)} ₽</td>
-                                        <td style="padding:10px;color:#eab308;">${(parseFloat(user.bonus_balance)||0).toFixed(2)} ₽</td>
-                                        <td style="padding:10px;">${getRatingStars(rating)} (${user.ratingCount||0})</td>
-                                        <td style="padding:10px;">${isBanned ? '⛔ Забанен' : '✅ Активен'}${isBanned && user.banReason ? `<br><small style="color:#dc2626;">${escapeHtml(user.banReason)}</small>` : ''}</td>
-                                        <td style="padding:10px;">
+                                        <td><strong>${escapeHtml(user.name)}</strong><br><small>ID: ${escapeHtml(user.id).slice(-8)}</small></td>
+                                        <td>${escapeHtml(user.school)}</td>
+                                        <td>${escapeHtml(user.corp)}</td>
+                                        <td style="color:#2c6e4f;">${(parseFloat(user.balance)||0).toFixed(2)} ₽</td>
+                                        <td style="color:#eab308;">${(parseFloat(user.bonus_balance)||0).toFixed(2)} ₽</td>
+                                        <td>${getRatingStars(rating)} (${user.ratingCount||0})</td>
+                                        <td>${isBanned ? '⛔ Забанен' : '✅ Активен'}${isBanned && user.banReason ? `<br><small style="color:#dc2626;">${escapeHtml(user.banReason)}</small>` : ''}</td>
+                                        <td>
                                             <div style="display:flex;flex-direction:column;gap:5px;">
                                                 <div style="display:flex;gap:5px;">
                                                     <input type="number" id="amount-${user.id}" value="100" style="width:70px;padding:5px;border-radius:20px;">
@@ -998,12 +1018,13 @@ function renderApp() {
                                                 </div>
                                             </div>
                                         </td>
-                                        <td style="padding:10px;">
+                                        <td>
                                             ${!isBanned ? `<button class="ban-btn" data-userid="${user.id}" style="background:#dc2626;color:white;padding:5px 10px;">⛔ Бан</button>` : `<button class="unban-btn" data-userid="${user.id}" style="background:#10b981;color:white;padding:5px 10px;">✅ Разбан</button>`}
                                             <button class="reviews-btn" data-userid="${user.id}" style="background:#3b82f6;color:white;padding:5px 10px;margin-top:5px;">⭐ Отзывы</button>
                                             <button class="user-tasks-btn" data-userid="${user.id}" style="background:#8b5cf6;color:white;padding:5px 10px;margin-top:5px;">📋 Задания</button>
                                         </td>
-                                    </tr>`;
+                                    </tr>
+                                `;
                             }).join('')}
                         </tbody>
                     </table>
@@ -1017,7 +1038,6 @@ function renderApp() {
     let openTasks = tasks.filter(t => {
         if (t.status !== 'open') return false;
         if (t.scope === 'all') return true;
-        if (!t.creatorCorp) return true;
         return t.creatorSchool === currentUser.school && t.creatorCorp === currentUser.corp;
     });
     
@@ -1025,12 +1045,6 @@ function renderApp() {
     if (filters.maxPrice) openTasks = openTasks.filter(t => parseFloat(t.price) <= parseFloat(filters.maxPrice));
     
     let myCreatedTasks = tasks.filter(t => t.creatorId === currentUser.id);
-    myCreatedTasks.sort((a, b) => {
-        if (a.takerId && !b.takerId) return -1;
-        if (!a.takerId && b.takerId) return 1;
-        return 0;
-    });
-    
     let myExecTasks = tasks.filter(t => t.takerId === currentUser.id && t.status !== 'completed');
     let myCompletedTasks = tasks.filter(t => t.status === 'completed' && (t.creatorId === currentUser.id || t.takerId === currentUser.id));
     
@@ -1041,7 +1055,7 @@ function renderApp() {
         <h4>🎁 Бонусный счёт</h4>
         <p>Бонусы НЕ вывести, только тратить на задания. +5₽ за друга, +10₽ за выполнение, +20₽ за отзыв 5⭐, +3₽ ежедневно.</p>
         <div style="display:flex;justify-content:center;gap:10px;margin-top:10px;">
-            <button class="btn-info" onclick="claimDailyBonus()" style="padding:5px 15px;">🎁 Забрать бонус</button>
+            <button class="btn-info" onclick="claimDailyBonus()">🎁 Забрать бонус</button>
         </div>
         <div class="share-buttons" style="margin-top:10px;">
             <div class="share-btn share-tg" onclick="shareTelegram()" style="padding:5px 10px;font-size:12px;">📱 Telegram</div>
@@ -1063,96 +1077,68 @@ function renderApp() {
             btns = `<button class="btn-success complete-btn" data-id="${task.id}">✅ Подтвердить выполнение</button>`;
         }
         if (task.status === 'awaiting_confirmation' && task.creatorId === currentUser.id) {
-            btns = `<div class="action-buttons"><button class="btn-success confirm-btn" data-id="${task.id}">💰 Подтвердить получение</button><button class="btn-danger reject-btn" data-id="${task.id}">❌ Не получил</button></div>`;
+            btns = `<div class="action-buttons"><button class="btn-success confirm-btn" data-id="${task.id}">💰 Подтвердить</button><button class="btn-danger reject-btn" data-id="${task.id}">❌ Отклонить</button></div>`;
         }
         if (task.status === 'completed' && task.creatorId === currentUser.id && !reviews.some(r => r.taskId === task.id && r.fromUserId === currentUser.id)) {
-            btns += `<button class="btn-info review-btn" data-id="${task.id}" data-userid="${task.takerId}">⭐ Оставить отзыв</button>`;
+            btns += `<button class="btn-info review-btn" data-id="${task.id}" data-userid="${task.takerId}">⭐ Отзыв</button>`;
         }
         if (task.status === 'completed' && task.creatorId === currentUser.id) {
             btns += `<button class="btn-danger report-btn" data-id="${task.id}" data-userid="${task.takerId}" style="background:#6b7280;">⚠️ Жалоба</button>`;
         }
         if (showEditDelete && task.creatorId === currentUser.id && task.status === 'open') {
-            btns += `<div class="action-buttons"><button class="btn-edit edit-btn" data-id="${task.id}">✏️ Редактировать</button><button class="btn-danger delete-btn" data-id="${task.id}">🗑️ Удалить</button></div>`;
-        }
-        
-        let taskReviews = reviews.filter(r => r.taskId === task.id);
-        let avgRating = taskReviews.length > 0 ? taskReviews.reduce((sum, r) => sum + parseInt(r.rating), 0) / taskReviews.length : 0;
-        
-        let scopeIcon = task.scope === 'all' ? '🌍' : '🏫';
-        let scopeText = task.scope === 'all' ? 'Для всех участников' : `Только школа ${task.creatorSchool}, корпус ${task.creatorCorp || '?'}`;
-        
-        let takenBadge = task.takerId ? '<span style="background:#fef3c7;color:#d97706;padding:2px 8px;border-radius:20px;font-size:10px;margin-left:8px;">👤 Взято</span>' : '';
-        
-        let participantsInfo = '';
-        if (task.status === 'completed') {
-            if (task.creatorId === currentUser.id) {
-                participantsInfo = `<div style="font-size:0.7rem;color:#10b981;margin-top:5px;">✅ Исполнил: ${executor?.name || '?'}</div>`;
-            } else if (task.takerId === currentUser.id) {
-                participantsInfo = `<div style="font-size:0.7rem;color:#10b981;margin-top:5px;">✅ Создатель: ${creator?.name || '?'}</div>`;
-            }
+            btns += `<div class="action-buttons"><button class="btn-edit edit-btn" data-id="${task.id}">✏️ Редакт</button><button class="btn-danger delete-btn" data-id="${task.id}">🗑️ Удалить</button></div>`;
         }
         
         return `<div class="task-card">
             <div class="task-header">
-                <div class="task-price">${task.price} ₽ ${takenBadge}</div>
+                <div class="task-price">${task.price} ₽</div>
                 <div class="task-status ${status.class}">${status.text}</div>
             </div>
             <div class="task-desc">📌 ${escapeHtml(task.description)}</div>
-            <div class="task-meta">📍 ${escapeHtml(task.location)} | ${scopeIcon} ${scopeText}</div>
-            <div style="font-size:0.7rem;color:#6b7280;">👤 Создатель: ${creator?.name || '?'} (${creator?.school || ''}, корпус ${creator?.corp || ''})${task.takerId && task.status !== 'completed' ? `<br>👤 Исполнитель: ${executor?.name || '?'}` : ''}</div>
-            ${participantsInfo}
-            ${avgRating > 0 ? `<div style="font-size:0.7rem;color:#fbbf24;">${getRatingStars(avgRating)} (${taskReviews.length} отзывов)</div>` : ''}
-            <div class="action-buttons" style="margin-top:10px;">
-                ${btns}
-            </div>
+            <div class="task-meta">📍 ${escapeHtml(task.location)}</div>
+            <div style="font-size:0.7rem;color:#6b7280;">👤 ${creator?.name || '?'} (${creator?.school || ''}, к.${creator?.corp || ''})</div>
+            <div class="action-buttons">${btns}</div>
         </div>`;
     };
     
     let createForm = `<div class="card">
         <h3>📝 Создать задание</h3>
-        <textarea id="taskDesc" rows="2" placeholder="Что нужно сделать? (например: принеси булочку в 40 кабинет)"></textarea>
+        <textarea id="taskDesc" rows="2" placeholder="Что нужно сделать?"></textarea>
         <input type="number" id="taskPrice" placeholder="Цена (руб)">
-        <input type="text" id="taskLocation" placeholder="Место (кабинет, этаж)">
+        <input type="text" id="taskLocation" placeholder="Место">
         <select id="paymentType">
-            <option value="main">💰 Оплатить с основного счёта (${(parseFloat(currentUser.balance)||0).toFixed(2)} ₽)</option>
-            <option value="bonus">🎁 Оплатить с бонусного счёта (${(parseFloat(currentUser.bonus_balance)||0).toFixed(2)} ₽)</option>
+            <option value="main">💰 Основной счёт (${(parseFloat(currentUser.balance)||0).toFixed(2)} ₽)</option>
+            <option value="bonus">🎁 Бонусный счёт (${(parseFloat(currentUser.bonus_balance)||0).toFixed(2)} ₽)</option>
         </select>
         <select id="taskScope">
-            <option value="school">🏫 Только моя школа и корпус</option>
-            <option value="all">🌍 Для всех участников сайта</option>
+            <option value="school">🏫 Только моя школа</option>
+            <option value="all">🌍 Для всех</option>
         </select>
         <button class="btn-primary" id="createBtn">Создать</button>
     </div>`;
     
     let profileHtml = `<div class="card">
-        <h3>👤 Мой профиль</h3>
+        <h3>👤 Профиль</h3>
         <p><strong>Имя:</strong> ${escapeHtml(currentUser.name)}</p>
-        <p><strong>Школа:</strong> ${escapeHtml(currentUser.school)}</p>
-        <p><strong>Корпус:</strong> ${escapeHtml(currentUser.corp)}</p>
-        <p><strong>💰 Основной баланс:</strong> ${(parseFloat(currentUser.balance)||0).toFixed(2)} ₽</p>
-        <p><strong>🎁 Бонусный счёт:</strong> ${(parseFloat(currentUser.bonus_balance)||0).toFixed(2)} ₽</p>
-        <p><strong>👥 Приглашено друзей:</strong> ${currentUser.referral_count || 0}</p>
-        <p><strong>⭐ Рейтинг:</strong> ${getRatingStars(userRating)} (${userRatingCount} оценок)</p>
-        <p><strong>📊 Выполнено заданий:</strong> ${currentUser.tasksCompleted || 0}</p>
-        <p><strong>💰 Заработано:</strong> ${(parseFloat(currentUser.totalEarned)||0).toFixed(2)} ₽</p>
-        <p><strong>📅 Регистрация:</strong> ${formatDate(currentUser.registeredAt)}</p>
+        <p><strong>Школа/Корпус:</strong> ${escapeHtml(currentUser.school)} / ${escapeHtml(currentUser.corp)}</p>
+        <p><strong>💰 Основной:</strong> ${(parseFloat(currentUser.balance)||0).toFixed(2)} ₽</p>
+        <p><strong>🎁 Бонусный:</strong> ${(parseFloat(currentUser.bonus_balance)||0).toFixed(2)} ₽</p>
+        <p><strong>👥 Приглашено:</strong> ${currentUser.referral_count || 0}</p>
+        <p><strong>⭐ Рейтинг:</strong> ${getRatingStars(userRating)} (${userRatingCount})</p>
+        <p><strong>📊 Выполнено:</strong> ${currentUser.tasksCompleted || 0}</p>
         <div class="referral-code" onclick="copyReferralLink()">🔗 ${getReferralLink()}</div>
-        <div style="margin-top:15px;">
-            <button class="btn-info" onclick="claimDailyBonus()" style="width:100%;">🎁 Ежедневный бонус (+3₽)</button>
-        </div>
-        <p style="font-size:12px;margin-top:10px;">➕ За каждого друга, который зарегистрируется по вашей ссылке, вы получите +5₽ на бонусный счёт!</p>
+        <button class="btn-info" onclick="claimDailyBonus()" style="width:100%;margin-top:15px;">🎁 Бонус дня (+3₽)</button>
     </div>`;
     
     let activeTab = window._activeTab || 'allTasks';
     let content = '';
     
     if (activeTab === 'allTasks') {
-        content = `<h3>📋 Доступные задания ${filters.scope === 'all' ? '(для всех участников)' : `(ваша школа ${currentUser.school}, корпус ${currentUser.corp})`}</h3>
-                   ${helpBlock}
+        content = `<h3>📋 Доступные задания</h3>${helpBlock}
                    <div class="filter-group">
                        <select id="filterScope">
-                           <option value="school" ${filters.scope === 'school' ? 'selected' : ''}>🏫 Только моя школа и корпус</option>
-                           <option value="all" ${filters.scope === 'all' ? 'selected' : ''}>🌍 Для всех участников</option>
+                           <option value="school" ${filters.scope === 'school' ? 'selected' : ''}>🏫 Только моя школа</option>
+                           <option value="all" ${filters.scope === 'all' ? 'selected' : ''}>🌍 Для всех</option>
                        </select>
                        <input type="number" id="filterMinPrice" placeholder="Цена от" value="${filters.minPrice}">
                        <input type="number" id="filterMaxPrice" placeholder="Цена до" value="${filters.maxPrice}">
@@ -1160,23 +1146,13 @@ function renderApp() {
                    </div>
                    <div class="tasks-grid">${openTasks.map(t => taskCard(t, true, false)).join('') || '<div style="text-align:center;padding:40px;">✨ Нет заданий</div>'}</div>`;
     } else if (activeTab === 'myTasks') {
-        content = `<h3>📌 Мои задания (созданные мной) ${myCreatedTasks.some(t => t.takerId) ? '🔥 Есть взятые!' : ''}</h3>
-                   <div class="video-rule" style="margin-top:10px;">
-                        <h4>🎥 ВАЖНОЕ ПРАВИЛО!</h4>
-                        <p>Если ваше задание взяли и выполнили — попросите у исполнителя ВИДЕО выполнения!<br>
-                        Это защитит вас от мошенничества и поможет доказать, что работа сделана.</p>
-                   </div>
-                   <div class="tasks-grid">${myCreatedTasks.map(t => taskCard(t, false, true)).join('') || '<div style="text-align:center;padding:40px;">✨ У вас пока нет созданных заданий</div>'}</div>`;
+        content = `<h3>📌 Мои задания</h3>
+                   <div class="tasks-grid">${myCreatedTasks.map(t => taskCard(t, false, true)).join('') || '<div style="text-align:center;padding:40px;">✨ Нет созданных заданий</div>'}</div>`;
     } else if (activeTab === 'myExecutions') {
-        content = `<h3>⚡ Мои выполнения</h3>
-                   <div class="video-rule" style="margin-top:10px;">
-                        <h4>🎥 ВАЖНОЕ ПРАВИЛО!</h4>
-                        <p>ОБЯЗАТЕЛЬНО запишите видео того, как вы выполняете задание!<br>
-                        Это ваше доказательство работы, если возникнет спор с заказчиком.</p>
-                   </div>
-                   <div class="tasks-grid">${myExecTasks.map(t => taskCard(t, false, false)).join('') || '<div style="text-align:center;padding:40px;">✨ Вы пока не взяли ни одного задания</div>'}</div>`;
+        content = `<h3>⚡ В работе</h3>
+                   <div class="tasks-grid">${myExecTasks.map(t => taskCard(t, false, false)).join('') || '<div style="text-align:center;padding:40px;">✨ Нет заданий в работе</div>'}</div>`;
     } else if (activeTab === 'completed') {
-        content = `<h3>✅ Завершённые задания</h3>
+        content = `<h3>✅ Завершённые</h3>
                    <div class="tasks-grid">${myCompletedTasks.map(t => taskCard(t, false, false)).join('') || '<div style="text-align:center;padding:40px;">✨ Нет завершённых заданий</div>'}</div>`;
     } else if (activeTab === 'profile') {
         content = profileHtml;
@@ -1196,27 +1172,22 @@ function renderApp() {
                     <button class="btn-danger" id="logoutBtn">Выйти</button>
                 </div>
             </div>
-            <div style="display:flex;justify-content:space-between;margin-bottom:15px;flex-wrap:wrap;gap:10px;">
-                <div>${adminEntryBtn}</div>
-                <div><button class="btn-info" onclick="claimDailyBonus()" style="padding:5px 15px;">🎁 Бонус дня</button></div>
-            </div>
+            <div style="margin-bottom:15px;">${adminEntryBtn}</div>
             ${adminPanelHtml}
             <div class="tabs">
-                <div class="tab ${activeTab === 'allTasks' ? 'active' : ''}" data-tab="allTasks">📋 Все задания</div>
-                <div class="tab ${activeTab === 'myTasks' ? 'active' : ''}" data-tab="myTasks">📦 Мои задания</div>
+                <div class="tab ${activeTab === 'allTasks' ? 'active' : ''}" data-tab="allTasks">📋 Все</div>
+                <div class="tab ${activeTab === 'myTasks' ? 'active' : ''}" data-tab="myTasks">📦 Мои</div>
                 <div class="tab ${activeTab === 'myExecutions' ? 'active' : ''}" data-tab="myExecutions">⚡ В работе</div>
-                <div class="tab ${activeTab === 'completed' ? 'active' : ''}" data-tab="completed">✅ Завершённые</div>
+                <div class="tab ${activeTab === 'completed' ? 'active' : ''}" data-tab="completed">✅ Готово</div>
                 <div class="tab ${activeTab === 'profile' ? 'active' : ''}" data-tab="profile">👤 Профиль</div>
                 <div class="tab ${activeTab === 'create' ? 'active' : ''}" data-tab="create">➕ Создать</div>
             </div>
             ${content}
-            <div style="margin-top:20px;text-align:center;font-size:12px;">⚠️ Комиссия 5% | Обязательно записывайте видео выполнения!</div>
-            <div class="support-link">
-                📞 Поддержка: <strong>@leshr_ak47</strong> (Telegram)
-            </div>
+            <div class="support-link">📞 Поддержка: <strong>@leshr_ak47</strong> (Telegram)</div>
         </div>
     `;
     
+    // Обработчики событий
     document.querySelectorAll('.tab').forEach(tab => {
         tab.onclick = () => {
             window._activeTab = tab.getAttribute('data-tab');
@@ -1256,21 +1227,19 @@ function renderApp() {
         if (document.getElementById('exitAdminBtn')) document.getElementById('exitAdminBtn').onclick = exitAdminMode;
         if (document.getElementById('clearTasksBtn')) document.getElementById('clearTasksBtn').onclick = deleteAllTasks;
         if (document.getElementById('showStatsBtn')) {
-            document.getElementById('showStatsBtn').onclick = async () => {
-                const totalEarned = users.reduce((sum,u)=>sum+(parseFloat(u.totalEarned)||0),0);
-                const totalBonus = users.reduce((sum,u)=>sum+(parseFloat(u.bonus_balance)||0),0);
-                alert(`📊 СТАТИСТИКА\n\n👥 Пользователей: ${users.length}\n📋 Заданий: ${tasks.length}\n⭐ Отзывов: ${reviews.length}\n💰 Заработано: ${totalEarned.toFixed(2)} ₽\n🎁 Бонусов: ${totalBonus.toFixed(2)} ₽`);
+            document.getElementById('showStatsBtn').onclick = () => {
+                alert(`📊 СТАТИСТИКА\n👥 Пользователей: ${users.length}\n📋 Заданий: ${tasks.length}\n⭐ Отзывов: ${reviews.length}`);
             };
         }
         if (document.getElementById('showReportsBtn')) {
-            document.getElementById('showReportsBtn').onclick = async () => {
-                if (reports.length === 0) alert('📋 Жалоб пока нет.');
+            document.getElementById('showReportsBtn').onclick = () => {
+                if (reports.length === 0) alert('📋 Жалоб нет.');
                 else {
                     let text = '⚠️ ЖАЛОБЫ ⚠️\n\n';
-                    reports.forEach((r, i) => {
+                    reports.slice(0, 10).forEach((r, i) => {
                         const reporter = users.find(u => u.id === r.reporterId);
                         const reported = users.find(u => u.id === r.reportedId);
-                        text += `${i+1}. От: ${reporter?.name || '?'} → На: ${reported?.name || '?'}\n   Причина: ${r.reason}\n   Дата: ${formatDate(r.createdAt)}\n\n`;
+                        text += `${i+1}. ${reporter?.name || '?'} → ${reported?.name || '?'}: ${r.reason}\n`;
                     });
                     alert(text);
                 }
@@ -1285,7 +1254,7 @@ function renderApp() {
                 const userId = btn.getAttribute('data-userid');
                 const isBonus = btn.getAttribute('data-bonus') === 'true';
                 const amountField = isBonus ? document.getElementById('bonus-' + userId) : document.getElementById('amount-' + userId);
-                const amount = parseFloat(amountField ? amountField.value : 100);
+                const amount = parseFloat(amountField?.value || 100);
                 if (amount > 0) adminChangeBalance(userId, amount, isBonus);
             };
         });
@@ -1295,7 +1264,7 @@ function renderApp() {
                 const userId = btn.getAttribute('data-userid');
                 const isBonus = btn.getAttribute('data-bonus') === 'true';
                 const amountField = isBonus ? document.getElementById('bonus-' + userId) : document.getElementById('amount-' + userId);
-                const amount = parseFloat(amountField ? amountField.value : 100);
+                const amount = parseFloat(amountField?.value || 100);
                 if (amount > 0) adminChangeBalance(userId, -amount, isBonus);
             };
         });
@@ -1309,36 +1278,24 @@ function renderApp() {
         });
         
         document.querySelectorAll('.reviews-btn').forEach(btn => {
-            btn.onclick = async () => {
+            btn.onclick = () => {
                 const userId = btn.getAttribute('data-userid');
                 const userReviews = reviews.filter(r => r.toUserId === userId);
                 const userObj = users.find(u => u.id === userId);
-                if (userReviews.length === 0) alert(`⭐ У пользователя ${userObj?.name} пока нет отзывов.`);
+                if (userReviews.length === 0) alert(`⭐ У ${userObj?.name} нет отзывов.`);
                 else {
                     let avg = userReviews.reduce((s,r)=>s+parseInt(r.rating),0)/userReviews.length;
-                    let text = `⭐ ОТЗЫВЫ О ПОЛЬЗОВАТЕЛЕ ${userObj?.name} ⭐\n\nСредняя оценка: ${getRatingStars(avg)} (${avg.toFixed(1)})\n\n`;
-                    userReviews.forEach(r => {
-                        const fromUser = users.find(u => u.id === r.fromUserId);
-                        text += `• ${getRatingStars(parseInt(r.rating))} - ${r.comment || 'Без комментария'}\n  от ${fromUser?.name || '?'} (${formatDate(r.createdAt)})\n\n`;
-                    });
-                    alert(text);
+                    alert(`⭐ ОТЗЫВЫ О ${userObj?.name}\nСр.оценка: ${avg.toFixed(1)}\nВсего: ${userReviews.length}\n\n${userReviews.slice(0,5).map(r => `• ${getRatingStars(r.rating)}: ${r.comment || 'без коммента'}`).join('\n')}`);
                 }
             };
         });
         
         document.querySelectorAll('.user-tasks-btn').forEach(btn => {
-            btn.onclick = async () => {
+            btn.onclick = () => {
                 const userId = btn.getAttribute('data-userid');
                 const userTasks = tasks.filter(t => t.creatorId === userId || t.takerId === userId);
                 const userObj = users.find(u => u.id === userId);
-                if (userTasks.length === 0) alert(`📋 У пользователя ${userObj?.name} нет заданий.`);
-                else {
-                    let text = `📋 ЗАДАНИЯ ПОЛЬЗОВАТЕЛЯ ${userObj?.name} 📋\n\n📝 Создал: ${userTasks.filter(t=>t.creatorId===userId).length}\n🔧 Взял: ${userTasks.filter(t=>t.takerId===userId).length}\n✅ Завершил: ${userTasks.filter(t=>t.status==='completed' && (t.creatorId===userId || t.takerId===userId)).length}\n\n`;
-                    userTasks.slice(0, 5).forEach(t => {
-                        text += `• ${t.description?.substring(0,30)}... — ${t.price}₽ (${getStatusText(t.status).text})\n`;
-                    });
-                    alert(text);
-                }
+                alert(`📋 ЗАДАНИЯ ${userObj?.name}\n📝 Создал: ${userTasks.filter(t=>t.creatorId===userId).length}\n🔧 Взял: ${userTasks.filter(t=>t.takerId===userId).length}`);
             };
         });
     }
@@ -1346,33 +1303,26 @@ function renderApp() {
     document.querySelectorAll('.take-btn').forEach(btn => {
         btn.onclick = () => takeTask(btn.getAttribute('data-id'), btn);
     });
-    
     document.querySelectorAll('.delete-btn').forEach(btn => {
         btn.onclick = () => deleteTask(btn.getAttribute('data-id'), btn);
     });
-    
     document.querySelectorAll('.edit-btn').forEach(btn => {
         const taskId = btn.getAttribute('data-id');
         const task = tasks.find(t => t.id == taskId);
         if (task) btn.onclick = () => showEditModal(task);
     });
-    
     document.querySelectorAll('.complete-btn').forEach(btn => {
         btn.onclick = () => confirmCompletion(btn.getAttribute('data-id'), btn);
     });
-    
     document.querySelectorAll('.confirm-btn').forEach(btn => {
         btn.onclick = () => confirmReceipt(btn.getAttribute('data-id'), btn);
     });
-    
     document.querySelectorAll('.reject-btn').forEach(btn => {
         btn.onclick = () => rejectReceipt(btn.getAttribute('data-id'), btn);
     });
-    
     document.querySelectorAll('.review-btn').forEach(btn => {
         btn.onclick = () => showReviewModal(btn.getAttribute('data-id'), btn.getAttribute('data-userid'));
     });
-    
     document.querySelectorAll('.report-btn').forEach(btn => {
         btn.onclick = () => showReportModal(btn.getAttribute('data-id'), btn.getAttribute('data-userid'));
     });
@@ -1387,10 +1337,10 @@ window.closeWalletModal = closeWalletModal;
 window.showPaymentAlert = showPaymentAlert;
 window.claimDailyBonus = claimDailyBonus;
 
-// Запуск приложения
+// ЗАПУСК
 (async function init() {
     await loadDataFromGoogle(false);
-    const restored = await restoreSession();
+    await restoreSession();
     renderApp();
 })();
 </script>
