@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>SchoolTask - Биржа поручений</title>
+    <title>SchoolTask - Биржа поручений (чат только для участников)</title>
     <style>
         * {
             margin: 0;
@@ -647,7 +647,7 @@
             vertical-align: middle;
         }
 
-        /* ========== НОВЫЕ СТИЛИ ДЛЯ ЧАТА ========== */
+        /* ========== ЧАТ (только для участников задания) ========== */
         .chat-container {
             margin-top: 15px;
             border-top: 1px solid #e2e8f0;
@@ -685,7 +685,14 @@
             margin-bottom: 0;
         }
 
-        /* ========== НОВЫЕ СТИЛИ ДЛЯ ДОСКИ ПОЧЁТА ========== */
+        .chat-disabled {
+            text-align: center;
+            padding: 10px;
+            color: #6b7280;
+            font-style: italic;
+        }
+
+        /* ========== ДОСКА ПОЧЁТА ========== */
         .honor-board {
             background: linear-gradient(135deg, #fef9e6, #fff4e0);
             border-radius: 24px;
@@ -714,7 +721,7 @@
             font-size: 2rem;
         }
 
-        /* ========== НОВЫЕ СТИЛИ ДЛЯ УВЕДОМЛЕНИЙ ========== */
+        /* ========== УВЕДОМЛЕНИЯ ========== */
         .notification-badge {
             background: #ef4444;
             color: white;
@@ -756,7 +763,7 @@
 
 <script>
     // ========== НАСТРОЙКИ ==========
-    const API_URL = 'https://script.google.com/macros/s/AKfycbxf5v8wNf6_yx-S87wcuWdr4kYbza6bWqQKwTaPZjIXZYtkPNB3AO3mHYW2Fo9lShA_/exec';
+    const API_URL = 'https://script.google.com/macros/s/AKfycbw8gUsCyj3MA7LgZTP9W6Ic_LrrzBeILb3AoCVYK8cgtZS4nMpH3StF0qVwqMpBp_rY/exec';
 
     let currentUser = null;
     let authMode = 'login';
@@ -1211,9 +1218,18 @@
         renderApp();
     }
 
+    // ИСПРАВЛЕННОЕ ВЗЯТИЕ ЗАДАНИЯ (через обычный updateTask)
     async function takeTask(taskId, btn) {
         if (btn) btn.disabled = true;
-        const result = await saveToGoogle('takeTaskSafe', { taskId, userId: currentUser.id });
+        
+        const takedAt = new Date().toISOString();
+        const result = await saveToGoogle('updateTask', { 
+            id: taskId, 
+            status: 'in_progress', 
+            takerId: currentUser.id,
+            takenAt: takedAt
+        });
+        
         if (result && result.success) {
             await loadDataFromGoogle(true);
             currentUser = users.find(u => u.id === currentUser.id);
@@ -1223,7 +1239,7 @@
             }
             showToast('📢 Вы взяли задание!', false);
         } else {
-            showToast(result?.error || '❌ Не удалось', true);
+            showToast('❌ Не удалось взять задание', true);
         }
         if (btn) btn.disabled = false;
         renderApp();
@@ -1444,9 +1460,21 @@
         return stars;
     }
 
-    // ========== ЧАТ ==========
+    // ========== ЧАТ (только для участников задания) ==========
+    function canUserChat(task) {
+        if (!currentUser || !task) return false;
+        return (task.creatorId === currentUser.id || task.takerId === currentUser.id);
+    }
+
     function sendMessage(taskId, text) {
         if (!text.trim()) return;
+        
+        const task = tasks.find(t => t.id == taskId);
+        if (!canUserChat(task)) {
+            showToast('❌ Чат доступен только создателю и исполнителю задания', true);
+            return;
+        }
+        
         if (!taskMessages[taskId]) taskMessages[taskId] = [];
         taskMessages[taskId].push({
             senderId: currentUser.id,
@@ -1455,17 +1483,29 @@
             timestamp: new Date().toISOString()
         });
         saveLocalData();
-        const task = tasks.find(t => t.id == taskId);
-        if (task) {
-            const otherId = task.creatorId === currentUser.id ? task.takerId : task.creatorId;
-            if (otherId) addNotification(otherId, `💬 Новое сообщение в чате задания "${task.description.substring(0,30)}..."`, taskId);
-        }
+        
+        const otherId = task.creatorId === currentUser.id ? task.takerId : task.creatorId;
+        if (otherId) addNotification(otherId, `💬 Новое сообщение в чате задания "${task.description.substring(0,30)}..."`, taskId);
+        
         renderApp();
     }
 
-    function renderChat(taskId) {
-        const messages = taskMessages[taskId] || [];
+    function renderChat(task) {
         if (!currentUser) return '';
+        
+        const canChat = canUserChat(task);
+        const messages = taskMessages[task.id] || [];
+        
+        if (!canChat) {
+            return `
+                <div class="chat-container">
+                    <div class="chat-disabled">
+                        💬 Чат станет доступен, когда вы возьмёте это задание или оно будет у вас в работе
+                    </div>
+                </div>
+            `;
+        }
+        
         return `
             <div class="chat-container">
                 <div class="chat-messages">
@@ -1475,10 +1515,11 @@
                             ${escapeHtml(m.text)}
                         </div>
                     `).join('')}
+                    ${messages.length === 0 ? '<div class="chat-disabled" style="text-align:center;padding:10px;">💬 Напишите первое сообщение...</div>' : ''}
                 </div>
                 <div class="chat-input-area">
-                    <input type="text" id="chatInput-${taskId}" placeholder="Написать...">
-                    <button class="btn-info send-chat-btn" data-task="${taskId}">📨</button>
+                    <input type="text" id="chatInput-${task.id}" placeholder="Написать...">
+                    <button class="btn-info send-chat-btn" data-task="${task.id}">📨 Отправить</button>
                 </div>
             </div>
         `;
@@ -1710,11 +1751,13 @@
 
         let adminEntryBtn = isAdmin ? `<button id="adminPanelBtn" style="background:#2c3e50;color:white;">🔐 Админка</button>` : '';
 
+        // ИСПРАВЛЕННЫЙ ФИЛЬТР ЗАДАНИЙ: одна школа И один корпус
         let openTasks = tasks.filter(t => {
             if (t.status !== 'open') return false;
             if (t.scope === 'all') return true;
             return t.creatorSchool === currentUser.school && t.creatorCorp === currentUser.corp;
         });
+        
         if (filters.minPrice) openTasks = openTasks.filter(t => parseFloat(t.price) >= parseFloat(filters.minPrice));
         if (filters.maxPrice) openTasks = openTasks.filter(t => parseFloat(t.price) <= parseFloat(filters.maxPrice));
 
@@ -1773,7 +1816,7 @@
                     <div class="task-meta">📍 ${escapeHtml(task.location)}</div>
                     <div>👤 ${creator?.name || '?'} (${creator?.school || ''}, к.${creator?.corp || ''})</div>
                     <div class="action-buttons">${btns}</div>
-                    ${renderChat(task.id)}
+                    ${renderChat(task)}
                 </div>
             `;
         };
@@ -1789,8 +1832,8 @@
                     <option value="bonus">🎁 Бонусный (${(parseFloat(currentUser.bonus_balance) || 0).toFixed(2)} ₽)</option>
                 </select>
                 <select id="taskScope">
-                    <option value="school">🏫 Только моя школа</option>
-                    <option value="all">🌍 Для всех</option>
+                    <option value="school">🏫 Только моя школа и корпус</option>
+                    <option value="all">🌍 Для всех участников</option>
                 </select>
                 <button class="btn-primary" id="createBtn">Создать</button>
             </div>
@@ -1814,11 +1857,11 @@
         let content = '';
         if (activeTab === 'allTasks') {
             content = `
-                <h3>📋 Доступные задания</h3>
+                <h3>📋 Доступные задания (твоя школа ${currentUser.school}, корпус ${currentUser.corp})</h3>
                 <div class="filter-group">
                     <select id="filterScope">
-                        <option value="school" ${filters.scope === 'school' ? 'selected' : ''}>🏫 Только моя школа</option>
-                        <option value="all" ${filters.scope === 'all' ? 'selected' : ''}>🌍 Для всех</option>
+                        <option value="school" ${filters.scope === 'school' ? 'selected' : ''}>🏫 Только моя школа и корпус</option>
+                        <option value="all" ${filters.scope === 'all' ? 'selected' : ''}>🌍 Для всех участников</option>
                     </select>
                     <input type="number" id="filterMinPrice" placeholder="Цена от" value="${filters.minPrice}">
                     <input type="number" id="filterMaxPrice" placeholder="Цена до" value="${filters.maxPrice}">
