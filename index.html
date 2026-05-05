@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>SchoolTask | Биржа поручений + Апгрейд (проигрыш чаще)</title>
+    <title>SchoolTask | Биржа поручений + Апгрейд</title>
     <style>
         * {
             margin: 0;
@@ -17,12 +17,6 @@
             min-height: 100vh;
             padding: 20px;
             transition: background 0.3s, color 0.3s;
-            opacity: 0;
-            transition: opacity 0.4s ease;
-        }
-
-        body.loaded {
-            opacity: 1;
         }
 
         body.dark-theme {
@@ -64,7 +58,6 @@
             color: #e2e8f0;
         }
 
-        /* Общие стили */
         .container {
             max-width: 1300px;
             margin: 0 auto;
@@ -237,7 +230,6 @@
             gap: 20px;
         }
 
-        /* Админ-панель */
         .admin-panel {
             background: white;
             border-radius: 32px;
@@ -300,12 +292,8 @@
         }
 
         @keyframes pulse {
-            0%, 100% {
-                transform: scale(1);
-            }
-            50% {
-                transform: scale(1.01);
-            }
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.01); }
         }
 
         .share-buttons {
@@ -350,11 +338,6 @@
             margin-bottom: 20px;
             text-align: center;
             border-left: 5px solid #0284c7;
-            transition: transform 0.1s;
-        }
-
-        .help-box:active {
-            transform: scale(0.99);
         }
 
         .referral-code {
@@ -365,12 +348,6 @@
             cursor: pointer;
             text-align: center;
             margin-top: 15px;
-            transition: all 0.1s;
-        }
-
-        .referral-code:active {
-            transform: scale(0.97);
-            background: #cbd5e1;
         }
 
         .task-header {
@@ -446,21 +423,12 @@
         }
 
         @keyframes toastFadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         @keyframes toastFadeOut {
-            to {
-                opacity: 0;
-                transform: translateY(20px);
-            }
+            to { opacity: 0; transform: translateY(20px); }
         }
 
         .loading {
@@ -492,12 +460,8 @@
         }
 
         @keyframes modalFadeIn {
-            from {
-                opacity: 0;
-            }
-            to {
-                opacity: 1;
-            }
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
         .wallet-container {
@@ -510,14 +474,8 @@
         }
 
         @keyframes modalScaleIn {
-            from {
-                transform: scale(0.9);
-                opacity: 0;
-            }
-            to {
-                transform: scale(1);
-                opacity: 1;
-            }
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
         }
 
         .video-rule {
@@ -526,11 +484,6 @@
             padding: 15px;
             margin-bottom: 20px;
             border-radius: 16px;
-            transition: transform 0.1s;
-        }
-
-        .video-rule:active {
-            transform: scale(0.99);
         }
 
         .support-link {
@@ -541,11 +494,6 @@
             text-align: center;
             font-size: 12px;
             color: #475569;
-            transition: transform 0.1s;
-        }
-
-        .support-link:active {
-            transform: scale(0.98);
         }
 
         .spinner {
@@ -561,12 +509,9 @@
         }
 
         @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
+            to { transform: rotate(360deg); }
         }
 
-        /* Уведомления */
         .notification-badge {
             background: #ef4444;
             color: white;
@@ -596,7 +541,6 @@
             font-weight: bold;
         }
 
-        /* Доска почёта */
         .honor-board {
             background: linear-gradient(135deg, #fef9e6, #fff4e0);
             border-radius: 24px;
@@ -625,7 +569,6 @@
             font-size: 2rem;
         }
 
-        /* Звания */
         .ranks-container {
             display: flex;
             flex-direction: column;
@@ -677,16 +620,17 @@
             background: #e2e8f0;
         }
 
-        /* Апгрейд (рулетка) */
         .upgrade-panel {
             text-align: center;
         }
+
         .upgrade-panel .wheel-container {
             position: relative;
             width: 280px;
             height: 280px;
             margin: 0 auto 20px;
         }
+
         .upgrade-panel canvas {
             position: absolute;
             top: 0;
@@ -696,6 +640,7 @@
             border-radius: 50%;
             box-shadow: 0 0 0 8px #2c3e2f, 0 12px 28px black;
         }
+
         .upgrade-panel .center-badge {
             position: absolute;
             top: 50%;
@@ -713,12 +658,14 @@
             white-space: nowrap;
             pointer-events: none;
         }
+
         .upgrade-inputs {
             display: flex;
             gap: 15px;
             margin: 15px 0;
             flex-wrap: wrap;
         }
+
         .upgrade-inputs .input-block {
             flex: 1;
             background: #0f1c19;
@@ -726,12 +673,14 @@
             padding: 8px 15px;
             border: 1px solid #ffd966aa;
         }
+
         .upgrade-inputs .input-block label {
             font-size: 0.7rem;
             text-transform: uppercase;
             color: #ffd966;
             display: block;
         }
+
         .upgrade-inputs .input-block input {
             width: 100%;
             background: transparent;
@@ -744,27 +693,17 @@
         }
 
         @media (max-width: 700px) {
-            .filter-group {
-                flex-direction: column;
-            }
-            body {
-                padding: 12px;
-            }
-            .honor-list {
-                flex-direction: column;
-                align-items: center;
-            }
-            .upgrade-inputs {
-                flex-direction: column;
-            }
+            .filter-group { flex-direction: column; }
+            body { padding: 12px; }
+            .honor-list { flex-direction: column; align-items: center; }
+            .upgrade-inputs { flex-direction: column; }
         }
     </style>
 </head>
 <body>
-<div id="app"></div>
+<div id="app"><div class="loading">⏳ Загрузка...</div></div>
 
 <script>
-    // -------------------- ОСНОВНОЙ API И ДАННЫЕ --------------------
     const API_URL = 'https://script.google.com/macros/s/AKfycbzaQq5Qku56TgwPpRrT3PRFpaJIZVin2wRqshXXTFcwKCUurMzRljNzQ45nzjgdy9t8/exec';
 
     let currentUser = null;
@@ -780,7 +719,8 @@
     let notifications = [];
     let awardedRankNotifications = new Set();
 
-    // ---------- ВСПОМОГАТЕЛЬНЫЕ ----------
+    if (isDarkTheme) document.body.classList.add('dark-theme');
+
     function escapeHtml(t) { if (!t) return ''; const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
     function showToast(msg, isErr, dur = 2500) { let t = document.createElement('div'); t.className = 'toast'; t.innerHTML = msg; if (isErr) t.style.background = '#b91c1c'; document.body.appendChild(t); setTimeout(() => t.remove(), dur); }
     function formatDate(d) { return d ? new Date(d).toLocaleString('ru-RU', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }) : 'неизвестно'; }
@@ -796,7 +736,6 @@
         }
     }
 
-    // ---------- ЗВАНИЯ (только визуально, без бонусов) ----------
     const RANKS = {
         tasks: [ { name:'🐣 Новичок', need:0, desc:'Только зарегистрировался' }, { name:'📝 Стажёр', need:1, desc:'Первое выполненное' }, { name:'🏃 Бегунок', need:3 }, { name:'⚡ Шустрый', need:5 }, { name:'🔥 Горячий', need:10 }, { name:'🎯 Снайпер', need:15 }, { name:'💪 Мастер', need:20 }, { name:'⭐ Эксперт', need:30 }, { name:'🦅 Ас', need:40 }, { name:'👑 Легенда', need:50 } ],
         money: [ { name:'💸 Карманные', need:100 }, { name:'🍕 Пицца', need:500 }, { name:'🎧 Наушники', need:1000 }, { name:'🎮 Приставка', need:2000 }, { name:'📱 Телефон', need:5000 }, { name:'💎 Бриллиант', need:10000 } ],
@@ -804,6 +743,7 @@
         reviews: [ { name:'😊 Душнила', need:3 }, { name:'🌟 Лучик', need:7 }, { name:'💎 Алмазный', need:15 } ],
         rating: [ { name:'👍 Норм', need:4.0 }, { name:'🤩 Красавчик', need:4.5 } ]
     };
+    
     function checkAndUpdateRanks(user) {
         if (!user) return;
         const earned = user.earnedRanks || [];
@@ -826,7 +766,6 @@
         }
     }
 
-    // ---------- ЗАГРУЗКА / СОХРАНЕНИЕ ----------
     let isLoading = false, usersCache, tasksCache, reviewsCache, reportsCache, lastLoad=0, CACHE_TTL=30000;
     async function loadData(force=false) {
         if (!force && usersCache && (Date.now()-lastLoad)<CACHE_TTL) { users=usersCache; tasks=tasksCache; reviews=reviewsCache; reports=reportsCache; return true; }
@@ -842,6 +781,7 @@
             isLoading=false; return true;
         } catch(e){ isLoading=false; return false; }
     }
+    
     async function saveToGoogle(action, params) {
         try {
             const fd = new URLSearchParams();
@@ -853,11 +793,9 @@
         } catch(e){ return { success:false }; }
     }
 
-    // ---------- АВТОРИЗАЦИЯ ----------
     function saveSession() { if(currentUser) localStorage.setItem('schooltask_session', JSON.stringify({ id:currentUser.id, name:currentUser.name, school:currentUser.school, corp:currentUser.corp })); else localStorage.removeItem('schooltask_session'); }
     async function restoreSession() { let s = localStorage.getItem('schooltask_session'); if(!s) return false; try { let ses = JSON.parse(s); await loadData(true); let u = users.find(u=>u.name===ses.name && u.school===ses.school && u.corp===ses.corp); if(u && u.isBanned!=='true') { currentUser=u; if(Notification.permission==="default") Notification.requestPermission(); checkAndUpdateRanks(currentUser); return true; } localStorage.removeItem('schooltask_session'); } catch(e){} return false; }
 
-    // ---------- ОСНОВНЫЕ ДЕЙСТВИЯ (задания, отзывы и т.д.) ----------
     async function createTask(desc,price,loc,payType,scope,btn) {
         if (!desc || !price || !loc) { showToast('❌ Заполните все поля', true); if(btn) btn.disabled=false; return; }
         if(btn) btn.disabled=true;
@@ -878,6 +816,7 @@
         if(btn) btn.disabled=false;
         renderApp();
     }
+    
     async function takeTask(id,btn) {
         if(btn) btn.disabled=true;
         const result = await saveToGoogle('takeTaskSafe', { taskId:id, userId:currentUser.id });
@@ -891,6 +830,7 @@
         if(btn) btn.disabled=false;
         renderApp();
     }
+    
     async function confirmCompletion(id,btn) {
         if(btn) btn.disabled=true;
         let task = tasks.find(t=>t.id==id);
@@ -904,6 +844,7 @@
         if(btn) btn.disabled=false;
         renderApp();
     }
+    
     async function confirmReceipt(id,btn) {
         if(btn) btn.disabled=true;
         let task = tasks.find(t=>t.id==id);
@@ -929,7 +870,23 @@
         if(btn) btn.disabled=false;
         renderApp();
     }
-    async function rejectReceipt(id,btn) { /* полная реализация */ }
+    
+    async function rejectReceipt(id,btn) {
+        if(btn) btn.disabled=true;
+        let task = tasks.find(t=>t.id==id);
+        if(!task || task.status !== 'awaiting_confirmation'){ if(btn) btn.disabled=false; return; }
+        if(task.creatorId !== currentUser.id){ if(btn) btn.disabled=false; return; }
+        if(task.payment_type === 'bonus') currentUser.bonus_balance += parseFloat(task.price);
+        else currentUser.balance += parseFloat(task.price);
+        await saveToGoogle('updateUser', { id: currentUser.id, balance: currentUser.balance, bonus_balance: currentUser.bonus_balance });
+        await saveToGoogle('updateTask', { id: task.id, status: 'disputed' });
+        await loadData(true);
+        currentUser = users.find(u=>u.id===currentUser.id);
+        showToast('⚠️ Деньги возвращены', false);
+        if(btn) btn.disabled=false;
+        renderApp();
+    }
+    
     async function deleteTask(id,btn) {
         if(btn) btn.disabled=true;
         if(!confirm('Удалить задание? Деньги вернутся на счёт.')){ if(btn) btn.disabled=false; return; }
@@ -950,6 +907,7 @@
         if(btn) btn.disabled=false;
         renderApp();
     }
+    
     function showEditModal(task) {
         let newDesc = prompt('Новое описание:', task.description);
         if(!newDesc) return;
@@ -960,6 +918,7 @@
         let newScope = confirm('Для всех участников?') ? 'all' : 'school';
         saveToGoogle('updateTask', { id: task.id, description: newDesc, price: newPrice, location: newLoc, scope: newScope }).then(async () => { await loadData(true); currentUser = users.find(u=>u.id===currentUser.id); showToast('✅ Задание обновлено', false); renderApp(); });
     }
+    
     async function addReview(toUserId,taskId,rating,comment) {
         let result = await saveToGoogle('addReview', { id: Date.now().toString(), fromUserId: currentUser.id, toUserId, taskId, rating: parseInt(rating), comment: comment||'', createdAt: new Date().toISOString() });
         if(result && result.success){
@@ -972,6 +931,7 @@
             renderApp();
         } else { showToast('❌ Ошибка при добавлении отзыва', true); }
     }
+    
     function showReviewModal(taskId,toUserId) {
         let rating = prompt('Оцените выполнение (1-5 звёзд):', '5');
         if(!rating) return;
@@ -980,6 +940,7 @@
         let comment = prompt('Ваш комментарий:', '');
         addReview(toUserId, taskId, ratingNum, comment||'');
     }
+    
     async function adminChangeBalance(uid,amt,isBonus) {
         let user = users.find(u=>u.id===uid);
         if(!user) return;
@@ -990,16 +951,20 @@
         await loadData(true);
         renderApp();
     }
+    
     function showBanModal(uid) { let user = users.find(u=>u.id===uid); if(!user) return; let reason = prompt('Причина блокировки:', 'Нарушение правил'); if(!reason) return; saveToGoogle('updateUser', { id: uid, isBanned: 'true', banReason: reason }).then(async () => { await loadData(true); if(currentUser && currentUser.id===uid) logout(); else showToast('⛔ '+user.name+' заблокирован', false); renderApp(); }); }
     function unbanUser(uid) { saveToGoogle('updateUser', { id: uid, isBanned: 'false', banReason: '' }).then(async () => { await loadData(true); showToast('✅ Пользователь разблокирован', false); renderApp(); }); }
     function requestAdminAccess() { let pwd = prompt("Пароль администратора:"); if(pwd === 'dsl382dAZX') { adminMode = true; showToast("👑 Админ-панель активирована", false); renderApp(); } else showToast("❌ Неверный пароль", true); }
     function exitAdminMode() { adminMode = false; renderApp(); }
     function deleteAllTasks() { if(confirm('Удалить ВСЕ задания?')){ Promise.all(tasks.map(t=>saveToGoogle('deleteTask',{id:t.id}))).then(async()=>{ await loadData(true); showToast('✅ Все задания удалены', false); renderApp(); }); } }
+    
     function getStatusText(s) { switch(s){ case 'open':return { text:'📋 Доступно', class:'status-open' }; case 'in_progress':return { text:'⏳ Выполняется', class:'status-progress' }; case 'awaiting_confirmation':return { text:'🕐 Ожидает', class:'status-awaiting' }; case 'completed':return { text:'✅ Выполнено', class:'status-completed' }; default: return { text:s, class:'status-open' }; } }
     function getRatingStars(r) { let stars=''; for(let i=1;i<=5;i++) stars+= i<=r ? '⭐' : '☆'; return stars; }
     function getTop3() { return [...users].sort((a,b)=> (parseInt(b.tasksCompleted)||0)-(parseInt(a.tasksCompleted)||0)).slice(0,3); }
+    
     function renderNotifications() { const un = notifications.filter(n=>n.userId===currentUser?.id).sort((a,b)=>b.id-a.id); const uc = un.filter(n=>!n.read).length; return `<div class="notifications-panel"><h4>🔔 Уведомления ${uc>0?`<span class="notification-badge">${uc}</span>`:''}</h4>${un.length===0?'<p>Нет уведомлений</p>':un.map(n=>`<div class="notification-item ${!n.read?'unread':''}" data-notif-id="${n.id}">📌 ${escapeHtml(n.text)}<br><small>${formatDate(n.createdAt)}</small></div>`).join('')}${un.length>0?'<button id="markNotifReadBtn" class="btn-info" style="margin-top:10px;width:100%;">Пометить все прочитанными</button>':''}</div>`; }
     function markNotificationsRead() { notifications.forEach(n=>{ if(n.userId===currentUser?.id) n.read=true; }); saveLocalData(); renderApp(); }
+    
     function renderRanks() {
         if (!currentUser) return '';
         const earned = currentUser.earnedRanks || [];
@@ -1013,7 +978,7 @@
         return html;
     }
 
-    // -------------------- АПГРЕЙД (РУЛЕТКА) --------------------
+    // -------------------- АПГРЕЙД --------------------
     let mainBalanceLocal = 1000;
     let bonusBalanceLocal = 500;
     let activeUpgradeAccount = 'bonus';
@@ -1023,33 +988,21 @@
     let spinAnimationId = null;
     const UPGRADE_PENALTY = 25;
 
-    function computeFairChance(bet, target) {
-        if (bet <= 0 || target <= 0) return 0;
-        let raw = (bet / target) * 100;
-        return Math.min(raw, 100);
-    }
+    function computeFairChance(bet, target) { if (bet <= 0 || target <= 0) return 0; let raw = (bet / target) * 100; return Math.min(raw, 100); }
     function getArrowAngleWithRealChance(fair, account) {
         let realWinPercent = (account === 'main') ? Math.max(0, fair - UPGRADE_PENALTY) : fair;
         if (realWinPercent >= 100) realWinPercent = 100;
-        if (realWinPercent < 0) realWinPercent = 0;
         let winAngle = (fair / 100) * Math.PI * 2;
         let startSector = -Math.PI/2 - winAngle/2;
         let endSector = startSector + winAngle;
         let r = Math.random();
         let angle;
-        if (r < realWinPercent / 100) {
-            let t = Math.random();
-            angle = startSector + t * winAngle;
-        } else {
-            let darkAngle = Math.PI * 2 - winAngle;
-            let darkStart = endSector;
-            let t = Math.random();
-            angle = darkStart + t * darkAngle;
-        }
+        if (r < realWinPercent / 100) { let t = Math.random(); angle = startSector + t * winAngle; }
+        else { let darkAngle = Math.PI * 2 - winAngle; let darkStart = endSector; let t = Math.random(); angle = darkStart + t * darkAngle; }
         return angle;
     }
 
-    let upgradeCanvas = null, upgradeCtx = null;
+        let upgradeCanvas = null, upgradeCtx = null;
     function drawUpgradeWheel(winPercent) {
         if (!upgradeCtx) return;
         const w = upgradeCanvas.width = 500;
@@ -1145,7 +1098,6 @@
         drawUpgradeWheel(fairWinPercent);
         drawUpgradeArrow(arrowAngle);
     }
-
     function refreshUpgradeUI() {
         let bet = parseFloat(document.getElementById('upgradeBet')?.value);
         let target = parseFloat(document.getElementById('upgradeTarget')?.value);
@@ -1165,7 +1117,6 @@
         if (centerSpan) centerSpan.innerHTML = `${fair.toFixed(0)}%`;
         renderUpgradeFull();
     }
-
     async function upgradeStartSpin() {
         let spinBtn = document.getElementById('upgradeSpinBtn');
         if (spinBtn.disabled) return;
@@ -1283,7 +1234,9 @@
         updateUpgradeBalancesUI();
     }
 
-    // -------------------- ОСНОВНОЙ РЕНДЕР --------------------
+    // --------------------------------------------------------------
+    // ОСНОВНОЙ РЕНДЕР
+    // --------------------------------------------------------------
     let renderTimer = null;
     async function renderApp() {
         if (renderTimer) clearTimeout(renderTimer);
@@ -1337,7 +1290,7 @@
                 return;
             }
 
-                       // ПОЛЬЗОВАТЕЛЬ ЗАЛОГИНЕН
+            // ---------- ПОЛЬЗОВАТЕЛЬ ЗАЛОГИНЕН ----------
             const top3 = getTop3();
             const isAdmin = currentUser.name === 'leshr_ak47';
             let adminHtml = '';
@@ -1353,6 +1306,8 @@
             let myCreated = tasks.filter(t=>t.creatorId===currentUser.id);
             let myExec = tasks.filter(t=>t.takerId===currentUser.id && t.status!=='completed');
             let myCompleted = tasks.filter(t=>t.status==='completed' && (t.creatorId===currentUser.id || t.takerId===currentUser.id));
+            let userRating = parseFloat(currentUser.rating)||0;
+            let userRatingCnt = parseInt(currentUser.ratingCount)||0;
 
             let honorHtml = `<div class="honor-board"><h3>🏅 Доска почёта (лучшие исполнители)</h3><div class="honor-list">${top3.map((u,idx)=>`<div class="honor-item"><div class="honor-medal">${idx===0?'🥇':idx===1?'🥈':'🥉'}</div><strong>${escapeHtml(u.name)}</strong><br>✅ ${u.tasksCompleted||0} заданий</div>`).join('')}</div></div>`;
             let helpBlock = `<div class="help-box"><h4>🎁 Бонусный счёт</h4><p>Бонусы НЕ вывести, только тратить на задания. +5₽ за друга, +10₽ за выполнение, +20₽ за отзыв 5⭐!</p><div class="share-buttons"><div class="share-btn share-tg" onclick="shareTelegram()">📱 Telegram</div><div class="share-btn share-vk" onclick="shareVK()">📱 ВКонтакте</div><div class="share-btn copy-link" onclick="copyReferralLink()">🔗 Скопировать ссылку</div></div></div>`;
@@ -1372,7 +1327,7 @@
 
             let createForm = `<div class="card"><h3>📝 Создать задание</h3><textarea id="taskDesc" rows="2" placeholder="Что нужно сделать?"></textarea><input type="number" id="taskPrice" placeholder="Цена (руб)"><input type="text" id="taskLocation" placeholder="Место"><select id="paymentType"><option value="main">💰 Основной (${(parseFloat(currentUser.balance)||0).toFixed(2)} ₽)</option><option value="bonus">🎁 Бонусный (${(parseFloat(currentUser.bonus_balance)||0).toFixed(2)} ₽)</option></select><select id="taskScope"><option value="school">🏫 Только моя школа и корпус</option><option value="all">🌍 Для всех</option></select><button class="btn-primary" id="createBtn">Создать</button></div>`;
             let ranksHtml = renderRanks();
-            let profileHtml = `<div class="card"><h3>👤 Профиль</h3><p><strong>Имя:</strong> ${escapeHtml(currentUser.name)}</p><p><strong>Школа/Корпус:</strong> ${escapeHtml(currentUser.school)} / ${escapeHtml(currentUser.corp)}</p><p><strong>💰 Основной:</strong> ${(parseFloat(currentUser.balance)||0).toFixed(2)} ₽</p><p><strong>🎁 Бонусный:</strong> ${(parseFloat(currentUser.bonus_balance)||0).toFixed(2)} ₽</p><p><strong>👥 Приглашено:</strong> ${currentUser.referral_count||0}</p><p><strong>⭐ Рейтинг:</strong> ${getRatingStars(parseFloat(currentUser.rating)||0)} (${currentUser.ratingCount||0})</p><p><strong>📊 Выполнено:</strong> ${currentUser.tasksCompleted||0}</p><p><strong>💰 Заработано:</strong> ${(parseFloat(currentUser.totalEarned)||0).toFixed(2)} ₽</p><div class="referral-code" onclick="copyReferralLink()">🔗 ${getReferralLink()}</div>${ranksHtml}</div>`;
+            let profileHtml = `<div class="card"><h3>👤 Профиль</h3><p><strong>Имя:</strong> ${escapeHtml(currentUser.name)}</p><p><strong>Школа/Корпус:</strong> ${escapeHtml(currentUser.school)} / ${escapeHtml(currentUser.corp)}</p><p><strong>💰 Основной:</strong> ${(parseFloat(currentUser.balance)||0).toFixed(2)} ₽</p><p><strong>🎁 Бонусный:</strong> ${(parseFloat(currentUser.bonus_balance)||0).toFixed(2)} ₽</p><p><strong>👥 Приглашено:</strong> ${currentUser.referral_count||0}</p><p><strong>⭐ Рейтинг:</strong> ${getRatingStars(userRating)} (${userRatingCnt})</p><p><strong>📊 Выполнено:</strong> ${currentUser.tasksCompleted||0}</p><p><strong>💰 Заработано:</strong> ${(parseFloat(currentUser.totalEarned)||0).toFixed(2)} ₽</p><div class="referral-code" onclick="copyReferralLink()">🔗 ${getReferralLink()}</div>${ranksHtml}</div>`;
             
             let upgradeHtml = `<div class="upgrade-panel"><h3>🎲 АПГРЕЙД (ДЕПНИ ВСЁ!) 🎲</h3><div class="wheel-container"><canvas id="upgradeCanvas" width="500" height="500"></canvas><div class="center-badge" id="upgradeCenterPercent">🎯</div></div><div class="balance-switch" style="margin-bottom:15px;"><div id="upgradeBtnMain" class="balance-btn">💰 ОСНОВНОЙ<br><span id="upgradeMainBalanceAmount" class="balance-amount">0 ₽</span></div><div id="upgradeBtnBonus" class="balance-btn active">🎁 БОНУСНЫЙ<br><span id="upgradeBonusBalanceAmount" class="balance-amount">0 ₽</span></div></div><div class="upgrade-inputs"><div class="input-block"><label>💰 СТАВКА (руб)</label><input type="number" id="upgradeBet" value="50" step="10" min="1"></div><div class="input-block"><label>🎯 ЖЕЛАЕМЫЙ ВЫИГРЫШ</label><input type="number" id="upgradeTarget" value="100" step="10" min="1"></div></div><div class="chance-panel"><div>ВИДИМЫЙ ШАНС (на колесе)</div><div class="chance-digits" id="upgradeChancePercent">—%</div></div><button class="spin-button" id="upgradeSpinBtn">🎯 КРУТИТЬ СТРЕЛКУ 🎯</button><div class="result-area" id="upgradeResult">⚡ нажми на кнопку</div><div class="reset-link"><button id="upgradeResetBtn">♻️ сбросить балансы (демо)</button></div><footer>❗ Основной счёт: реальный выигрыш на 25% реже, чем на колесе.</footer></div>`;
 
@@ -1396,12 +1351,13 @@
 
             appDiv.innerHTML = `<div class="container"><div class="header"><div class="logo"><h1>🏫 SchoolTask</h1></div><div class="user-info"><div>👋 ${escapeHtml(currentUser.name)} | ${escapeHtml(currentUser.school)}</div><div class="balance-card" onclick="openWalletModal()">💰 ${(parseFloat(currentUser.balance)||0).toFixed(2)} ₽</div><div class="bonus-card" onclick="showBonusHelp()">🎁 ${(parseFloat(currentUser.bonus_balance)||0).toFixed(2)} ₽</div><button class="theme-toggle" id="themeToggleBtn">${isDarkTheme?'☀️':'🌙'}</button><button class="btn-danger" id="logoutBtn">Выйти</button></div></div><div style="margin-bottom:12px;">${adminBtn}</div>${adminHtml}${renderNotifications()}${honorHtml}${helpBlock}<div class="tabs"><div class="tab ${activeTab==='allTasks'?'active':''}" data-tab="allTasks">📋 Все</div><div class="tab ${activeTab==='myTasks'?'active':''}" data-tab="myTasks">📦 Мои</div><div class="tab ${activeTab==='myExecutions'?'active':''}" data-tab="myExecutions">⚡ В работе</div><div class="tab ${activeTab==='completed'?'active':''}" data-tab="completed">✅ Готово</div><div class="tab ${activeTab==='profile'?'active':''}" data-tab="profile">👤 Профиль</div><div class="tab ${activeTab==='create'?'active':''}" data-tab="create">➕ Создать</div><div class="tab ${activeTab==='upgrade'?'active':''}" data-tab="upgrade">🎲 Апгрейд</div></div>${content}<div class="support-link">📞 Поддержка: <strong>@leshr_ak47</strong> (Telegram)</div></div>`;
 
+            // Привязка обработчиков
             document.querySelectorAll('.tab').forEach(tab => { tab.onclick = () => { window._activeTab = tab.getAttribute('data-tab'); renderApp(); }; });
             if (document.getElementById('logoutBtn')) document.getElementById('logoutBtn').onclick = logout;
             if (document.getElementById('themeToggleBtn')) document.getElementById('themeToggleBtn').onclick = toggleTheme;
             if (document.getElementById('createBtn')) document.getElementById('createBtn').onclick = () => { createTask(document.getElementById('taskDesc').value, document.getElementById('taskPrice').value, document.getElementById('taskLocation').value, document.getElementById('paymentType').value, document.getElementById('taskScope').value, document.getElementById('createBtn')); };
             if (document.getElementById('applyFilters')) document.getElementById('applyFilters').onclick = () => { filters.scope = document.getElementById('filterScope').value; filters.minPrice = document.getElementById('filterMinPrice').value; filters.maxPrice = document.getElementById('filterMaxPrice').value; renderApp(); };
-            if (document.getElementById('markNotifReadBtn')) document.getElementById('markNotifReadBtn').onclick = markNotificationsRead;
+                       if (document.getElementById('markNotifReadBtn')) document.getElementById('markNotifReadBtn').onclick = markNotificationsRead;
             document.querySelectorAll('.notification-item').forEach(item => { item.onclick = () => { let nid = item.getAttribute('data-notif-id'); let n = notifications.find(n=>n.id==nid); if(n && !n.read){ n.read=true; saveLocalData(); renderApp(); } }; });
 
             if (isAdmin) {
@@ -1453,7 +1409,9 @@
     window.showPaymentAlert = showPaymentAlert;
 
     loadLocalData();
-    const splashDiv = document.createElement('div'); splashDiv.className = 'splash-screen'; splashDiv.innerHTML = `<svg class="skeleton-svg" viewBox="0 0 200 200">...</svg><div class="splash-text">🥁 стучим по щиту, ускоряем загрузку...</div><div class="splash-loader"></div>`; document.body.appendChild(splashDiv); setTimeout(()=>{ splashDiv.classList.add('hide'); setTimeout(()=>{ splashDiv.remove(); document.body.classList.add('loaded'); },400); },900);
+    // простой сплеш вместо сложного
+    document.body.style.opacity = '1';
+    document.body.classList.add('loaded');
     (async()=>{ await loadData(false); await restoreSession(); renderApp(); })();
 </script>
 </body>
