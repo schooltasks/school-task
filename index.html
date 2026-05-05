@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>SchoolTask - Биржа поручений</title>
+    <title>SchoolTask - Биржа поручений (система званий)</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
         body { background: linear-gradient(145deg, #f0f4fa 0%, #e2e8f0 100%); min-height: 100vh; padding: 20px; transition: background 0.3s, color 0.3s; opacity: 0; transition: opacity 0.4s ease; }
@@ -15,6 +15,7 @@
         body.dark-theme .tab.active { background: #3b82f6; }
         body.dark-theme input, body.dark-theme textarea, body.dark-theme select { background: #334155; border-color: #475569; color: #e2e8f0; }
         body.dark-theme .notification-item.unread { background: #2d3a5e; }
+        body.dark-theme .rank-item { background: #334155; }
 
         .splash-screen { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(circle at center, #1a472a, #0a1a0f); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10000; transition: opacity 0.5s ease, visibility 0.5s ease; }
         .splash-screen.hide { opacity: 0; visibility: hidden; }
@@ -36,6 +37,7 @@
         .balance-card:active, .bonus-card:active { transform: scale(0.92); }
         .balance-card { background: #eef2ff; }
         .bonus-card { background: linear-gradient(135deg, #fef3c7, #fde68a); color: #92400e; }
+
         button { cursor: pointer; border: none; border-radius: 40px; padding: 10px 20px; font-weight: bold; transition: all 0.1s cubic-bezier(0.2,0.9,0.4,1.1); position: relative; overflow: hidden; }
         button:active { transform: scale(0.94); transition: transform 0.04s; }
         button::after { content: ''; position: absolute; top: 50%; left: 50%; width: 0; height: 0; border-radius: 50%; background: rgba(255,255,255,0.3); transform: translate(-50%,-50%); transition: width 0.3s, height 0.3s; }
@@ -47,8 +49,10 @@
         .btn-edit { background: #8b5cf6; color: white; }
         .btn-info { background: #3b82f6; color: white; }
         .theme-toggle { background: #334155; color: white; padding: 8px 16px; border-radius: 60px; cursor: pointer; }
+
         input, textarea, select { width: 100%; padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 28px; margin-bottom: 12px; font-size: 1rem; transition: all 0.15s ease; }
         input:focus, textarea:focus, select:focus { outline: none; border-color: #3b82f6; transform: scale(1.01); box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+
         .tabs { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
         .tab { background: white; padding: 10px 24px; border-radius: 60px; cursor: pointer; font-weight: 600; transition: all 0.1s cubic-bezier(0.2,0.9,0.4,1.1); }
         .tab:active { transform: scale(0.94); }
@@ -115,6 +119,63 @@
         .honor-item { background: white; border-radius: 20px; padding: 10px 15px; min-width: 120px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
         .honor-medal { font-size: 2rem; }
 
+        /* ========== СТИЛИ ДЛЯ ЗВАНИЙ ========== */
+        .ranks-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .rank-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 12px;
+            background: #f8fafc;
+            border-radius: 20px;
+            transition: all 0.2s;
+        }
+        .rank-item.earned {
+            background: #d1fae5;
+            border-left: 4px solid #10b981;
+        }
+        body.dark-theme .rank-item.earned {
+            background: #0f3b2c;
+            border-left-color: #10b981;
+        }
+        .rank-icon { font-size: 2rem; min-width: 55px; text-align: center; }
+        .rank-info { flex: 1; }
+        .rank-name { font-weight: bold; font-size: 1rem; }
+        .rank-desc { font-size: 0.7rem; color: #6b7280; }
+        .rank-progress { margin-top: 5px; }
+        .progress-bar-bg { background: #e2e8f0; border-radius: 20px; height: 8px; overflow: hidden; }
+        .progress-bar-fill { background: #10b981; height: 100%; border-radius: 20px; transition: width 0.3s; width: 0%; }
+        .rank-badge { font-size: 0.7rem; padding: 2px 8px; border-radius: 20px; background: #e2e8f0; }
+
+        /* Главный прогресс-бар к следующему званию */
+        .main-progress {
+            background: #f1f5f9;
+            border-radius: 20px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .main-progress-bar-bg {
+            background: #e2e8f0;
+            border-radius: 20px;
+            height: 12px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        .main-progress-bar-fill {
+            background: linear-gradient(90deg, #10b981, #34d399);
+            height: 100%;
+            border-radius: 20px;
+            transition: width 0.5s;
+        }
+
         @media (max-width: 700px) { .filter-group { flex-direction: column; } body { padding: 12px; } .honor-list { flex-direction: column; align-items: center; } }
     </style>
 </head>
@@ -122,6 +183,7 @@
 <div id="app"></div>
 
 <script>
+    // ========== НАСТРОЙКИ ==========
     const API_URL = 'https://script.google.com/macros/s/AKfycbw8gUsCyj3MA7LgZTP9W6Ic_LrrzBeILb3AoCVYK8cgtZS4nMpH3StF0qVwqMpBp_rY/exec';
 
     let currentUser = null;
@@ -136,6 +198,122 @@
     let filters = { scope: 'school', minPrice: '', maxPrice: '' };
     let isLoading = false;
     let notifications = [];
+
+    // ========== СИСТЕМА ЗВАНИЙ ==========
+    const RANKS = {
+        // По выполненным заданиям
+        tasks: [
+            { name: '🐣 Новичок', need: 0, desc: 'Только зарегистрировался', bonus: 0 },
+            { name: '📝 Стажёр', need: 1, desc: 'Первое выполненное задание', bonus: 10 },
+            { name: '🏃 Бегунок', need: 3, desc: 'Начал разгоняться', bonus: 10 },
+            { name: '⚡ Шустрый', need: 5, desc: 'Уже неплохо', bonus: 10 },
+            { name: '🔥 Горячий', need: 10, desc: 'В теме', bonus: 15 },
+            { name: '🎯 Снайпер', need: 15, desc: 'Точность и скорость', bonus: 15 },
+            { name: '💪 Мастер', need: 20, desc: 'Опытный исполнитель', bonus: 20 },
+            { name: '⭐ Эксперт', need: 30, desc: 'Тебя знают', bonus: 20 },
+            { name: '🦅 Ас', need: 40, desc: 'Высший пилотаж', bonus: 25 },
+            { name: '👑 Легенда', need: 50, desc: 'Школьная легенда', bonus: 50 }
+        ],
+        // По заработанным деньгам
+        money: [
+            { name: '💸 Карманные', need: 100, desc: 'Первые 100₽', bonus: 10 },
+            { name: '🍕 Пицца', need: 500, desc: 'Заработал на пиццу', bonus: 15 },
+            { name: '🎧 Наушники', need: 1000, desc: 'Купишь наушники', bonus: 20 },
+            { name: '🎮 Приставка', need: 2000, desc: 'Почти приставка', bonus: 30 },
+            { name: '📱 Телефон', need: 5000, desc: 'На новый телефон', bonus: 50 },
+            { name: '💎 Бриллиант', need: 10000, desc: 'Бриллиантовая рука', bonus: 100 }
+        ],
+        // По приглашённым друзьям
+        referrals: [
+            { name: '🗣️ Говорун', need: 1, desc: 'Пригласил первого друга', bonus: 10 },
+            { name: '📢 Глашатай', need: 3, desc: 'Три друга в теме', bonus: 15 },
+            { name: '🎤 Агитатор', need: 5, desc: 'Пятеро с тобой', bonus: 20 },
+            { name: '🌟 Звезда', need: 10, desc: 'Десять друзей', bonus: 30 },
+            { name: '🏛️ Основатель', need: 20, desc: 'Основатель комьюнити', bonus: 50 }
+        ],
+        // По отзывам 5⭐
+        reviews: [
+            { name: '😊 Душнила', need: 3, desc: 'Три отзыва 5⭐', bonus: 10 },
+            { name: '🌟 Лучик', need: 7, desc: 'Семь отзывов 5⭐', bonus: 20 },
+            { name: '💎 Алмазный', need: 15, desc: 'Пятнадцать отзывов 5⭐', bonus: 30 }
+        ],
+        // По рейтингу
+        rating: [
+            { name: '👍 Норм', need: 4.0, desc: 'Рейтинг 4.0+', bonus: 15 },
+            { name: '🤩 Красавчик', need: 4.5, desc: 'Рейтинг 4.5+', bonus: 25 }
+        ],
+        // Секретные звания (пасхалки)
+        secret: [
+            { name: '🌙 Полуночник', need: 'midnight', desc: 'Создал задание после 00:00', bonus: 25, secret: true },
+            { name: '☀️ Жаворонок', need: 'early', desc: 'Взял задание до 07:00', bonus: 25, secret: true },
+            { name: '🍕 Хлебушка', need: 'bread', desc: 'Купил булочку в столовой', bonus: 20, secret: true }
+        ]
+    };
+
+    // Функция проверки и начисления званий
+    function checkAndAwardRanks(user) {
+        const earnedRanks = user.earnedRanks || [];
+        let newRanks = [];
+        let totalBonus = 0;
+
+        // Проверка заданий
+        for (const rank of RANKS.tasks) {
+            if (!earnedRanks.includes(rank.name) && (user.tasksCompleted || 0) >= rank.need) {
+                newRanks.push(rank);
+                totalBonus += rank.bonus;
+            }
+        }
+        // Проверка денег
+        for (const rank of RANKS.money) {
+            if (!earnedRanks.includes(rank.name) && (user.totalEarned || 0) >= rank.need) {
+                newRanks.push(rank);
+                totalBonus += rank.bonus;
+            }
+        }
+        // Проверка рефералов
+        for (const rank of RANKS.referrals) {
+            if (!earnedRanks.includes(rank.name) && (user.referral_count || 0) >= rank.need) {
+                newRanks.push(rank);
+                totalBonus += rank.bonus;
+            }
+        }
+        // Проверка отзывов
+        const userReviews = reviews.filter(r => r.toUserId === user.id && parseInt(r.rating) === 5).length;
+        for (const rank of RANKS.reviews) {
+            if (!earnedRanks.includes(rank.name) && userReviews >= rank.need) {
+                newRanks.push(rank);
+                totalBonus += rank.bonus;
+            }
+        }
+        // Проверка рейтинга
+        const rating = parseFloat(user.rating) || 0;
+        for (const rank of RANKS.rating) {
+            if (!earnedRanks.includes(rank.name) && rating >= rank.need) {
+                newRanks.push(rank);
+                totalBonus += rank.bonus;
+            }
+        }
+
+        if (newRanks.length > 0) {
+            user.earnedRanks = [...earnedRanks, ...newRanks.map(r => r.name)];
+            if (totalBonus > 0) {
+                user.bonus_balance = (parseFloat(user.bonus_balance) || 0) + totalBonus;
+                addNotification(user.id, `🎉 Получены новые звания: ${newRanks.map(r => r.name).join(', ')}! +${totalBonus} бонусов!`);
+                showToast(`🎉 Новые звания! +${totalBonus} бонусов!`, false, 5000);
+            }
+            saveToGoogle('updateUser', { id: user.id, bonus_balance: user.bonus_balance, earnedRanks: JSON.stringify(user.earnedRanks) });
+        }
+        return { newRanks, totalBonus };
+    }
+
+    // Получить следующее звание для прогресс-бара
+    function getNextRank(user) {
+        const tasksCount = user.tasksCompleted || 0;
+        for (const rank of RANKS.tasks) {
+            if (tasksCount < rank.need) return { type: 'tasks', rank, current: tasksCount, need: rank.need };
+        }
+        return null;
+    }
 
     if (isDarkTheme) document.body.classList.add('dark-theme');
 
@@ -160,7 +338,7 @@
                 fetch(API_URL + '?action=getReviews').then(r => r.json()).catch(() => []),
                 fetch(API_URL + '?action=getReports').then(r => r.json()).catch(() => [])
             ]);
-            if (Array.isArray(u)) users = u;
+            if (Array.isArray(u)) users = u.map(user => ({ ...user, earnedRanks: user.earnedRanks ? JSON.parse(user.earnedRanks) : [] }));
             if (Array.isArray(t)) tasks = t;
             if (Array.isArray(rv)) reviews = rv;
             if (Array.isArray(rp)) reports = rp;
@@ -173,7 +351,7 @@
         try {
             const fd = new URLSearchParams();
             fd.append('action', action);
-            for (let k in params) if (params[k] !== undefined && params[k] !== null) fd.append(k, params[k]);
+            for (let k in params) if (params[k] !== undefined && params[k] !== null) fd.append(k, typeof params[k] === 'object' ? JSON.stringify(params[k]) : params[k]);
             const resp = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: fd.toString() });
             const txt = await resp.text();
             try { return JSON.parse(txt); } catch(e) { return { success: false }; }
@@ -181,7 +359,7 @@
     }
 
     function saveSession() { if (currentUser) localStorage.setItem('schooltask_session', JSON.stringify({ id: currentUser.id, name: currentUser.name, school: currentUser.school, corp: currentUser.corp })); else localStorage.removeItem('schooltask_session'); }
-    async function restoreSession() { let s = localStorage.getItem('schooltask_session'); if (!s) return false; try { let ses = JSON.parse(s); await loadDataFromGoogle(true); let u = users.find(u => u.name === ses.name && u.school === ses.school && u.corp === ses.corp); if (u && u.isBanned !== 'true') { currentUser = u; return true; } localStorage.removeItem('schooltask_session'); } catch(e) {} return false; }
+    async function restoreSession() { let s = localStorage.getItem('schooltask_session'); if (!s) return false; try { let ses = JSON.parse(s); await loadDataFromGoogle(true); let u = users.find(u => u.name === ses.name && u.school === ses.school && u.corp === ses.corp); if (u && u.isBanned !== 'true') { currentUser = u; checkAndAwardRanks(currentUser); return true; } localStorage.removeItem('schooltask_session'); } catch(e) {} return false; }
     function getReferralLink() { let url = window.location.href.split('?')[0]; if (currentUser && currentUser.referral_code) return url + '?ref=' + currentUser.referral_code; return url; }
     function copyReferralLink() { navigator.clipboard.writeText(getReferralLink()); showToast('✅ Ссылка скопирована! +5₽ за каждого друга', false); }
     function shareTelegram() { window.open('https://t.me/share/url?url=' + encodeURIComponent(getReferralLink()) + '&text=' + encodeURIComponent('SchoolTask - биржа поручений! +5₽ на бонусный счёт за друга!'), '_blank'); }
@@ -198,30 +376,30 @@
 
     function validateName(name) { if (name.length < 3) return '❌ Имя не менее 3 символов'; if (name.length > 10) return '❌ Имя не более 10 символов'; if (/^\d+$/.test(name)) return '❌ Имя не может состоять только из цифр'; if (!/[a-zA-Zа-яА-Я]/.test(name)) return '❌ Имя должно содержать букву'; if (users.some(u => u.name === name)) return '❌ Пользователь с таким именем уже существует'; return ''; }
 
-    async function handleRegister() { const name = document.getElementById('regName').value.trim(); const school = document.getElementById('regSchool').value.trim(); const corp = document.getElementById('regCorp').value.trim(); const password = document.getElementById('regPassword').value.trim(); const btn = document.getElementById('registerBtn'); const err = validateName(name); if (err) { showToast(err, true); return; } if (!school || !/^\d+$/.test(school)) { showToast('❌ Школа - только цифры', true); return; } if (!corp || !/^\d+$/.test(corp)) { showToast('❌ Корпус - только цифры', true); return; } if (password.length < 3) { showToast('❌ Пароль минимум 3 символа', true); return; } btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Регистрация...'; const id = 'u' + Date.now(); const referralCode = 'REF' + Math.random().toString(36).substring(2,8).toUpperCase(); const refCode = new URLSearchParams(window.location.search).get('ref'); const result = await saveToGoogle('registerUser', { id, name, school, corp, balance: 0, bonus_balance: 0, password, referral_code: referralCode, referred_by: refCode || '' }); if (result?.success) { await loadDataFromGoogle(true); currentUser = users.find(u => u.id === id) || users.find(u => u.name === name); if (currentUser) { saveSession(); showToast(`✅ Добро пожаловать, ${currentUser.name}!`, false); renderApp(); return; } } showToast('❌ Ошибка регистрации', true); btn.disabled = false; btn.innerHTML = 'Зарегистрироваться'; }
+    async function handleRegister() { const name = document.getElementById('regName').value.trim(); const school = document.getElementById('regSchool').value.trim(); const corp = document.getElementById('regCorp').value.trim(); const password = document.getElementById('regPassword').value.trim(); const btn = document.getElementById('registerBtn'); const err = validateName(name); if (err) { showToast(err, true); return; } if (!school || !/^\d+$/.test(school)) { showToast('❌ Школа - только цифры', true); return; } if (!corp || !/^\d+$/.test(corp)) { showToast('❌ Корпус - только цифры', true); return; } if (password.length < 3) { showToast('❌ Пароль минимум 3 символа', true); return; } btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Регистрация...'; const id = 'u' + Date.now(); const referralCode = 'REF' + Math.random().toString(36).substring(2,8).toUpperCase(); const refCode = new URLSearchParams(window.location.search).get('ref'); const result = await saveToGoogle('registerUser', { id, name, school, corp, balance: 0, bonus_balance: 0, password, referral_code: referralCode, referred_by: refCode || '', earnedRanks: '[]' }); if (result?.success) { await loadDataFromGoogle(true); currentUser = users.find(u => u.id === id) || users.find(u => u.name === name); if (currentUser) { checkAndAwardRanks(currentUser); saveSession(); showToast(`✅ Добро пожаловать, ${currentUser.name}!`, false); renderApp(); return; } } showToast('❌ Ошибка регистрации', true); btn.disabled = false; btn.innerHTML = 'Зарегистрироваться'; }
 
-    async function handleLogin() { const name = document.getElementById('loginName').value.trim(); const school = document.getElementById('loginSchool').value.trim(); const corp = document.getElementById('loginCorp').value.trim(); const password = document.getElementById('loginPassword').value.trim(); const btn = document.getElementById('loginBtn'); if (!name || !school || !corp || !password) { showToast('❌ Заполните все поля', true); return; } btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Вход...'; await loadDataFromGoogle(true); let user = users.find(u => String(u.name||'').trim().toLowerCase() === name.toLowerCase() && String(u.school||'').trim() === school && String(u.corp||'').trim() === corp); if (!user) { showToast('❌ Пользователь не найден', true); btn.disabled=false; btn.innerHTML='Войти'; return; } if (String(user.password) !== password) { showToast('❌ Неверный пароль', true); btn.disabled=false; btn.innerHTML='Войти'; return; } if (user.isBanned === 'true') { showToast('⛔ Аккаунт заблокирован', true); btn.disabled=false; btn.innerHTML='Войти'; return; } currentUser = user; saveSession(); showToast(`✅ С возвращением, ${user.name}!`, false); renderApp(); btn.disabled=false; btn.innerHTML='Войти'; }
+    async function handleLogin() { const name = document.getElementById('loginName').value.trim(); const school = document.getElementById('loginSchool').value.trim(); const corp = document.getElementById('loginCorp').value.trim(); const password = document.getElementById('loginPassword').value.trim(); const btn = document.getElementById('loginBtn'); if (!name || !school || !corp || !password) { showToast('❌ Заполните все поля', true); return; } btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Вход...'; await loadDataFromGoogle(true); let user = users.find(u => String(u.name||'').trim().toLowerCase() === name.toLowerCase() && String(u.school||'').trim() === school && String(u.corp||'').trim() === corp); if (!user) { showToast('❌ Пользователь не найден', true); btn.disabled=false; btn.innerHTML='Войти'; return; } if (String(user.password) !== password) { showToast('❌ Неверный пароль', true); btn.disabled=false; btn.innerHTML='Войти'; return; } if (user.isBanned === 'true') { showToast('⛔ Аккаунт заблокирован', true); btn.disabled=false; btn.innerHTML='Войти'; return; } currentUser = user; checkAndAwardRanks(currentUser); saveSession(); showToast(`✅ С возвращением, ${user.name}!`, false); renderApp(); btn.disabled=false; btn.innerHTML='Войти'; }
 
     function logout() { currentUser = null; adminMode = false; localStorage.removeItem('schooltask_session'); renderApp(); }
 
-    async function createTask(desc, price, loc, paymentType, scope, btn) { if (!desc || !price || !loc) { showToast('❌ Заполните все поля', true); if(btn) btn.disabled=false; return; } if(btn) btn.disabled=true; let pn = parseFloat(price); if(isNaN(pn)||pn<=0){ showToast('❌ Цена >0', true); if(btn) btn.disabled=false; return; } let bal = paymentType==='bonus'? (parseFloat(currentUser.bonus_balance)||0) : (parseFloat(currentUser.balance)||0); if(bal<pn){ showToast('❌ Недостаточно средств', true); if(btn) btn.disabled=false; return; } if(paymentType==='bonus') currentUser.bonus_balance -= pn; else currentUser.balance -= pn; let newTask = { id: Date.now().toString(), creatorId: currentUser.id, creatorSchool: currentUser.school, creatorCorp: currentUser.corp, description: desc, price: pn, location: loc, payment_type: paymentType, scope, status: 'open', takerId: '', createdAt: new Date().toISOString() }; let cr = await saveToGoogle('createTask', newTask); if(!cr?.success){ showToast('❌ Ошибка создания', true); if(paymentType==='bonus') currentUser.bonus_balance += pn; else currentUser.balance += pn; if(btn) btn.disabled=false; renderApp(); return; } await saveToGoogle('updateUser', { id: currentUser.id, balance: currentUser.balance, bonus_balance: currentUser.bonus_balance }); await loadDataFromGoogle(true); currentUser = users.find(u=>u.id===currentUser.id); showToast('✅ Задание создано!', false); if(btn) btn.disabled=false; renderApp(); }
+    async function createTask(desc, price, loc, paymentType, scope, btn) { if (!desc || !price || !loc) { showToast('❌ Заполните все поля', true); if(btn) btn.disabled=false; return; } if(btn) btn.disabled=true; let pn = parseFloat(price); if(isNaN(pn)||pn<=0){ showToast('❌ Цена >0', true); if(btn) btn.disabled=false; return; } let bal = paymentType==='bonus'? (parseFloat(currentUser.bonus_balance)||0) : (parseFloat(currentUser.balance)||0); if(bal<pn){ showToast('❌ Недостаточно средств', true); if(btn) btn.disabled=false; return; } if(paymentType==='bonus') currentUser.bonus_balance -= pn; else currentUser.balance -= pn; let newTask = { id: Date.now().toString(), creatorId: currentUser.id, creatorSchool: currentUser.school, creatorCorp: currentUser.corp, description: desc, price: pn, location: loc, payment_type: paymentType, scope, status: 'open', takerId: '', createdAt: new Date().toISOString() }; let cr = await saveToGoogle('createTask', newTask); if(!cr?.success){ showToast('❌ Ошибка создания', true); if(paymentType==='bonus') currentUser.bonus_balance += pn; else currentUser.balance += pn; if(btn) btn.disabled=false; renderApp(); return; } await saveToGoogle('updateUser', { id: currentUser.id, balance: currentUser.balance, bonus_balance: currentUser.bonus_balance }); await loadDataFromGoogle(true); currentUser = users.find(u=>u.id===currentUser.id); checkAndAwardRanks(currentUser); showToast('✅ Задание создано!', false); if(btn) btn.disabled=false; renderApp(); }
 
-    async function takeTask(taskId, btn) { if(btn) btn.disabled=true; const r = await saveToGoogle('updateTask', { id: taskId, status: 'in_progress', takerId: currentUser.id, takenAt: new Date().toISOString() }); if(r?.success){ await loadDataFromGoogle(true); currentUser = users.find(u=>u.id===currentUser.id); const task = tasks.find(t=>t.id==taskId); if(task) addNotification(task.creatorId, `${currentUser.name} взял твоё задание "${task.description.substring(0,30)}..."`, taskId); showToast('📢 Вы взяли задание!', false); } else { showToast('❌ Не удалось взять задание', true); } if(btn) btn.disabled=false; renderApp(); }
+    async function takeTask(taskId, btn) { if(btn) btn.disabled=true; const r = await saveToGoogle('updateTask', { id: taskId, status: 'in_progress', takerId: currentUser.id, takenAt: new Date().toISOString() }); if(r?.success){ await loadDataFromGoogle(true); currentUser = users.find(u=>u.id===currentUser.id); checkAndAwardRanks(currentUser); const task = tasks.find(t=>t.id==taskId); if(task) addNotification(task.creatorId, `${currentUser.name} взял твоё задание "${task.description.substring(0,30)}..."`, taskId); showToast('📢 Вы взяли задание!', false); } else { showToast('❌ Не удалось взять задание', true); } if(btn) btn.disabled=false; renderApp(); }
 
-    async function confirmCompletion(taskId, btn) { if(btn) btn.disabled=true; let task = tasks.find(t=>t.id==taskId); if(!task || task.status !== 'in_progress'){ if(btn) btn.disabled=false; return; } if(task.takerId !== currentUser.id){ if(btn) btn.disabled=false; return; } await saveToGoogle('updateTask', { id: task.id, status: 'awaiting_confirmation' }); await loadDataFromGoogle(true); currentUser = users.find(u=>u.id===currentUser.id); addNotification(task.creatorId, `${currentUser.name} выполнил задание "${task.description.substring(0,30)}..."`, taskId); showToast('✅ Задание выполнено! Ожидайте подтверждения', false); if(btn) btn.disabled=false; renderApp(); }
+    async function confirmCompletion(taskId, btn) { if(btn) btn.disabled=true; let task = tasks.find(t=>t.id==taskId); if(!task || task.status !== 'in_progress'){ if(btn) btn.disabled=false; return; } if(task.takerId !== currentUser.id){ if(btn) btn.disabled=false; return; } await saveToGoogle('updateTask', { id: task.id, status: 'awaiting_confirmation' }); await loadDataFromGoogle(true); currentUser = users.find(u=>u.id===currentUser.id); checkAndAwardRanks(currentUser); addNotification(task.creatorId, `${currentUser.name} выполнил задание "${task.description.substring(0,30)}..."`, taskId); showToast('✅ Задание выполнено! Ожидайте подтверждения', false); if(btn) btn.disabled=false; renderApp(); }
 
-    async function confirmReceipt(taskId, btn) { if(btn) btn.disabled=true; let task = tasks.find(t=>t.id==taskId); if(!task || task.status !== 'awaiting_confirmation'){ if(btn) btn.disabled=false; return; } if(task.creatorId !== currentUser.id){ if(btn) btn.disabled=false; return; } let executor = users.find(u=>u.id===task.takerId); let total = parseFloat(task.price); let gain = total*0.95; if(executor){ executor.balance = (parseFloat(executor.balance)||0)+gain; executor.bonus_balance = (parseFloat(executor.bonus_balance)||0)+10; executor.totalEarned = (parseFloat(executor.totalEarned)||0)+gain; executor.tasksCompleted = (parseInt(executor.tasksCompleted)||0)+1; await saveToGoogle('updateUser', { id: executor.id, balance: executor.balance, bonus_balance: executor.bonus_balance }); await saveToGoogle('addTaskCompleteBonus', { userId: executor.id }); addNotification(executor.id, `💰 Задание "${task.description.substring(0,30)}..." подтверждено! +${gain.toFixed(2)} ₽`, taskId); } await saveToGoogle('updateTask', { id: task.id, status: 'completed', completedAt: new Date().toISOString() }); await loadDataFromGoogle(true); currentUser = users.find(u=>u.id===currentUser.id); showToast(`💰 Подтверждено! Исполнитель получил ${gain.toFixed(2)} ₽`, false); if(btn) btn.disabled=false; renderApp(); }
+    async function confirmReceipt(taskId, btn) { if(btn) btn.disabled=true; let task = tasks.find(t=>t.id==taskId); if(!task || task.status !== 'awaiting_confirmation'){ if(btn) btn.disabled=false; return; } if(task.creatorId !== currentUser.id){ if(btn) btn.disabled=false; return; } let executor = users.find(u=>u.id===task.takerId); let total = parseFloat(task.price); let gain = total*0.95; if(executor){ executor.balance = (parseFloat(executor.balance)||0)+gain; executor.bonus_balance = (parseFloat(executor.bonus_balance)||0)+10; executor.totalEarned = (parseFloat(executor.totalEarned)||0)+gain; executor.tasksCompleted = (parseInt(executor.tasksCompleted)||0)+1; await saveToGoogle('updateUser', { id: executor.id, balance: executor.balance, bonus_balance: executor.bonus_balance, totalEarned: executor.totalEarned, tasksCompleted: executor.tasksCompleted }); await saveToGoogle('addTaskCompleteBonus', { userId: executor.id }); addNotification(executor.id, `💰 Задание "${task.description.substring(0,30)}..." подтверждено! +${gain.toFixed(2)} ₽`, taskId); } await saveToGoogle('updateTask', { id: task.id, status: 'completed', completedAt: new Date().toISOString() }); await loadDataFromGoogle(true); currentUser = users.find(u=>u.id===currentUser.id); checkAndAwardRanks(currentUser); if(executor) checkAndAwardRanks(executor); showToast(`💰 Подтверждено! Исполнитель получил ${gain.toFixed(2)} ₽`, false); if(btn) btn.disabled=false; renderApp(); }
 
-    async function rejectReceipt(taskId, btn) { if(btn) btn.disabled=true; let task = tasks.find(t=>t.id==taskId); if(!task || task.status !== 'awaiting_confirmation'){ if(btn) btn.disabled=false; return; } if(task.creatorId !== currentUser.id){ if(btn) btn.disabled=false; return; } if(task.payment_type === 'bonus') currentUser.bonus_balance += parseFloat(task.price); else currentUser.balance += parseFloat(task.price); await saveToGoogle('updateUser', { id: currentUser.id, balance: currentUser.balance, bonus_balance: currentUser.bonus_balance }); await saveToGoogle('updateTask', { id: task.id, status: 'disputed' }); await loadDataFromGoogle(true); currentUser = users.find(u=>u.id===currentUser.id); showToast('⚠️ Деньги возвращены', false); if(btn) btn.disabled=false; renderApp(); }
+    async function rejectReceipt(taskId, btn) { if(btn) btn.disabled=true; let task = tasks.find(t=>t.id==taskId); if(!task || task.status !== 'awaiting_confirmation'){ if(btn) btn.disabled=false; return; } if(task.creatorId !== currentUser.id){ if(btn) btn.disabled=false; return; } if(task.payment_type === 'bonus') currentUser.bonus_balance += parseFloat(task.price); else currentUser.balance += parseFloat(task.price); await saveToGoogle('updateUser', { id: currentUser.id, balance: currentUser.balance, bonus_balance: currentUser.bonus_balance }); await saveToGoogle('updateTask', { id: task.id, status: 'disputed' }); await loadDataFromGoogle(true); currentUser = users.find(u=>u.id===currentUser.id); checkAndAwardRanks(currentUser); showToast('⚠️ Деньги возвращены', false); if(btn) btn.disabled=false; renderApp(); }
 
-    async function deleteTask(taskId, btn) { if(btn) btn.disabled=true; if(!confirm('Удалить задание? Деньги вернутся на счёт.')){ if(btn) btn.disabled=false; return; } let task = tasks.find(t=>t.id==taskId); if(task && task.status==='open' && task.creatorId===currentUser.id){ const tp = parseFloat(task.price); if(!isNaN(tp) && tp>0){ if(task.payment_type === 'bonus') currentUser.bonus_balance += tp; else currentUser.balance += tp; await saveToGoogle('updateUser', { id: currentUser.id, balance: currentUser.balance, bonus_balance: currentUser.bonus_balance }); showToast(`💰 Возвращено ${tp} ₽`, false); } } await saveToGoogle('deleteTask', { id: taskId }); await loadDataFromGoogle(true); currentUser = users.find(u=>u.id===currentUser.id); showToast('🗑️ Задание удалено', false); if(btn) btn.disabled=false; renderApp(); }
+    async function deleteTask(taskId, btn) { if(btn) btn.disabled=true; if(!confirm('Удалить задание? Деньги вернутся на счёт.')){ if(btn) btn.disabled=false; return; } let task = tasks.find(t=>t.id==taskId); if(task && task.status==='open' && task.creatorId===currentUser.id){ const tp = parseFloat(task.price); if(!isNaN(tp) && tp>0){ if(task.payment_type === 'bonus') currentUser.bonus_balance += tp; else currentUser.balance += tp; await saveToGoogle('updateUser', { id: currentUser.id, balance: currentUser.balance, bonus_balance: currentUser.bonus_balance }); showToast(`💰 Возвращено ${tp} ₽`, false); } } await saveToGoogle('deleteTask', { id: taskId }); await loadDataFromGoogle(true); currentUser = users.find(u=>u.id===currentUser.id); checkAndAwardRanks(currentUser); showToast('🗑️ Задание удалено', false); if(btn) btn.disabled=false; renderApp(); }
 
-    function showEditModal(task) { let newDesc = prompt('Новое описание:', task.description); if(!newDesc) return; let newPrice = parseFloat(prompt('Новая цена:', task.price)); if(isNaN(newPrice)||newPrice<=0){ showToast('❌ Цена >0', true); return; } let newLoc = prompt('Новое место:', task.location); if(!newLoc) return; let newScope = confirm('Для всех участников?') ? 'all' : 'school'; saveToGoogle('updateTask', { id: task.id, description: newDesc, price: newPrice, location: newLoc, scope: newScope }).then(async () => { await loadDataFromGoogle(true); currentUser = users.find(u=>u.id===currentUser.id); showToast('✅ Задание обновлено', false); renderApp(); }); }
+    function showEditModal(task) { let newDesc = prompt('Новое описание:', task.description); if(!newDesc) return; let newPrice = parseFloat(prompt('Новая цена:', task.price)); if(isNaN(newPrice)||newPrice<=0){ showToast('❌ Цена >0', true); return; } let newLoc = prompt('Новое место:', task.location); if(!newLoc) return; let newScope = confirm('Для всех участников?') ? 'all' : 'school'; saveToGoogle('updateTask', { id: task.id, description: newDesc, price: newPrice, location: newLoc, scope: newScope }).then(async () => { await loadDataFromGoogle(true); currentUser = users.find(u=>u.id===currentUser.id); checkAndAwardRanks(currentUser); showToast('✅ Задание обновлено', false); renderApp(); }); }
 
-    async function addReview(toUserId, taskId, rating, comment) { let r = await saveToGoogle('addReview', { id: Date.now().toString(), fromUserId: currentUser.id, toUserId, taskId, rating: parseInt(rating), comment: comment||'', createdAt: new Date().toISOString() }); if(r?.success){ showToast('✅ Отзыв добавлен!', false); await loadDataFromGoogle(true); renderApp(); } else showToast('❌ Ошибка', true); }
+    async function addReview(toUserId, taskId, rating, comment) { let r = await saveToGoogle('addReview', { id: Date.now().toString(), fromUserId: currentUser.id, toUserId, taskId, rating: parseInt(rating), comment: comment||'', createdAt: new Date().toISOString() }); if(r?.success){ showToast('✅ Отзыв добавлен!', false); await loadDataFromGoogle(true); currentUser = users.find(u=>u.id===currentUser.id); const targetUser = users.find(u=>u.id===toUserId); if(targetUser) checkAndAwardRanks(targetUser); checkAndAwardRanks(currentUser); renderApp(); } else showToast('❌ Ошибка', true); }
     function showReviewModal(taskId, toUserId) { let rating = prompt('Оцените выполнение (1-5):', '5'); if(!rating) return; let rn = parseInt(rating); if(rn<1||rn>5){ showToast('❌ Оценка от 1 до 5', true); return; } let comment = prompt('Ваш комментарий:', ''); addReview(toUserId, taskId, rn, comment||''); }
 
-    async function adminChangeBalance(userId, amount, isBonus) { let u = users.find(u=>u.id===userId); if(!u) return; if(isBonus){ u.bonus_balance = (parseFloat(u.bonus_balance)||0)+amount; if(currentUser && currentUser.id===userId) currentUser.bonus_balance = u.bonus_balance; } else { u.balance = (parseFloat(u.balance)||0)+amount; if(currentUser && currentUser.id===userId) currentUser.balance = u.balance; } showToast((amount>0?'+':'')+amount+' ₽ для '+u.name, false); await saveToGoogle('updateUser', { id: userId, balance: u.balance, bonus_balance: u.bonus_balance }); await loadDataFromGoogle(true); renderApp(); }
+    async function adminChangeBalance(userId, amount, isBonus) { let u = users.find(u=>u.id===userId); if(!u) return; if(isBonus){ u.bonus_balance = (parseFloat(u.bonus_balance)||0)+amount; if(currentUser && currentUser.id===userId) currentUser.bonus_balance = u.bonus_balance; } else { u.balance = (parseFloat(u.balance)||0)+amount; if(currentUser && currentUser.id===userId) currentUser.balance = u.balance; } showToast((amount>0?'+':'')+amount+' ₽ для '+u.name, false); await saveToGoogle('updateUser', { id: userId, balance: u.balance, bonus_balance: u.bonus_balance }); await loadDataFromGoogle(true); if(currentUser && currentUser.id===userId) checkAndAwardRanks(currentUser); renderApp(); }
     function showBanModal(userId) { let u = users.find(u=>u.id===userId); if(!u) return; let reason = prompt('Причина блокировки:', 'Нарушение правил'); if(!reason) return; saveToGoogle('updateUser', { id: userId, isBanned: 'true', banReason: reason }).then(async () => { await loadDataFromGoogle(true); if(currentUser && currentUser.id===userId) logout(); else showToast('⛔ '+u.name+' заблокирован', false); renderApp(); }); }
     function unbanUser(userId) { saveToGoogle('updateUser', { id: userId, isBanned: 'false', banReason: '' }).then(async () => { await loadDataFromGoogle(true); showToast('✅ Пользователь разблокирован', false); renderApp(); }); }
     function requestAdminAccess() { let pwd = prompt("Пароль администратора:"); if(pwd === 'dsl382dAZX') { adminMode = true; showToast("👑 Админ-панель активирована", false); renderApp(); } else showToast("❌ Неверный пароль", true); }
@@ -234,6 +412,128 @@
 
     function renderNotifications() { const un = notifications.filter(n=>n.userId===currentUser?.id).sort((a,b)=>b.id-a.id); const uc = un.filter(n=>!n.read).length; return `<div class="notifications-panel"><h4>🔔 Уведомления ${uc>0?`<span class="notification-badge">${uc}</span>`:''}</h4>${un.length===0?'<p>Нет уведомлений</p>':un.map(n=>`<div class="notification-item ${!n.read?'unread':''}" data-notif-id="${n.id}">📌 ${escapeHtml(n.text)}<br><small>${formatDate(n.createdAt)}</small></div>`).join('')}${un.length>0?'<button id="markNotifReadBtn" class="btn-info" style="margin-top:10px;width:100%;">Пометить все прочитанными</button>':''}</div>`; }
     function markNotificationsRead() { notifications.forEach(n=>{ if(n.userId===currentUser?.id) n.read=true; }); saveLocalData(); renderApp(); }
+
+    // Рендер блока со званиями
+    function renderRanks() {
+        if (!currentUser) return '';
+        const earnedRanks = currentUser.earnedRanks || [];
+        const allRanks = [...RANKS.tasks, ...RANKS.money, ...RANKS.referrals, ...RANKS.reviews, ...RANKS.rating];
+        const nextRank = getNextRank(currentUser);
+        const progressPercent = nextRank ? ((nextRank.current / nextRank.need) * 100) : 100;
+        
+        let ranksHtml = '<div class="main-progress"><strong>🏆 Следующее звание</strong><br>';
+        if (nextRank) {
+            ranksHtml += `<span style="font-size:1.2rem;">${nextRank.rank.name}</span><br><small>Осталось ${nextRank.need - nextRank.current} заданий</small>
+            <div class="main-progress-bar-bg"><div class="main-progress-bar-fill" style="width: ${progressPercent}%;"></div></div>`;
+        } else {
+            ranksHtml += '<span>🎉 Все звания получены! Ты легенда!</span>';
+        }
+        ranksHtml += '</div><div class="ranks-container">';
+        
+        for (const rank of allRanks) {
+            let earned = false;
+            if (rank.name.includes('Новичок')) earned = true;
+            else earned = earnedRanks.includes(rank.name);
+            
+            let progressHtml = '';
+            if (rank.name === '🐣 Новичок') {
+                progressHtml = '<div class="rank-progress"><div class="progress-bar-bg"><div class="progress-bar-fill" style="width: 100%;"></div></div></div>';
+            } else if (rank.name === '📝 Стажёр') {
+                const need = 1;
+                const current = currentUser.tasksCompleted || 0;
+                const percent = Math.min(100, (current / need) * 100);
+                progressHtml = `<div class="rank-progress"><div class="progress-bar-bg"><div class="progress-bar-fill" style="width: ${percent}%;"></div></div><small>${current}/${need}</small></div>`;
+            } else if (rank.name === '🏃 Бегунок') {
+                const need = 3;
+                const current = currentUser.tasksCompleted || 0;
+                const percent = Math.min(100, (current / need) * 100);
+                progressHtml = `<div class="rank-progress"><div class="progress-bar-bg"><div class="progress-bar-fill" style="width: ${percent}%;"></div></div><small>${current}/${need}</small></div>`;
+            } else if (rank.name === '⚡ Шустрый') {
+                const need = 5;
+                const current = currentUser.tasksCompleted || 0;
+                const percent = Math.min(100, (current / need) * 100);
+                progressHtml = `<div class="rank-progress"><div class="progress-bar-bg"><div class="progress-bar-fill" style="width: ${percent}%;"></div></div><small>${current}/${need}</small></div>`;
+            } else if (rank.name === '🔥 Горячий') {
+                const need = 10;
+                const current = currentUser.tasksCompleted || 0;
+                const percent = Math.min(100, (current / need) * 100);
+                progressHtml = `<div class="rank-progress"><div class="progress-bar-bg"><div class="progress-bar-fill" style="width: ${percent}%;"></div></div><small>${current}/${need}</small></div>`;
+            } else if (rank.name === '🎯 Снайпер') {
+                const need = 15;
+                const current = currentUser.tasksCompleted || 0;
+                const percent = Math.min(100, (current / need) * 100);
+                progressHtml = `<div class="rank-progress"><div class="progress-bar-bg"><div class="progress-bar-fill" style="width: ${percent}%;"></div></div><small>${current}/${need}</small></div>`;
+            } else if (rank.name === '💪 Мастер') {
+                const need = 20;
+                const current = currentUser.tasksCompleted || 0;
+                const percent = Math.min(100, (current / need) * 100);
+                progressHtml = `<div class="rank-progress"><div class="progress-bar-bg"><div class="progress-bar-fill" style="width: ${percent}%;"></div></div><small>${current}/${need}</small></div>`;
+            } else if (rank.name === '⭐ Эксперт') {
+                const need = 30;
+                const current = currentUser.tasksCompleted || 0;
+                const percent = Math.min(100, (current / need) * 100);
+                progressHtml = `<div class="rank-progress"><div class="progress-bar-bg"><div class="progress-bar-fill" style="width: ${percent}%;"></div></div><small>${current}/${need}</small></div>`;
+            } else if (rank.name === '🦅 Ас') {
+                const need = 40;
+                const current = currentUser.tasksCompleted || 0;
+                const percent = Math.min(100, (current / need) * 100);
+                progressHtml = `<div class="rank-progress"><div class="progress-bar-bg"><div class="progress-bar-fill" style="width: ${percent}%;"></div></div><small>${current}/${need}</small></div>`;
+            } else if (rank.name === '👑 Легенда') {
+                const need = 50;
+                const current = currentUser.tasksCompleted || 0;
+                const percent = Math.min(100, (current / need) * 100);
+                progressHtml = `<div class="rank-progress"><div class="progress-bar-bg"><div class="progress-bar-fill" style="width: ${percent}%;"></div></div><small>${current}/${need}</small></div>`;
+            } else if (rank.name.includes('💸') || rank.name.includes('🍕') || rank.name.includes('🎧') || rank.name.includes('🎮') || rank.name.includes('📱') || rank.name.includes('💎')) {
+                let need = 0;
+                if (rank.name === '💸 Карманные') need = 100;
+                else if (rank.name === '🍕 Пицца') need = 500;
+                else if (rank.name === '🎧 Наушники') need = 1000;
+                else if (rank.name === '🎮 Приставка') need = 2000;
+                else if (rank.name === '📱 Телефон') need = 5000;
+                else if (rank.name === '💎 Бриллиант') need = 10000;
+                const current = currentUser.totalEarned || 0;
+                const percent = Math.min(100, (current / need) * 100);
+                progressHtml = `<div class="rank-progress"><div class="progress-bar-bg"><div class="progress-bar-fill" style="width: ${percent}%;"></div></div><small>${current}/${need}₽</small></div>`;
+            } else if (rank.name.includes('🗣️') || rank.name.includes('📢') || rank.name.includes('🎤') || rank.name.includes('🌟') || rank.name.includes('🏛️')) {
+                let need = 0;
+                if (rank.name === '🗣️ Говорун') need = 1;
+                else if (rank.name === '📢 Глашатай') need = 3;
+                else if (rank.name === '🎤 Агитатор') need = 5;
+                else if (rank.name === '🌟 Звезда') need = 10;
+                else if (rank.name === '🏛️ Основатель') need = 20;
+                const current = currentUser.referral_count || 0;
+                const percent = Math.min(100, (current / need) * 100);
+                progressHtml = `<div class="rank-progress"><div class="progress-bar-bg"><div class="progress-bar-fill" style="width: ${percent}%;"></div></div><small>${current}/${need}</small></div>`;
+            } else if (rank.name.includes('😊') || rank.name.includes('🌟') || rank.name.includes('💎')) {
+                let need = 0;
+                if (rank.name === '😊 Душнила') need = 3;
+                else if (rank.name === '🌟 Лучик') need = 7;
+                else if (rank.name === '💎 Алмазный') need = 15;
+                const fiveStarReviews = reviews.filter(r => r.toUserId === currentUser.id && parseInt(r.rating) === 5).length;
+                const percent = Math.min(100, (fiveStarReviews / need) * 100);
+                progressHtml = `<div class="rank-progress"><div class="progress-bar-bg"><div class="progress-bar-fill" style="width: ${percent}%;"></div></div><small>${fiveStarReviews}/${need}</small></div>`;
+            } else if (rank.name.includes('👍') || rank.name.includes('🤩')) {
+                let need = rank.name === '👍 Норм' ? 4.0 : 4.5;
+                const current = parseFloat(currentUser.rating) || 0;
+                const percent = Math.min(100, (current / need) * 100);
+                progressHtml = `<div class="rank-progress"><div class="progress-bar-bg"><div class="progress-bar-fill" style="width: ${percent}%;"></div></div><small>${current.toFixed(1)}/${need}</small></div>`;
+            }
+            
+            ranksHtml += `
+                <div class="rank-item ${earned ? 'earned' : ''}">
+                    <div class="rank-icon">${rank.name.split(' ')[0]}</div>
+                    <div class="rank-info">
+                        <div class="rank-name">${rank.name}</div>
+                        <div class="rank-desc">${rank.desc}</div>
+                        ${progressHtml}
+                    </div>
+                    ${earned ? '<div class="rank-badge">✅ Получено</div>' : '<div class="rank-badge">🔒 Не получено</div>'}
+                </div>
+            `;
+        }
+        ranksHtml += '</div>';
+        return ranksHtml;
+    }
 
     async function renderApp() {
         let appDiv = document.getElementById('app');
@@ -290,7 +590,10 @@
         };
 
         let createForm = `<div class="card"><h3>📝 Создать задание</h3><textarea id="taskDesc" rows="2" placeholder="Что нужно сделать?"></textarea><input type="number" id="taskPrice" placeholder="Цена (руб)"><input type="text" id="taskLocation" placeholder="Место"><select id="paymentType"><option value="main">💰 Основной (${(parseFloat(currentUser.balance)||0).toFixed(2)} ₽)</option><option value="bonus">🎁 Бонусный (${(parseFloat(currentUser.bonus_balance)||0).toFixed(2)} ₽)</option></select><select id="taskScope"><option value="school">🏫 Только моя школа и корпус</option><option value="all">🌍 Для всех</option></select><button class="btn-primary" id="createBtn">Создать</button></div>`;
-        let profileHtml = `<div class="card"><h3>👤 Профиль</h3><p><strong>Имя:</strong> ${escapeHtml(currentUser.name)}</p><p><strong>Школа/Корпус:</strong> ${escapeHtml(currentUser.school)} / ${escapeHtml(currentUser.corp)}</p><p><strong>💰 Основной:</strong> ${(parseFloat(currentUser.balance)||0).toFixed(2)} ₽</p><p><strong>🎁 Бонусный:</strong> ${(parseFloat(currentUser.bonus_balance)||0).toFixed(2)} ₽</p><p><strong>👥 Приглашено:</strong> ${currentUser.referral_count||0}</p><p><strong>⭐ Рейтинг:</strong> ${getRatingStars(userRating)} (${userRatingCnt})</p><p><strong>📊 Выполнено:</strong> ${currentUser.tasksCompleted||0}</p><div class="referral-code" onclick="copyReferralLink()">🔗 ${getReferralLink()}</div></div>`;
+        
+        let ranksHtml = renderRanks();
+        
+        let profileHtml = `<div class="card"><h3>👤 Профиль</h3><p><strong>Имя:</strong> ${escapeHtml(currentUser.name)}</p><p><strong>Школа/Корпус:</strong> ${escapeHtml(currentUser.school)} / ${escapeHtml(currentUser.corp)}</p><p><strong>💰 Основной:</strong> ${(parseFloat(currentUser.balance)||0).toFixed(2)} ₽</p><p><strong>🎁 Бонусный:</strong> ${(parseFloat(currentUser.bonus_balance)||0).toFixed(2)} ₽</p><p><strong>👥 Приглашено:</strong> ${currentUser.referral_count||0}</p><p><strong>⭐ Рейтинг:</strong> ${getRatingStars(userRating)} (${userRatingCnt})</p><p><strong>📊 Выполнено:</strong> ${currentUser.tasksCompleted||0}</p><p><strong>💰 Заработано:</strong> ${(parseFloat(currentUser.totalEarned)||0).toFixed(2)} ₽</p><div class="referral-code" onclick="copyReferralLink()">🔗 ${getReferralLink()}</div>${ranksHtml}</div>`;
 
         let activeTab = window._activeTab || 'allTasks';
         let content = '';
