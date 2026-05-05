@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>SchoolTask - Биржа поручений (чат только для участников)</title>
+    <title>SchoolTask - Биржа поручений (чат, уведомления, доска почёта)</title>
     <style>
         * {
             margin: 0;
@@ -392,6 +392,20 @@
             border-bottom: 1px solid #e2e8f0;
         }
 
+        .balance-control {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .balance-control input {
+            width: 80px;
+            margin: 0;
+            padding: 6px;
+            border-radius: 30px;
+        }
+
         /* Доска объявлений */
         .announcement {
             background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
@@ -777,7 +791,7 @@
     let filters = { scope: 'school', minPrice: '', maxPrice: '' };
     let isLoading = false;
     
-    // ========== НОВЫЕ СИСТЕМЫ ==========
+    // НОВЫЕ СИСТЕМЫ
     let notifications = [];
     let taskMessages = {};
 
@@ -1218,18 +1232,14 @@
         renderApp();
     }
 
-    // ИСПРАВЛЕННОЕ ВЗЯТИЕ ЗАДАНИЯ (через обычный updateTask)
     async function takeTask(taskId, btn) {
         if (btn) btn.disabled = true;
-        
-        const takedAt = new Date().toISOString();
-        const result = await saveToGoogle('updateTask', { 
-            id: taskId, 
-            status: 'in_progress', 
+        const result = await saveToGoogle('updateTask', {
+            id: taskId,
+            status: 'in_progress',
             takerId: currentUser.id,
-            takenAt: takedAt
+            takenAt: new Date().toISOString()
         });
-        
         if (result && result.success) {
             await loadDataFromGoogle(true);
             currentUser = users.find(u => u.id === currentUser.id);
@@ -1466,15 +1476,14 @@
         return (task.creatorId === currentUser.id || task.takerId === currentUser.id);
     }
 
-    function sendMessage(taskId, text) {
+    async function sendMessage(taskId, text) {
         if (!text.trim()) return;
-        
         const task = tasks.find(t => t.id == taskId);
         if (!canUserChat(task)) {
             showToast('❌ Чат доступен только создателю и исполнителю задания', true);
             return;
         }
-        
+
         if (!taskMessages[taskId]) taskMessages[taskId] = [];
         taskMessages[taskId].push({
             senderId: currentUser.id,
@@ -1483,19 +1492,39 @@
             timestamp: new Date().toISOString()
         });
         saveLocalData();
-        
+
+        // Сохраняем сообщение на сервере
+        await saveToGoogle('saveMessage', {
+            taskId: taskId,
+            messages: JSON.stringify(taskMessages[taskId])
+        });
+
         const otherId = task.creatorId === currentUser.id ? task.takerId : task.creatorId;
-        if (otherId) addNotification(otherId, `💬 Новое сообщение в чате задания "${task.description.substring(0,30)}..."`, taskId);
-        
+        if (otherId && otherId !== '') {
+            addNotification(otherId, `💬 Новое сообщение в чате задания от ${currentUser.name}`, taskId);
+        }
+
         renderApp();
+    }
+
+    async function loadMessagesForTask(taskId) {
+        const result = await saveToGoogle('getMessages', { taskId });
+        if (result && result.messages && result.messages !== '[]') {
+            try {
+                const messages = JSON.parse(result.messages);
+                if (Array.isArray(messages) && messages.length > 0) {
+                    taskMessages[taskId] = messages;
+                    saveLocalData();
+                }
+            } catch(e) {}
+        }
     }
 
     function renderChat(task) {
         if (!currentUser) return '';
-        
         const canChat = canUserChat(task);
         const messages = taskMessages[task.id] || [];
-        
+
         if (!canChat) {
             return `
                 <div class="chat-container">
@@ -1505,7 +1534,7 @@
                 </div>
             `;
         }
-        
+
         return `
             <div class="chat-container">
                 <div class="chat-messages">
@@ -1531,7 +1560,7 @@
         const top3 = sorted.slice(0,3);
         const lastHonor = localStorage.getItem('lastHonorDate');
         const today = new Date().toDateString();
-        if (lastHonor !== today) {
+        if (lastHonor !== today && top3.length > 0) {
             const bonuses = [30, 20, 10];
             for (let i = 0; i < top3.length; i++) {
                 if (top3[i]) {
@@ -1578,6 +1607,11 @@
     // ========== ОСНОВНОЙ РЕНДЕР ==========
     async function renderApp() {
         let appDiv = document.getElementById('app');
+        
+        // Проверяем, загружены ли данные
+        if (users.length === 0 && tasks.length === 0) {
+            await loadDataFromGoogle(false);
+        }
 
         if (!currentUser) {
             let isLogin = authMode === 'login';
@@ -1699,6 +1733,13 @@
         const top3 = await updateHonorBoard();
         let isAdmin = currentUser.name === 'leshr_ak47';
 
+        // Загружаем сообщения для каждого задания, где пользователь участник
+        for (const task of tasks) {
+            if (canUserChat(task) && !taskMessages[task.id]) {
+                await loadMessagesForTask(task.id);
+            }
+        }
+
         let adminPanelHtml = '';
         if (isAdmin && adminMode) {
             let filteredUsers = users.filter(u => adminSearchTerm === '' || u.name.toLowerCase().includes(adminSearchTerm.toLowerCase()));
@@ -1716,7 +1757,11 @@
                     </div>
                     <div class="users-table">
                         <table>
-                            <thead><tr><th>Имя</th><th>Школа</th><th>Корпус</th><th>Основной</th><th>Бонусный</th><th>Рейтинг</th><th>Статус</th><th>Управление</th><th>Действия</th></tr></thead>
+                            <thead>
+                                <tr style="background:#f1f5f9;">
+                                    <th>Имя</th><th>Школа</th><th>Корпус</th><th>Основной</th><th>Бонусный</th><th>Рейтинг</th><th>Статус</th><th>Управление</th><th>Действия</th>
+                                </tr>
+                            </thead>
                             <tbody>
                                 ${filteredUsers.map(user => {
                                     let isBanned = user.isBanned === 'true';
@@ -1751,13 +1796,12 @@
 
         let adminEntryBtn = isAdmin ? `<button id="adminPanelBtn" style="background:#2c3e50;color:white;">🔐 Админка</button>` : '';
 
-        // ИСПРАВЛЕННЫЙ ФИЛЬТР ЗАДАНИЙ: одна школа И один корпус
+        // ФИЛЬТР ЗАДАНИЙ: одна школа И один корпус
         let openTasks = tasks.filter(t => {
             if (t.status !== 'open') return false;
             if (t.scope === 'all') return true;
             return t.creatorSchool === currentUser.school && t.creatorCorp === currentUser.corp;
         });
-        
         if (filters.minPrice) openTasks = openTasks.filter(t => parseFloat(t.price) >= parseFloat(filters.minPrice));
         if (filters.maxPrice) openTasks = openTasks.filter(t => parseFloat(t.price) <= parseFloat(filters.maxPrice));
 
@@ -1833,7 +1877,7 @@
                 </select>
                 <select id="taskScope">
                     <option value="school">🏫 Только моя школа и корпус</option>
-                    <option value="all">🌍 Для всех участников</option>
+                    <option value="all">🌍 Для всех</option>
                 </select>
                 <button class="btn-primary" id="createBtn">Создать</button>
             </div>
@@ -1861,7 +1905,7 @@
                 <div class="filter-group">
                     <select id="filterScope">
                         <option value="school" ${filters.scope === 'school' ? 'selected' : ''}>🏫 Только моя школа и корпус</option>
-                        <option value="all" ${filters.scope === 'all' ? 'selected' : ''}>🌍 Для всех участников</option>
+                        <option value="all" ${filters.scope === 'all' ? 'selected' : ''}>🌍 Для всех</option>
                     </select>
                     <input type="number" id="filterMinPrice" placeholder="Цена от" value="${filters.minPrice}">
                     <input type="number" id="filterMaxPrice" placeholder="Цена до" value="${filters.maxPrice}">
@@ -2038,7 +2082,6 @@
             });
         }
 
-        // Обработчики для кнопок заданий
         document.querySelectorAll('.take-btn').forEach(btn => {
             btn.onclick = () => takeTask(btn.getAttribute('data-id'), btn);
         });
