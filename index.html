@@ -387,7 +387,7 @@
         }
         .honor-medal { font-size: 2rem; }
 
-        /* Стили для бурмалды (апгрейдера) */
+        /* Стили для бурмалды */
         .upgrade-panel {
             text-align: center;
         }
@@ -638,7 +638,47 @@
     function closeWalletModal() { if(walletModal){ walletModal.remove(); walletModal=null; } renderApp(); }
     function showPaymentAlert(type) { if(type==='deposit') alert('💳 ПОПОЛНЕНИЕ БАЛАНСА\n\nДля пополнения баланса напишите в Telegram:\n@leshr_ak47'); else alert('💸 ВЫВОД СРЕДСТВ\n\nНапишите в Telegram:\n@leshr_ak47\n\nМин. сумма: 100₽'); }
 
-    async function createTask(desc,price,loc,payType,scope,btn) {
+    // ========== ФУНКЦИЯ ДЛЯ ОПРЕДЕЛЕНИЯ ЗВАНИЯ И ПРОГРЕССА ==========
+    const rankThresholds = [
+        { name: '🐣 Новичок', color: '#aaaaaa', tasksNeeded: 0, emoji: '🐣' },
+        { name: '🌱 Ученик', color: '#87CEEB', tasksNeeded: 10, emoji: '🌱' },
+        { name: '📌 Опытный', color: '#90EE90', tasksNeeded: 20, emoji: '📌' },
+        { name: '⭐ Продвинутый', color: '#cd7f32', tasksNeeded: 50, emoji: '⭐' },
+        { name: '💎 Мастер', color: '#c0c0c0', tasksNeeded: 100, emoji: '💎' },
+        { name: '👑 Легенда', color: '#ffd700', tasksNeeded: 200, emoji: '👑' }
+    ];
+
+    function getUserRankInfo(user) {
+        const completed = user.tasksCompleted || 0;
+        let currentRank = rankThresholds[0];
+        let nextRank = null;
+        for (let i = rankThresholds.length - 1; i >= 0; i--) {
+            if (completed >= rankThresholds[i].tasksNeeded) {
+                currentRank = rankThresholds[i];
+                nextRank = rankThresholds[i + 1] || null;
+                break;
+            }
+        }
+        if (!nextRank && completed < rankThresholds[0].tasksNeeded) {
+            currentRank = rankThresholds[0];
+            nextRank = rankThresholds[1];
+        }
+        let progress = 100;
+        let needed = 0;
+        let remaining = 0;
+        if (nextRank) {
+            const currentNeeded = currentRank.tasksNeeded;
+            const nextNeeded = nextRank.tasksNeeded;
+            needed = nextNeeded - currentNeeded;
+            const currentProgress = completed - currentNeeded;
+            progress = Math.min(100, Math.max(0, (currentProgress / needed) * 100));
+            remaining = nextNeeded - completed;
+        }
+        return { currentRank, nextRank, progress, remaining, completed };
+    }
+
+    // -------------------- ОСНОВНЫЕ ФУНКЦИИ --------------------
+    async function createTask(desc, price, loc, payType, scope, btn) {
         if(!desc||!price||!loc){ showToast('❌ Заполните все поля',true); if(btn) btn.disabled=false; return; }
         if(btn) btn.disabled=true;
         let priceNum=parseFloat(price);
@@ -647,7 +687,21 @@
         if(balance<priceNum){ showToast('❌ Недостаточно средств',true); if(btn) btn.disabled=false; return; }
         if(payType==='bonus') currentUser.bonus_balance-=priceNum;
         else currentUser.balance-=priceNum;
-        let newTask={ id:Date.now().toString(), creatorId:currentUser.id, creatorSchool:currentUser.school, creatorCorp:currentUser.corp, description:desc, price:priceNum, location:loc, payment_type:payType, scope, status:'open', takerId:'', createdAt:new Date().toISOString() };
+        let newTask={ 
+            id: Date.now().toString(), 
+            creatorId: currentUser.id, 
+            creatorSchool: currentUser.school, 
+            creatorCorp: currentUser.corp, 
+            description: desc, 
+            price: priceNum, 
+            location: loc, 
+            payment_type: payType, 
+            scope, 
+            status: 'open', 
+            takerId: '', 
+            createdAt: new Date().toISOString(),
+            paymentProcessed: 'false'
+        };
         let createResult=await saveToGoogle('createTask',newTask);
         if(!createResult?.success){ showToast('❌ Ошибка создания задания',true); if(payType==='bonus') currentUser.bonus_balance+=priceNum; else currentUser.balance+=priceNum; if(btn) btn.disabled=false; renderApp(); return; }
         await saveToGoogle('updateUser',{ id:currentUser.id, balance:currentUser.balance, bonus_balance:currentUser.bonus_balance });
@@ -658,21 +712,29 @@
         renderApp();
     }
 
-    async function takeTask(id,btn) {
-        if(btn) btn.disabled=true;
-        const result=await saveToGoogle('takeTaskSafe',{ taskId:id, userId:currentUser.id });
-        if(result&&result.success){
+    async function takeTask(id, btn) {
+        if(btn) { btn.disabled = true; btn.style.transform = 'scale(0.96)'; }
+        let task = tasks.find(t => t.id == id);
+        if(!task || task.status !== 'open') {
+            showToast('❌ Задание уже недоступно', true);
+            if(btn) { btn.disabled = false; btn.style.transform = ''; }
+            return;
+        }
+        const result = await saveToGoogle('takeTaskSafe', { taskId: id, userId: currentUser.id });
+        if(result && result.success){
             await loadData(true);
-            currentUser=users.find(u=>u.id===currentUser.id);
-            const task=tasks.find(t=>t.id==id);
-            if(task) addNotification(task.creatorId,`${currentUser.name} взял твоё задание "${task.description.substring(0,30)}..."`,id);
-            showToast('📢 Вы взяли задание!',false);
-        } else { showToast(result?.error||'❌ Не удалось взять задание',true); }
-        if(btn) btn.disabled=false;
+            currentUser = users.find(u => u.id === currentUser.id);
+            const task = tasks.find(t => t.id == id);
+            if(task) addNotification(task.creatorId, `${currentUser.name} взял твоё задание "${task.description.substring(0,30)}..."`, id);
+            showToast('📢 Вы взяли задание!', false);
+        } else {
+            showToast(result?.error || '❌ Не удалось взять задание', true);
+        }
+        if(btn) { btn.disabled = false; btn.style.transform = ''; }
         renderApp();
     }
 
-    async function confirmCompletion(id,btn) {
+    async function confirmCompletion(id, btn) {
         if(btn) btn.disabled=true;
         let task=tasks.find(t=>t.id==id);
         if(!task||task.status!=='in_progress'){ if(btn) btn.disabled=false; return; }
@@ -686,27 +748,68 @@
         renderApp();
     }
 
-    async function confirmReceipt(id,btn) {
+    async function confirmReceipt(id, btn) {
         if(btn) btn.disabled=true;
-        let task=tasks.find(t=>t.id==id);
-        if(!task||task.status!=='awaiting_confirmation'){ if(btn) btn.disabled=false; return; }
-        if(task.creatorId!==currentUser.id){ if(btn) btn.disabled=false; return; }
-        let executor=users.find(u=>u.id===task.takerId);
-        let total=parseFloat(task.price);
-        let gain=total*0.95;
-        if(executor){
-            executor.balance=(parseFloat(executor.balance)||0)+gain;
-            executor.bonus_balance=(parseFloat(executor.bonus_balance)||0)+10;
-            executor.totalEarned=(parseFloat(executor.totalEarned)||0)+gain;
-            executor.tasksCompleted=(parseInt(executor.tasksCompleted)||0)+1;
-            await saveToGoogle('updateUser',{ id:executor.id, balance:executor.balance, bonus_balance:executor.bonus_balance, totalEarned:executor.totalEarned, tasksCompleted:executor.tasksCompleted });
-            await saveToGoogle('addTaskCompleteBonus',{ userId:executor.id });
-            addNotification(executor.id,`💰 Задание "${task.description.substring(0,30)}..." подтверждено! +${gain.toFixed(2)} ₽`,id);
+        let task = tasks.find(t => t.id == id);
+        if(!task) {
+            showToast('❌ Задание не найдено', true);
+            if(btn) btn.disabled=false;
+            return;
         }
-        await saveToGoogle('updateTask',{ id:task.id, status:'completed', completedAt:new Date().toISOString() });
+        if(task.status !== 'awaiting_confirmation') {
+            showToast('❌ Задание не ожидает подтверждения', true);
+            if(btn) btn.disabled=false;
+            return;
+        }
+        if(task.creatorId !== currentUser.id) {
+            showToast('❌ Вы не можете подтвердить это задание', true);
+            if(btn) btn.disabled=false;
+            return;
+        }
+        if(task.paymentProcessed === 'true') {
+            showToast('❌ Оплата по этому заданию уже произведена', true);
+            if(btn) btn.disabled=false;
+            return;
+        }
+        
+        let executor = users.find(u => u.id === task.takerId);
+        if(!executor) {
+            showToast('❌ Исполнитель не найден', true);
+            if(btn) btn.disabled=false;
+            return;
+        }
+        
+        let total = parseFloat(task.price);
+        let gain = total * 0.95;
+        
+        executor.balance = (parseFloat(executor.balance) || 0) + gain;
+        executor.bonus_balance = (parseFloat(executor.bonus_balance) || 0) + 10;
+        executor.totalEarned = (parseFloat(executor.totalEarned) || 0) + gain;
+        executor.tasksCompleted = (parseInt(executor.tasksCompleted) || 0) + 1;
+        
+        await saveToGoogle('updateUser', { 
+            id: executor.id, 
+            balance: executor.balance, 
+            bonus_balance: executor.bonus_balance, 
+            totalEarned: executor.totalEarned, 
+            tasksCompleted: executor.tasksCompleted 
+        });
+        
+        await saveToGoogle('addTaskCompleteBonus', { userId: executor.id });
+        
+        await saveToGoogle('updateTask', { 
+            id: task.id, 
+            status: 'completed', 
+            completedAt: new Date().toISOString(),
+            paymentProcessed: 'true'
+        });
+        
+        addNotification(executor.id, `💰 Задание "${task.description.substring(0,30)}..." подтверждено! +${gain.toFixed(2)} ₽`, id);
+        
         await loadData(true);
-        currentUser=users.find(u=>u.id===currentUser.id);
-        showToast(`💰 Подтверждено! Исполнитель получил ${gain.toFixed(2)} ₽`,false);
+        currentUser = users.find(u => u.id === currentUser.id);
+        showToast(`💰 Подтверждено! Исполнитель получил ${gain.toFixed(2)} ₽`, false);
+        
         if(btn) btn.disabled=false;
         renderApp();
     }
@@ -792,46 +895,54 @@
     function renderNotifications() { const un=notifications.filter(n=>n.userId===currentUser?.id).sort((a,b)=>b.id-a.id); const uc=un.filter(n=>!n.read).length; return `<div class="notifications-panel"><h4>🔔 Уведомления ${uc>0?`<span class="notification-badge">${uc}</span>`:''}</h4>${un.length===0?'<p>Нет уведомлений</p>':un.map(n=>`<div class="notification-item ${!n.read?'unread':''}" data-notif-id="${n.id}">📌 ${escapeHtml(n.text)}<br><small>${formatDate(n.createdAt)}</small></div>`).join('')}${un.length>0?'<button id="markNotifReadBtn" class="btn-info" style="margin-top:10px;width:100%;">Пометить все прочитанными</button>':''}</div>`; }
     function markNotificationsRead() { notifications.forEach(n=>{ if(n.userId===currentUser?.id) n.read=true; }); saveLocalData(); renderApp(); }
 
-    // ========== ФУНКЦИЯ ДЛЯ ОПРЕДЕЛЕНИЯ ЗВАНИЯ И ПРОГРЕССА ==========
-    const rankThresholds = [
-        { name: '🐣 Новичок', color: '#aaaaaa', tasksNeeded: 0, emoji: '🐣' },
-        { name: '🌱 Ученик', color: '#87CEEB', tasksNeeded: 10, emoji: '🌱' },
-        { name: '📌 Опытный', color: '#90EE90', tasksNeeded: 20, emoji: '📌' },
-        { name: '⭐ Продвинутый', color: '#cd7f32', tasksNeeded: 50, emoji: '⭐' },
-        { name: '💎 Мастер', color: '#c0c0c0', tasksNeeded: 100, emoji: '💎' },
-        { name: '👑 Легенда', color: '#ffd700', tasksNeeded: 200, emoji: '👑' }
-    ];
-
-    function getUserRankInfo(user) {
-        const completed = user.tasksCompleted || 0;
-        let currentRank = rankThresholds[0];
-        let nextRank = null;
-        for (let i = rankThresholds.length - 1; i >= 0; i--) {
-            if (completed >= rankThresholds[i].tasksNeeded) {
-                currentRank = rankThresholds[i];
-                nextRank = rankThresholds[i + 1] || null;
-                break;
-            }
-        }
-        if (!nextRank && completed < rankThresholds[0].tasksNeeded) {
-            currentRank = rankThresholds[0];
-            nextRank = rankThresholds[1];
-        }
-        let progress = 100;
-        let needed = 0;
-        let remaining = 0;
-        if (nextRank) {
-            const currentNeeded = currentRank.tasksNeeded;
-            const nextNeeded = nextRank.tasksNeeded;
-            needed = nextNeeded - currentNeeded;
-            const currentProgress = completed - currentNeeded;
-            progress = Math.min(100, Math.max(0, (currentProgress / needed) * 100));
-            remaining = nextNeeded - completed;
-        }
-        return { currentRank, nextRank, progress, remaining, completed };
+    // -------------------- АВТОРИЗАЦИЯ --------------------
+    async function login(name, school, corp, pass) {
+        await loadData();
+        const user = users.find(u => u.name === name && String(u.school) === String(school) && String(u.corp) === String(corp));
+        if (!user) { showToast('❌ Пользователь не найден', true); return; }
+        if (String(user.password) !== String(pass)) { showToast('❌ Неверный пароль', true); return; }
+        if (user.isBanned === 'true') { showToast('⛔ Аккаунт заблокирован', true); return; }
+        currentUser = user;
+        localStorage.setItem('schooltask_session', JSON.stringify({ id: user.id, name: user.name, school: user.school, corp: user.corp }));
+        showToast(`✅ Добро пожаловать, ${user.name}!`);
+        renderApp();
     }
 
-    // -------------------- БУРМАЛДА (АПГРЕЙДЕР) – ИСПРАВЛЕННАЯ МГНОВЕННАЯ ВЕРСИЯ --------------------
+    async function register(name, school, corp, pass) {
+        if (name.length < 3 || name.length > 10 || !/^[a-zA-Zа-яА-Я0-9_]+$/.test(name)) {
+            showToast('❌ Имя 3-10 символов (буквы/цифры)', true);
+            return;
+        }
+        if (!school || !/^\d+$/.test(school)) { showToast('❌ Школа только цифры', true); return; }
+        if (!corp || !/^\d+$/.test(corp)) { showToast('❌ Корпус только цифры', true); return; }
+        if (pass.length < 3) { showToast('❌ Пароль минимум 3', true); return; }
+        
+        await loadData();
+        const exists = users.find(u => u.name === name && String(u.school) === school && String(u.corp) === corp);
+        if (exists) { showToast('❌ Уже существует', true); return; }
+        
+        const newUser = {
+            id: 'u' + Date.now(),
+            name, school, corp,
+            password: pass,
+            balance: 0,
+            bonus_balance: 0,
+            referral_code: 'REF' + Math.random().toString(36).substring(2, 10).toUpperCase(),
+            referred_by: ''
+        };
+        
+        const result = await saveToGoogle('registerUser', newUser);
+        if (result?.success) {
+            showToast('✅ Регистрация успешна! Теперь войдите');
+            renderApp();
+        } else {
+            showToast('❌ Ошибка регистрации', true);
+        }
+    }
+
+    function logout() { currentUser = null; localStorage.removeItem('schooltask_session'); renderApp(); }
+
+    // -------------------- БУРМАЛДА --------------------
     let upgradeCanvas=null, upgradeCtx=null;
     let upgradeFairWinPercent=0;
     let upgradeArrowAngle=0;
@@ -1121,14 +1232,13 @@
                 return;
             }
 
-            // ПОЛЬЗОВАТЕЛЬ ЗАЛОГИНЕН – полный интерфейс с заданиями, профилем и бурмалдой
             const top3=getTop3();
             const isAdmin=currentUser.name==='leshr_ak47';
             const rankInfo = getUserRankInfo(currentUser);
             let adminHtml='';
             if(isAdmin&&adminMode){
                 let fu=users.filter(u=>adminSearchTerm===''||u.name.toLowerCase().includes(adminSearchTerm.toLowerCase()));
-                adminHtml=`<div class="admin-panel"><div class="admin-header"><h2>👑 Админ-панель</h2><button class="btn-danger" id="exitAdminBtn">Выйти</button></div><div class="admin-header"><div class="search-box">🔍 <input type="text" id="adminSearch" placeholder="Поиск..." value="${adminSearchTerm}"></div><button id="clearTasksBtn" class="btn-danger">🗑️ Удалить все задания</button><button id="showStatsBtn" class="btn-info">📊 Статистика</button><button id="showReportsBtn" class="btn-warning">⚠️ Жалобы (${reports.length})</button></div><div class="users-table"><table><thead><tr><th>Имя</th><th>Школа</th><th>Корпус</th><th>Основной</th><th>Бонусный</th><th>Рейтинг</th><th>Статус</th><th>Управление</th><th>Действия</th></tr></thead><tbody>${fu.map(u=>{ let banned=u.isBanned==='true'; let rating=parseFloat(u.rating)||0; return `<tr><td style="padding:10px;"><strong>${escapeHtml(u.name)}</strong><br><small>${escapeHtml(u.id).slice(-8)}</small></td><td style="padding:10px;">${escapeHtml(u.school)}</td><td style="padding:10px;">${escapeHtml(u.corp)}</td><td style="color:#2c6e4f;">${(parseFloat(u.balance)||0).toFixed(2)} ₽</td><td style="color:#eab308;">${(parseFloat(u.bonus_balance)||0).toFixed(2)} ₽</td><td style="padding:10px;">${getRatingStars(rating)} (${u.ratingCount||0})</td><td style="padding:10px;">${banned?'⛔ Забанен':'✅ Активен'}${banned&&u.banReason?`<br><small>${escapeHtml(u.banReason)}</small>`:''}</td><td style="padding:10px;"><div><input type="number" id="amount-${u.id}" value="100" style="width:70px;"><button class="topup-btn" data-userid="${u.id}" data-bonus="false">+💰</button><button class="withdraw-btn" data-userid="${u.id}" data-bonus="false">-💰</button></div><div><input type="number" id="bonus-${u.id}" value="100" style="width:70px;"><button class="topup-btn" data-userid="${u.id}" data-bonus="true">+🎁</button><button class="withdraw-btn" data-userid="${u.id}" data-bonus="true">-🎁</button></div></td><td style="padding:10px;">${!banned?`<button class="ban-btn" data-userid="${u.id}">⛔ Бан</button>`:`<button class="unban-btn" data-userid="${u.id}">✅ Разбан</button>`}<br><button class="reviews-btn" data-userid="${u.id}">⭐ Отзывы</button><br><button class="user-tasks-btn" data-userid="${u.id}">📋 Задания</button></td></tr>`}).join('')}</tbody>}</div></div>`;
+                adminHtml=`<div class="admin-panel"><div class="admin-header"><h2>👑 Админ-панель</h2><button class="btn-danger" id="exitAdminBtn">Выйти</button></div><div class="admin-header"><div class="search-box">🔍 <input type="text" id="adminSearch" placeholder="Поиск..." value="${adminSearchTerm}"></div><button id="clearTasksBtn" class="btn-danger">🗑️ Удалить все задания</button><button id="showStatsBtn" class="btn-info">📊 Статистика</button><button id="showReportsBtn" class="btn-warning">⚠️ Жалобы (${reports.length})</button></div><div class="users-table"></table><thead><tr><th>Имя</th><th>Школа</th><th>Корпус</th><th>Основной</th><th>Бонусный</th><th>Рейтинг</th><th>Статус</th><th>Управление</th><th>Действия</th></tr></thead><tbody>${fu.map(u=>{ let banned=u.isBanned==='true'; let rating=parseFloat(u.rating)||0; return `<tr><td style="padding:10px;"><strong>${escapeHtml(u.name)}</strong><br><small>${escapeHtml(u.id).slice(-8)}</small></td><td style="padding:10px;">${escapeHtml(u.school)}</td><td style="padding:10px;">${escapeHtml(u.corp)}</td><td style="color:#2c6e4f;">${(parseFloat(u.balance)||0).toFixed(2)} ₽</td><td style="color:#eab308;">${(parseFloat(u.bonus_balance)||0).toFixed(2)} ₽</td><td style="padding:10px;">${getRatingStars(rating)} (${u.ratingCount||0})</td><td style="padding:10px;">${banned?'⛔ Забанен':'✅ Активен'}${banned&&u.banReason?`<br><small>${escapeHtml(u.banReason)}</small>`:''}</td><td style="padding:10px;"><div><input type="number" id="amount-${u.id}" value="100" style="width:70px;"><button class="topup-btn" data-userid="${u.id}" data-bonus="false">+💰</button><button class="withdraw-btn" data-userid="${u.id}" data-bonus="false">-💰</button></div><div><input type="number" id="bonus-${u.id}" value="100" style="width:70px;"><button class="topup-btn" data-userid="${u.id}" data-bonus="true">+🎁</button><button class="withdraw-btn" data-userid="${u.id}" data-bonus="true">-🎁</button></div></td><td style="padding:10px;">${!banned?`<button class="ban-btn" data-userid="${u.id}">⛔ Бан</button>`:`<button class="unban-btn" data-userid="${u.id}">✅ Разбан</button>`}<br><button class="reviews-btn" data-userid="${u.id}">⭐ Отзывы</button><br><button class="user-tasks-btn" data-userid="${u.id}">📋 Задания</button></table></tr>`}).join('')}</tbody>}</div></div>`;
             }
             let adminBtn=isAdmin?`<button id="adminPanelBtn" class="btn-warning">🔐 Админка</button>`:'';
 
@@ -1140,10 +1250,8 @@
             let myCompleted=tasks.filter(t=>t.status==='completed'&&(t.creatorId===currentUser.id||t.takerId===currentUser.id));
             let userRating=parseFloat(currentUser.rating)||0;
             let userRatingCnt=parseInt(currentUser.ratingCount)||0;
-            let reviewProgress = currentUser.ratingCount || 0;
-            let reviewNeeded = 5 - (reviewProgress % 5);
-            if (reviewNeeded === 5 && reviewProgress > 0) reviewNeeded = 5;
-            let reviewToNextStar = reviewNeeded;
+            let reviewNeeded = 5 - ((userRatingCnt % 5) || 5);
+            if (reviewNeeded === 5 && userRatingCnt > 0) reviewNeeded = 5;
 
             let honorHtml=`<div class="honor-board"><h3>🏅 Доска почёта</h3><div class="honor-list">${top3.map((u,idx)=>`<div class="honor-item"><div class="honor-medal">${idx===0?'🥇':idx===1?'🥈':'🥉'}</div><strong>${escapeHtml(u.name)}</strong><br>✅ ${u.tasksCompleted||0}</div>`).join('')}</div></div>`;
             let helpBlock=`<div class="help-box"><h4>🎁 Бонусный счёт</h4><p>+5₽ за друга, +10₽ за выполнение, +20₽ за отзыв 5⭐</p><div class="share-buttons"><div class="share-btn share-tg" onclick="shareTelegram()">📱 Telegram</div><div class="share-btn share-vk" onclick="shareVK()">📱 ВКонтакте</div><div class="share-btn copy-link" onclick="copyReferralLink()">🔗 Скопировать ссылку</div></div></div>`;
@@ -1163,7 +1271,6 @@
 
             let createForm=`<div class="card"><h3>📝 Создать задание</h3><textarea id="taskDesc" rows="2" placeholder="Что нужно сделать?"></textarea><input type="number" id="taskPrice" placeholder="Цена"><input type="text" id="taskLocation" placeholder="Место"><select id="paymentType"><option value="main">💰 Основной (${(parseFloat(currentUser.balance)||0).toFixed(2)} ₽)</option><option value="bonus">🎁 Бонусный (${(parseFloat(currentUser.bonus_balance)||0).toFixed(2)} ₽)</option></select><select id="taskScope"><option value="school">🏫 Только моя школа</option><option value="all">🌍 Для всех</option></select><button class="btn-primary" id="createBtn">Создать</button></div>`;
             
-            // Профиль с шкалами прогресса
             let profileHtml = `<div class="card"><h3>👤 Профиль</h3>
                 <p><strong>Имя:</strong> ${escapeHtml(currentUser.name)}</p>
                 <p><strong>Школа/Корпус:</strong> ${escapeHtml(currentUser.school)} / ${escapeHtml(currentUser.corp)}</p>
@@ -1186,9 +1293,9 @@
                 
                 <div style="margin-top: 15px;"><strong>⭐ Прогресс рейтинга:</strong></div>
                 <div class="progress-container">
-                    <div class="progress-fill" style="width: ${((userRatingCnt % 5) / 5 * 100)}%;"></div>
+                    <div class="progress-fill" style="width: ${(userRatingCnt % 5) / 5 * 100}%;"></div>
                 </div>
-                <div class="rank-progress-text">До следующей звезды: ${reviewToNextStar} отзыв(ов)</div>
+                <div class="rank-progress-text">До следующей звезды: ${reviewNeeded} отзыв(ов)</div>
                 <div class="next-rank-info">💡 Получите отзывы 5⭐, чтобы повысить рейтинг!</div>
             </div>`;
             
@@ -1206,7 +1313,6 @@
 
             appDiv.innerHTML=`<div class="container"><div class="header"><div class="logo"><h1>🏫 SchoolTask</h1></div><div class="user-info"><div>👋 ${escapeHtml(currentUser.name)} | ${escapeHtml(currentUser.school)} <span class="rank-badge">${rankInfo.currentRank.emoji} ${rankInfo.currentRank.name}</span></div><div class="balance-card" onclick="openWalletModal()">💰 ${(parseFloat(currentUser.balance)||0).toFixed(2)} ₽</div><div class="bonus-card" onclick="showBonusHelp()">🎁 ${(parseFloat(currentUser.bonus_balance)||0).toFixed(2)} ₽</div><button class="theme-toggle" id="themeToggleBtn">${isDarkTheme?'☀️':'🌙'}</button><button class="btn-danger" id="logoutBtn">Выйти</button></div></div><div style="margin-bottom:12px;">${adminBtn}</div>${adminHtml}${renderNotifications()}${honorHtml}${helpBlock}<div class="tabs"><div class="tab ${activeTab==='allTasks'?'active':''}" data-tab="allTasks">📋 Все</div><div class="tab ${activeTab==='myTasks'?'active':''}" data-tab="myTasks">📦 Мои</div><div class="tab ${activeTab==='myExecutions'?'active':''}" data-tab="myExecutions">⚡ В работе</div><div class="tab ${activeTab==='completed'?'active':''}" data-tab="completed">✅ Готово</div><div class="tab ${activeTab==='profile'?'active':''}" data-tab="profile">👤 Профиль</div><div class="tab ${activeTab==='create'?'active':''}" data-tab="create">➕ Создать</div><div class="tab ${activeTab==='upgrade'?'active':''}" data-tab="upgrade">🎲 Бурмалда</div></div>${content}<div class="support-link">📞 Поддержка: <strong>@leshr_ak47</strong></div></div>`;
 
-            // Обработчики вкладок
             document.querySelectorAll('.tab').forEach(tab=>{ tab.onclick=()=>{ window._activeTab=tab.getAttribute('data-tab'); renderApp(); }; });
             if(document.getElementById('logoutBtn')) document.getElementById('logoutBtn').onclick=()=>{ currentUser=null; localStorage.removeItem('schooltask_session'); renderApp(); };
             if(document.getElementById('themeToggleBtn')) document.getElementById('themeToggleBtn').onclick=()=>{ isDarkTheme=!isDarkTheme; localStorage.setItem('darkTheme',isDarkTheme); document.body.classList.toggle('dark-theme',isDarkTheme); renderApp(); };
