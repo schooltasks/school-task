@@ -13,49 +13,13 @@
         }
 
         body {
-            background: linear-gradient(145deg, #f0f4fa 0%, #e2e8f0 100%);
+            background: linear-gradient(135deg, #f5f7fa 0%, #eef2f7 100%);
             min-height: 100vh;
             padding: 20px;
-            transition: background 0.3s, color 0.3s;
         }
 
-        body.dark-theme {
-            background: linear-gradient(145deg, #1a1a2e 0%, #16213e 100%);
-            color: #e2e8f0;
-        }
-
-        body.dark-theme .header,
-        body.dark-theme .card,
-        body.dark-theme .task-card,
-        body.dark-theme .admin-panel,
-        body.dark-theme .help-box,
-        body.dark-theme .announcement,
-        body.dark-theme .honor-board,
-        body.dark-theme .notifications-panel,
-        body.dark-theme .upgrade-panel {
-            background: #1e293b;
-            color: #e2e8f0;
-        }
-
-        body.dark-theme .user-info {
-            background: #334155;
-        }
-
-        body.dark-theme .tab {
-            background: #334155;
-            color: #e2e8f0;
-        }
-
-        body.dark-theme .tab.active {
-            background: #3b82f6;
-        }
-
-        body.dark-theme input,
-        body.dark-theme textarea,
-        body.dark-theme select {
-            background: #334155;
-            border-color: #475569;
-            color: #e2e8f0;
+        body.dark {
+            background: linear-gradient(145deg, #0a0f0a 0%, #050a05 100%);
         }
 
         .container {
@@ -63,16 +27,20 @@
             margin: 0 auto;
         }
 
-        .header,
-        .card,
-        .task-card,
-        .upgrade-panel {
+        .header, .card, .task-card, .upgrade-panel {
             background: white;
             border-radius: 32px;
             padding: 20px;
             margin-bottom: 20px;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
-            transition: all 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        body.dark .header,
+        body.dark .card,
+        body.dark .task-card,
+        body.dark .upgrade-panel {
+            background: #1e2a1e;
+            border: 1px solid #ffd966aa;
         }
 
         .header {
@@ -83,44 +51,62 @@
         }
 
         .logo h1 {
-            background: linear-gradient(135deg, #1e2b3c, #2c4c6e);
+            background: linear-gradient(135deg, #1a73e8, #0d47a1);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
             font-size: 1.6rem;
         }
 
+        body.dark .logo h1 {
+            background: linear-gradient(135deg, #ffd966, #ffb347);
+            -webkit-background-clip: text;
+            background-clip: text;
+        }
+
+        .logo span {
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+
+        body.dark .logo span {
+            color: #bbaa66;
+        }
+
         .user-info {
             display: flex;
             align-items: center;
-            gap: 20px;
-            background: #f8fafc;
+            gap: 15px;
+            background: #e8f0fe;
             padding: 8px 20px;
             border-radius: 60px;
             flex-wrap: wrap;
         }
 
-        .balance-card,
-        .bonus-card {
+        body.dark .user-info {
+            background: #0f1c19;
+        }
+
+        .balance-card, .bonus-card {
             padding: 6px 16px;
             border-radius: 40px;
             font-weight: bold;
             cursor: pointer;
-            transition: all 0.08s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+            transition: all 0.15s;
         }
 
-        .balance-card:active,
-        .bonus-card:active {
-            transform: scale(0.92);
+        .balance-card:hover, .bonus-card:hover {
+            transform: scale(1.03);
         }
 
         .balance-card {
-            background: #eef2ff;
+            background: #1a73e8;
+            color: white;
         }
 
         .bonus-card {
-            background: linear-gradient(135deg, #fef3c7, #fde68a);
-            color: #92400e;
+            background: #f7b32b;
+            color: #1f2a1b;
         }
 
         button {
@@ -129,42 +115,49 @@
             border-radius: 40px;
             padding: 10px 20px;
             font-weight: bold;
-            transition: all 0.08s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+            transition: all 0.15s;
+        }
+
+        button:hover {
+            transform: scale(1.02);
         }
 
         button:active {
-            transform: scale(0.94);
+            transform: scale(0.97);
         }
 
         button:disabled {
             opacity: 0.6;
+            transform: none;
             cursor: not-allowed;
-            transform: none !important;
         }
 
-        .btn-primary {
-            background: #2c6e4f;
-            color: white;
-        }
+        .btn-primary { background: #1a73e8; color: white; }
         .btn-success { background: #10b981; color: white; }
         .btn-danger { background: #dc2626; color: white; }
-        .btn-edit { background: #8b5cf6; color: white; }
         .btn-info { background: #3b82f6; color: white; }
-        .theme-toggle { background: #334155; color: white; padding: 8px 16px; border-radius: 60px; cursor: pointer; }
+        .theme-toggle { background: #64748b; color: white; padding: 8px 16px; border-radius: 60px; }
 
         input, textarea, select {
             width: 100%;
             padding: 12px 16px;
-            border: 1px solid #cbd5e1;
+            border: 2px solid #e2e8f0;
             border-radius: 28px;
             margin-bottom: 12px;
             font-size: 1rem;
+            background: white;
+            color: #1e293b;
+        }
+
+        body.dark input, body.dark textarea, body.dark select {
+            background: #0f1c19;
+            border-color: #ffd96688;
+            color: #ffdf8c;
         }
 
         input:focus, textarea:focus, select:focus {
             outline: none;
-            border-color: #3b82f6;
-            transform: scale(1.01);
+            border-color: #1a73e8;
         }
 
         .tabs {
@@ -175,16 +168,22 @@
         }
 
         .tab {
-            background: white;
+            background: #e2e8f0;
             padding: 10px 24px;
             border-radius: 60px;
             cursor: pointer;
             font-weight: 600;
-            transition: all 0.08s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+            color: #1e293b;
         }
 
-        .tab:active { transform: scale(0.94); }
-        .tab.active { background: #1e4a6e; color: white; }
+        body.dark .tab {
+            background: #0f1c19;
+            color: #ddd;
+        }
+
+        .tab:hover { transform: translateY(-2px); }
+        .tab.active { background: #1a73e8; color: white; }
+        body.dark .tab.active { background: #f7b32b; color: #1f2a1b; }
 
         .tasks-grid {
             display: grid;
@@ -192,82 +191,10 @@
             gap: 20px;
         }
 
-        .admin-panel {
-            background: white;
-            border-radius: 32px;
-            padding: 20px;
-            margin-bottom: 20px;
-            border: 2px solid #ffd966;
-        }
-
-        .admin-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .search-box {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: #f1f5f9;
-            padding: 5px 15px;
-            border-radius: 40px;
-        }
-        .search-box input { margin: 0; padding: 8px; background: transparent; border: none; width: 200px; outline: none; }
-
-        .users-table { overflow-x: auto; margin-top: 15px; }
-        .users-table table { width: 100%; border-collapse: collapse; }
-        .users-table th, .users-table td { padding: 12px 8px; text-align: left; border-bottom: 1px solid #e2e8f0; }
-
-        .announcement {
-            background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
-            border-radius: 32px;
-            padding: 20px;
-            margin-bottom: 20px;
-            text-align: center;
-            animation: pulse 2s infinite;
-        }
-        @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.01); } }
-
-        .share-buttons {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            margin-top: 15px;
-            flex-wrap: wrap;
-        }
-        .share-btn {
-            padding: 10px 20px;
-            border-radius: 40px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.08s cubic-bezier(0.2, 0.9, 0.4, 1.1);
-        }
-        .share-btn:active { transform: scale(0.94); }
-        .share-tg { background: #0088cc; color: white; }
-        .share-vk { background: #0077ff; color: white; }
-        .copy-link { background: #6b7280; color: white; }
-
-        .help-box {
-            background: #e0f2fe;
-            border-radius: 20px;
-            padding: 15px;
-            margin-bottom: 20px;
-            text-align: center;
-            border-left: 5px solid #0284c7;
-        }
-        .referral-code {
-            background: #e2e8f0;
-            padding: 10px;
-            border-radius: 40px;
-            font-family: monospace;
-            cursor: pointer;
-            text-align: center;
-            margin-top: 15px;
+        .task-card { transition: all 0.2s; }
+        .task-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
         }
 
         .task-header {
@@ -276,101 +203,50 @@
             margin-bottom: 12px;
             flex-wrap: wrap;
         }
-        .task-price { font-size: 1.6rem; font-weight: 800; color: #2b6e4f; }
+        .task-price { font-size: 1.6rem; font-weight: 800; color: #1a73e8; }
+        body.dark .task-price { color: #ffd966; }
         .task-status { padding: 4px 12px; border-radius: 30px; font-size: 0.75rem; font-weight: bold; }
-        .status-open { background: #e2e8f0; color: #1e4a6e; }
-        .status-progress { background: #fef3c7; color: #d97706; }
-        .status-awaiting { background: #e0f2fe; color: #0284c7; }
-        .status-completed { background: #d1fae5; color: #10b981; }
+        .status-open { background: #10b981; color: white; }
+        .status-in_progress { background: #f59e0b; color: white; }
+        .status-awaiting_confirmation { background: #3b82f6; color: white; }
+        .status-completed { background: #64748b; color: white; }
         .action-buttons { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
-        .filter-group { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
-        .filter-group input, .filter-group select { flex: 1; margin: 0; }
 
         .toast {
             position: fixed;
             bottom: 30px;
-            right: 30px;
-            background: #1f2f3e;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e293b;
             color: white;
             padding: 12px 24px;
             border-radius: 60px;
             z-index: 1000;
-            animation: toastFadeIn 0.3s, toastFadeOut 0.3s 2.7s forwards;
+            animation: slideUp 0.2s ease, fadeOut 0.2s ease 2.5s forwards;
         }
-        @keyframes toastFadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes toastFadeOut { to { opacity: 0; transform: translateY(20px); } }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+        @keyframes fadeOut {
+            to { opacity: 0; transform: translateX(-50%) translateY(20px); }
+        }
 
-        .wallet-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.8);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-            animation: modalFadeIn 0.2s;
-        }
-        @keyframes modalFadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .wallet-container {
-            background: white;
-            border-radius: 32px;
-            width: 90%;
-            max-width: 400px;
-            padding: 20px;
-            animation: modalScaleIn 0.2s;
-        }
-        @keyframes modalScaleIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-
-        .video-rule {
-            background: #fef3c7;
-            border-left: 5px solid #f59e0b;
-            padding: 15px;
-            margin-bottom: 20px;
-            border-radius: 16px;
-        }
         .support-link {
             margin-top: 20px;
             padding: 10px;
-            background: #f1f5f9;
+            background: #e8f0fe;
             border-radius: 20px;
             text-align: center;
             font-size: 12px;
-            color: #475569;
+            color: #1a73e8;
         }
 
-        .notification-badge {
-            background: #ef4444;
-            color: white;
-            border-radius: 20px;
-            padding: 2px 8px;
-            font-size: 0.7rem;
-            margin-left: 5px;
+        body.dark .support-link {
+            background: #0f1c19;
+            color: #bbaa66;
         }
-        .notifications-panel {
-            background: white;
-            border-radius: 24px;
-            padding: 15px;
-            margin-bottom: 20px;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-        .notification-item {
-            padding: 10px;
-            border-bottom: 1px solid #e2e8f0;
-            cursor: pointer;
-        }
-        .notification-item.unread { background: #eef2ff; font-weight: bold; }
 
-        .honor-board {
-            background: linear-gradient(135deg, #fef9e6, #fff4e0);
-            border-radius: 24px;
-            padding: 15px;
-            text-align: center;
-            margin-bottom: 20px;
-        }
         .honor-list {
             display: flex;
             justify-content: center;
@@ -379,22 +255,84 @@
             margin-top: 10px;
         }
         .honor-item {
-            background: white;
+            background: #e8f0fe;
             border-radius: 20px;
             padding: 10px 15px;
-            min-width: 120px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-        }
-        .honor-medal { font-size: 2rem; }
-
-        /* Стили для бурмалды */
-        .upgrade-panel {
+            min-width: 100px;
             text-align: center;
         }
+        body.dark .honor-item {
+            background: #0f1c19;
+            border: 1px solid #ffd96655;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal.show { display: flex; }
+        .modal-content {
+            background: white;
+            border-radius: 32px;
+            padding: 30px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+        body.dark .modal-content {
+            background: #1e2a1e;
+            border: 1px solid #ffd966;
+        }
+        .modal-content h3 {
+            margin-bottom: 15px;
+            color: #1a73e8;
+        }
+        body.dark .modal-content h3 { color: #ffd966; }
+        .modal-content p {
+            margin-bottom: 20px;
+            color: #1e293b;
+            line-height: 1.5;
+        }
+        body.dark .modal-content p { color: #ffdf8c; }
+        .modal-content .telegram-link {
+            background: #1a73e8;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 40px;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 10px;
+        }
+        .modal-content .close-btn {
+            background: #dc2626;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 40px;
+            margin-top: 15px;
+            cursor: pointer;
+        }
+        .bonus-info {
+            font-size: 0.85rem;
+            background: #e8f0fe;
+            padding: 10px;
+            border-radius: 20px;
+            margin-top: 15px;
+            text-align: left;
+        }
+        body.dark .bonus-info { background: #0f1c19; }
+
         .upgrade-panel .wheel-container {
             position: relative;
-            width: 320px;
-            height: 320px;
+            width: 300px;
+            height: 300px;
             margin: 0 auto 20px;
         }
         .upgrade-panel canvas {
@@ -404,962 +342,1213 @@
             width: 100% !important;
             height: 100% !important;
             border-radius: 50%;
-            box-shadow: 0 0 0 8px #2c3e2f, 0 12px 28px black;
+            box-shadow: 0 0 0 6px #e2e8f0;
         }
+        body.dark .upgrade-panel canvas { box-shadow: 0 0 0 6px #2c3e2f; }
         .upgrade-panel .center-badge {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: #1f2d29dd;
+            background: rgba(0,0,0,0.8);
             backdrop-filter: blur(8px);
             border-radius: 60px;
             padding: 6px 12px;
+            color: #f7b32b;
             font-weight: bold;
             font-size: 0.85rem;
-            color: #ffd966;
-            border: 1px solid #ffd966aa;
-            z-index: 12;
-            white-space: nowrap;
-            pointer-events: none;
         }
         .upgrade-inputs {
             display: flex;
-            gap: 15px;
+            gap: 12px;
             margin: 15px 0;
             flex-wrap: wrap;
         }
-        .upgrade-inputs .input-block {
+        .upgrade-inputs input {
             flex: 1;
-            background: #0f1c19;
-            border-radius: 44px;
-            padding: 8px 15px;
-            border: 1px solid #ffd966aa;
+            margin: 0;
         }
-        .upgrade-inputs .input-block label {
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            color: #ffd966;
-            display: block;
-        }
-        .upgrade-inputs .input-block input {
-            width: 100%;
-            background: transparent;
-            border: none;
-            font-size: 1.6rem;
-            font-weight: bold;
-            color: #ffdf8c;
-            outline: none;
-            padding: 5px 0;
-        }
-        .upgrade-panel .balance-switch {
+        .balance-switch {
             display: flex;
-            gap: 15px;
-            justify-content: center;
-            margin: 10px 0 15px;
+            gap: 12px;
+            margin: 10px 0;
         }
-        .upgrade-panel .balance-btn {
+        .balance-btn {
+            flex: 1;
+            background: #e2e8f0;
+            border-radius: 60px;
+            padding: 10px;
+            cursor: pointer;
+            text-align: center;
+            color: #1e293b;
+        }
+        body.dark .balance-btn {
             background: #0f1c19;
             border: 1px solid #ffd96688;
-            border-radius: 60px;
-            padding: 8px 20px;
-            font-weight: bold;
-            color: #ddddbb;
-            cursor: pointer;
-            transition: 0.08s linear;
-            flex: 1;
-            text-align: center;
+            color: #ddd;
         }
-        .upgrade-panel .balance-btn.active {
+        .balance-btn.active {
+            background: #1a73e8;
+            color: white;
+        }
+        body.dark .balance-btn.active {
             background: #f7b32b;
             color: #1f2a1b;
-            border-color: #ffdd99;
-            box-shadow: 0 0 6px #ffcd7e;
         }
-        .upgrade-panel .balance-amount {
-            font-size: 0.75rem;
-            margin-top: 4px;
-            color: #ffdfaa;
-        }
-        .upgrade-panel .chance-panel {
+        .chance-panel {
             text-align: center;
-            background: #07131299;
+            background: #e8f0fe;
             border-radius: 60px;
             padding: 12px;
-            margin: 0 0 16px;
-            backdrop-filter: blur(4px);
+            margin-bottom: 15px;
         }
-        .upgrade-panel .chance-digits {
-            font-size: 2.5rem;
-            font-weight: 800;
-            color: #ffd966;
-            line-height: 1;
-        }
-        .upgrade-panel .spin-button {
-            width: 100%;
-            background: linear-gradient(95deg, #f0a500, #ff7b00);
-            border: none;
-            padding: 16px;
+        body.dark .chance-panel { background: #07131299; }
+        .chance-digits {
             font-size: 1.6rem;
-            font-weight: bold;
-            color: #1f2a1b;
-            border-radius: 60px;
-            cursor: pointer;
-            transition: 0.05s linear;
-            box-shadow: 0 7px 0 #8b4600;
+            font-weight: 800;
+            color: #1a73e8;
         }
-        .upgrade-panel .spin-button:active { transform: translateY(3px); box-shadow: 0 3px 0 #8b4600; }
-        .upgrade-panel .spin-button:disabled { opacity: 0.55; transform: none; cursor: not-allowed; }
-        .upgrade-panel .result-area {
-            margin-top: 20px;
-            background: #00000066;
-            border-radius: 50px;
+        body.dark .chance-digits { color: #ffd966; }
+        .spin-button {
+            width: 100%;
+            background: linear-gradient(95deg, #1a73e8, #0d47a1);
             padding: 14px;
-            text-align: center;
+            font-size: 1.2rem;
             font-weight: bold;
-            font-size: 0.95rem;
-            color: #ffeca2;
-            backdrop-filter: blur(4px);
+            border-radius: 60px;
         }
-
-        /* Стили для званий и шкалы прогресса */
+        body.dark .spin-button {
+            background: linear-gradient(95deg, #f0a500, #ff7b00);
+        }
+        .result-area {
+            margin-top: 15px;
+            background: #e8f0fe;
+            border-radius: 50px;
+            padding: 12px;
+            text-align: center;
+            color: #1a73e8;
+        }
+        body.dark .result-area {
+            background: #00000066;
+            color: #ffeca2;
+        }
         .rank-badge {
             display: inline-block;
-            background: #2c3e2f;
+            background: #e2e8f0;
             border-radius: 20px;
             padding: 4px 12px;
             font-size: 0.7rem;
             font-weight: bold;
             margin-left: 8px;
+            color: #1a73e8;
+        }
+        body.dark .rank-badge {
+            background: #2c3e2f;
             color: #ffd966;
         }
         .progress-container {
-            background: #2c3e2f;
+            background: #e2e8f0;
             border-radius: 20px;
-            height: 12px;
+            height: 8px;
             margin: 10px 0;
             overflow: hidden;
         }
+        body.dark .progress-container { background: #2c3e2f; }
         .progress-fill {
-            background: linear-gradient(90deg, #f7b32b, #ffd966);
+            background: linear-gradient(90deg, #1a73e8, #0d47a1);
             height: 100%;
             width: 0%;
             border-radius: 20px;
-            transition: width 0.5s ease;
+            transition: width 0.3s;
         }
-        .rank-progress-text {
-            font-size: 0.7rem;
-            color: #bbaa66;
-            text-align: right;
-            margin-top: 4px;
+        body.dark .progress-fill {
+            background: linear-gradient(90deg, #f7b32b, #ffd966);
         }
-        .next-rank-info {
+
+        .notification-badge {
+            position: relative;
+            cursor: pointer;
+        }
+        .notification-dot {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #ef4444;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+
+        .notifications-panel {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            width: 350px;
+            max-height: 500px;
+            background: white;
+            border-radius: 20px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+        body.dark .notifications-panel {
+            background: #1e2a1e;
+            border-color: #ffd966;
+        }
+        .notification-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        body.dark .notification-item { border-color: #ffd96633; }
+        .notification-item.unread { background: #dbeafe; border-left: 3px solid #1a73e8; }
+        body.dark .notification-item.unread { background: #2c6e4f33; border-left-color: #f7b32b; }
+        .notification-text { font-size: 0.9rem; color: #1e293b; }
+        body.dark .notification-text { color: #ffdf8c; }
+        .notification-time { font-size: 0.7rem; color: #888; margin-top: 5px; }
+
+        .referral-code {
+            background: #e8f0fe;
+            padding: 10px;
+            border-radius: 40px;
+            cursor: pointer;
+            text-align: center;
+            margin-top: 15px;
+        }
+        body.dark .referral-code { background: #0f1c19; }
+
+        .chance-warning {
+            color: #dc2626;
             font-size: 0.75rem;
-            color: #ffd966;
+            text-align: center;
             margin-top: 5px;
+            display: none;
+        }
+        body.dark .chance-warning { color: #f87171; }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #ffd966;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
 
         @media (max-width: 700px) {
-            .filter-group { flex-direction: column; }
-            body { padding: 12px; }
-            .upgrade-inputs { flex-direction: column; }
+            .upgrade-panel .wheel-container { width: 250px; height: 250px; }
+            .tabs { gap: 8px; }
+            .tab { padding: 8px 16px; font-size: 0.85rem; }
+            .notifications-panel { width: calc(100% - 40px); right: 20px; left: 20px; }
+            .user-info { gap: 8px; }
+            .balance-card, .bonus-card { padding: 4px 10px; font-size: 0.85rem; }
         }
     </style>
 </head>
 <body>
-<div id="app"></div>
+<div id="app">Загрузка...</div>
 
 <script>
-    const API_URL = 'https://script.google.com/macros/s/AKfycbzaQq5Qku56TgwPpRrT3PRFpaJIZVin2wRqshXXTFcwKCUurMzRljNzQ45nzjgdy9t8/exec';
+// ========== КОНФИГУРАЦИЯ ==========
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw12Uc86PqXNiZEm8CIz-4CUlymbAqEFrQkzIo1woMPj8cAiFqSWhl1IYiH9h_N43qh/exec';
 
-    let currentUser = null;
-    let authMode = 'login';
-    let adminMode = false;
-    let adminSearchTerm = '';
-    let users = [];
-    let tasks = [];
-    let reviews = [];
-    let reports = [];
-    let isDarkTheme = localStorage.getItem('darkTheme') === 'true';
-    let filters = { scope: 'school', minPrice: '', maxPrice: '' };
-    let notifications = [];
+let currentUser = null;
+let currentTab = 'allTasks';
+let isDark = localStorage.getItem('dark') === 'true';
+let showNotifs = false;
+let allUsers = [];
+let allTasks = [];
+let allNotifications = [];
 
-    if (isDarkTheme) document.body.classList.add('dark-theme');
+// Бурмалда переменные
+let upgradeCanvas, upgradeCtx;
+let upgradeVisible = 0, upgradeAngle = -Math.PI / 2;
+let upgradeSpinning = false, upgradeAnim = null;
+let upgradeAccount = 'bonus';
+let pendingBalanceSync = false; // Флаг для отложенной синхронизации
+const MAIN_PENALTY = 0.45;
+const MAX_CHANCE = 75;
 
-    function escapeHtml(t) { if (!t) return ''; const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
-    function showToast(msg, isErr, dur = 2500) { let t = document.createElement('div'); t.className = 'toast'; t.innerHTML = msg; if (isErr) t.style.background = '#b91c1c'; document.body.appendChild(t); setTimeout(() => t.remove(), dur); }
-    function formatDate(d) { return d ? new Date(d).toLocaleString('ru-RU', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }) : 'неизвестно'; }
-    function saveLocalData() { localStorage.setItem('schooltask_notifications', JSON.stringify(notifications)); }
-    function loadLocalData() { const s = localStorage.getItem('schooltask_notifications'); if (s) notifications = JSON.parse(s); }
+if (isDark) document.body.classList.add('dark');
 
-    function addNotification(userId, text, taskId = null) {
-        const n = { id: Date.now(), userId, text, read: false, createdAt: new Date().toISOString(), taskId };
-        notifications.push(n); saveLocalData();
-        if (currentUser && currentUser.id === userId) showToast(`🔔 ${text}`, false, 3500);
-    }
+// ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
+function escapeHtml(s) {
+    if (!s) return '';
+    return String(s).replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
+}
 
-    let isLoading = false, usersCache, tasksCache, reviewsCache, reportsCache, lastLoad=0, CACHE_TTL=30000;
-    async function loadData(force=false) {
-        if (!force && usersCache && (Date.now()-lastLoad)<CACHE_TTL) { users=usersCache; tasks=tasksCache; reviews=reviewsCache; reports=reportsCache; return true; }
-        if (isLoading) return users.length>0;
-        isLoading=true;
-        try {
-            const [u,t,rv,rp] = await Promise.all([ fetch(API_URL+'?action=getUsers').then(r=>r.json()).catch(()=>[]), fetch(API_URL+'?action=getTasks').then(r=>r.json()).catch(()=>[]), fetch(API_URL+'?action=getReviews').then(r=>r.json()).catch(()=>[]), fetch(API_URL+'?action=getReports').then(r=>r.json()).catch(()=>[]) ]);
-            if (Array.isArray(u)) users = u;
-            if (Array.isArray(t)) tasks = t;
-            if (Array.isArray(rv)) reviews = rv;
-            if (Array.isArray(rp)) reports = rp;
-            usersCache=users; tasksCache=tasks; reviewsCache=reviews; reportsCache=reports; lastLoad=Date.now();
-            isLoading=false; return true;
-        } catch(e){ isLoading=false; return false; }
-    }
-    async function saveToGoogle(action, params) {
-        try {
-            const fd = new URLSearchParams();
-            fd.append('action', action);
-            for(let k in params) if(params[k]!==undefined && params[k]!==null) fd.append(k, typeof params[k]==='object'?JSON.stringify(params[k]):params[k]);
-            const resp = await fetch(API_URL, { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:fd });
-            const txt = await resp.text();
-            try { return JSON.parse(txt); } catch(e){ return { success:false }; }
-        } catch(e){ return { success:false }; }
-    }
+function showToast(msg, isError) {
+    let t = document.createElement('div');
+    t.className = 'toast';
+    t.textContent = msg;
+    if (isError) t.style.background = '#dc2626';
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 2700);
+}
 
-    function saveSession() { if(currentUser) localStorage.setItem('schooltask_session', JSON.stringify({ id:currentUser.id, name:currentUser.name, school:currentUser.school, corp:currentUser.corp })); else localStorage.removeItem('schooltask_session'); }
-    async function restoreSession() { let s = localStorage.getItem('schooltask_session'); if(!s) return false; try { let ses = JSON.parse(s); await loadData(true); let u = users.find(u=>u.name===ses.name && u.school===ses.school && u.corp===ses.corp); if(u && u.isBanned!=='true') { currentUser=u; return true; } localStorage.removeItem('schooltask_session'); } catch(e){} return false; }
-
-    function getReferralLink() { let url = window.location.href.split('?')[0]; if(currentUser?.referral_code) return url+'?ref='+currentUser.referral_code; return url; }
-    function copyReferralLink() { navigator.clipboard.writeText(getReferralLink()); showToast('✅ Ссылка скопирована! +5₽ за каждого друга', false); }
-    function shareTelegram() { window.open('https://t.me/share/url?url='+encodeURIComponent(getReferralLink())+'&text='+encodeURIComponent('SchoolTask - биржа поручений! +5₽ на бонусный счёт за друга!'), '_blank'); }
-    function shareVK() { window.open('https://vk.com/share.php?url='+encodeURIComponent(getReferralLink()), '_blank'); }
-    function showBonusHelp() { alert('🎁 Бонусный счёт\n\nБонусы НЕЛЬЗЯ вывести, только тратить на создание заданий!\n\n✨ Как получить:\n• +5₽ за каждого приглашённого друга\n• +10₽ за выполнение задания\n• +20₽ за отзыв 5 звёзд'); }
-
-    let walletModal = null;
-    function openWalletModal() { if(!currentUser) return; if(walletModal) walletModal.remove(); walletModal = document.createElement('div'); walletModal.className = 'wallet-modal'; walletModal.innerHTML = `<div class="wallet-container"><div style="display:flex;justify-content:space-between;"><h3>💰 Кошелёк</h3><button onclick="closeWalletModal()" style="background:none;font-size:28px;">✕</button></div><div style="text-align:center;margin:20px 0;"><div>💰 Основной баланс</div><div style="font-size:2rem;font-weight:bold;">${(parseFloat(currentUser.balance)||0).toFixed(2)} ₽</div></div><div style="text-align:center;margin:20px 0;"><div>🎁 Бонусный счёт</div><div style="font-size:2rem;font-weight:bold;">${(parseFloat(currentUser.bonus_balance)||0).toFixed(2)} ₽</div></div><div style="display:flex;flex-direction:column;gap:10px;"><button class="btn-success" onclick="showPaymentAlert('deposit')">💰 Пополнить</button><button class="btn-primary" onclick="showPaymentAlert('withdraw')">💸 Вывод</button></div><button class="btn-danger" onclick="closeWalletModal()" style="margin-top:15px;">Закрыть</button></div>`; document.body.appendChild(walletModal); }
-    function closeWalletModal() { if(walletModal){ walletModal.remove(); walletModal=null; } renderApp(); }
-    function showPaymentAlert(type) { if(type==='deposit') alert('💳 ПОПОЛНЕНИЕ БАЛАНСА\n\nДля пополнения баланса напишите в Telegram:\n@leshr_ak47'); else alert('💸 ВЫВОД СРЕДСТВ\n\nНапишите в Telegram:\n@leshr_ak47\n\nМин. сумма: 100₽'); }
-
-    // ========== ФУНКЦИЯ ДЛЯ ОПРЕДЕЛЕНИЯ ЗВАНИЯ И ПРОГРЕССА ==========
-    const rankThresholds = [
-        { name: '🐣 Новичок', color: '#aaaaaa', tasksNeeded: 0, emoji: '🐣' },
-        { name: '🌱 Ученик', color: '#87CEEB', tasksNeeded: 10, emoji: '🌱' },
-        { name: '📌 Опытный', color: '#90EE90', tasksNeeded: 20, emoji: '📌' },
-        { name: '⭐ Продвинутый', color: '#cd7f32', tasksNeeded: 50, emoji: '⭐' },
-        { name: '💎 Мастер', color: '#c0c0c0', tasksNeeded: 100, emoji: '💎' },
-        { name: '👑 Легенда', color: '#ffd700', tasksNeeded: 200, emoji: '👑' }
-    ];
-
-    function getUserRankInfo(user) {
-        const completed = user.tasksCompleted || 0;
-        let currentRank = rankThresholds[0];
-        let nextRank = null;
-        for (let i = rankThresholds.length - 1; i >= 0; i--) {
-            if (completed >= rankThresholds[i].tasksNeeded) {
-                currentRank = rankThresholds[i];
-                nextRank = rankThresholds[i + 1] || null;
-                break;
+let loadingTimeout = null;
+function showLoading(show) {
+    let existing = document.querySelector('.loading-overlay');
+    if (show && !existing) {
+        let overlay = document.createElement('div');
+        overlay.className = 'loading-overlay';
+        overlay.innerHTML = '<div class="spinner"></div>';
+        document.body.appendChild(overlay);
+        loadingTimeout = setTimeout(() => {
+            if (document.querySelector('.loading-overlay')) {
+                document.querySelector('.loading-overlay')?.remove();
+                showToast('⚠️ Сервер долго отвечает, попробуйте позже', true);
             }
-        }
-        if (!nextRank && completed < rankThresholds[0].tasksNeeded) {
-            currentRank = rankThresholds[0];
-            nextRank = rankThresholds[1];
-        }
-        let progress = 100;
-        let needed = 0;
-        let remaining = 0;
-        if (nextRank) {
-            const currentNeeded = currentRank.tasksNeeded;
-            const nextNeeded = nextRank.tasksNeeded;
-            needed = nextNeeded - currentNeeded;
-            const currentProgress = completed - currentNeeded;
-            progress = Math.min(100, Math.max(0, (currentProgress / needed) * 100));
-            remaining = nextNeeded - completed;
-        }
-        return { currentRank, nextRank, progress, remaining, completed };
+        }, 10000);
+    } else if (!show && existing) {
+        if (loadingTimeout) clearTimeout(loadingTimeout);
+        existing.remove();
     }
+}
 
-    // -------------------- ОСНОВНЫЕ ФУНКЦИИ --------------------
-    async function createTask(desc, price, loc, payType, scope, btn) {
-        if(!desc||!price||!loc){ showToast('❌ Заполните все поля',true); if(btn) btn.disabled=false; return; }
-        if(btn) btn.disabled=true;
-        let priceNum=parseFloat(price);
-        if(isNaN(priceNum)||priceNum<=0){ showToast('❌ Цена должна быть положительной',true); if(btn) btn.disabled=false; return; }
-        let balance=payType==='bonus'?(parseFloat(currentUser.bonus_balance)||0):(parseFloat(currentUser.balance)||0);
-        if(balance<priceNum){ showToast('❌ Недостаточно средств',true); if(btn) btn.disabled=false; return; }
-        if(payType==='bonus') currentUser.bonus_balance-=priceNum;
-        else currentUser.balance-=priceNum;
-        let newTask={ 
-            id: Date.now().toString(), 
-            creatorId: currentUser.id, 
-            creatorSchool: currentUser.school, 
-            creatorCorp: currentUser.corp, 
-            description: desc, 
-            price: priceNum, 
-            location: loc, 
-            payment_type: payType, 
-            scope, 
-            status: 'open', 
-            takerId: '', 
-            createdAt: new Date().toISOString(),
-            paymentProcessed: 'false'
-        };
-        let createResult=await saveToGoogle('createTask',newTask);
-        if(!createResult?.success){ showToast('❌ Ошибка создания задания',true); if(payType==='bonus') currentUser.bonus_balance+=priceNum; else currentUser.balance+=priceNum; if(btn) btn.disabled=false; renderApp(); return; }
-        await saveToGoogle('updateUser',{ id:currentUser.id, balance:currentUser.balance, bonus_balance:currentUser.bonus_balance });
-        await loadData(true);
-        currentUser=users.find(u=>u.id===currentUser.id);
-        showToast('✅ Задание создано!',false);
-        if(btn) btn.disabled=false;
-        renderApp();
-    }
+function showModal(title, message, showBonusInfo = false) {
+    let modal = document.createElement('div');
+    modal.className = 'modal show';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <h3>${title}</h3>
+            <p>${message.replace(/\n/g, '<br>')}</p>
+            ${showBonusInfo ? '<div class="bonus-info">🎁 <strong>Для чего нужен бонусный счёт?</strong><br><br>• Создание заданий<br>• Участие в бурмалде<br>• Получение наград за выполнение<br>• Реферальные бонусы<br><br>⚠️ Бонусы нельзя вывести на реальные деньги</div>' : ''}
+            <a href="https://t.me/leshr_ak47" target="_blank" class="telegram-link">📱 Написать в Telegram</a>
+            <div class="close-btn">Закрыть</div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    modal.querySelector('.close-btn').onclick = () => modal.remove();
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+}
 
-    async function takeTask(id, btn) {
-        if(btn) { btn.disabled = true; btn.style.transform = 'scale(0.96)'; }
-        let task = tasks.find(t => t.id == id);
-        if(!task || task.status !== 'open') {
-            showToast('❌ Задание уже недоступно', true);
-            if(btn) { btn.disabled = false; btn.style.transform = ''; }
-            return;
-        }
-        const result = await saveToGoogle('takeTaskSafe', { taskId: id, userId: currentUser.id });
-        if(result && result.success){
-            await loadData(true);
-            currentUser = users.find(u => u.id === currentUser.id);
-            const task = tasks.find(t => t.id == id);
-            if(task) addNotification(task.creatorId, `${currentUser.name} взял твоё задание "${task.description.substring(0,30)}..."`, id);
-            showToast('📢 Вы взяли задание!', false);
-        } else {
-            showToast(result?.error || '❌ Не удалось взять задание', true);
-        }
-        if(btn) { btn.disabled = false; btn.style.transform = ''; }
-        renderApp();
-    }
-
-    async function confirmCompletion(id, btn) {
-        if(btn) btn.disabled=true;
-        let task=tasks.find(t=>t.id==id);
-        if(!task||task.status!=='in_progress'){ if(btn) btn.disabled=false; return; }
-        if(task.takerId!==currentUser.id){ if(btn) btn.disabled=false; return; }
-        await saveToGoogle('updateTask',{ id:task.id, status:'awaiting_confirmation' });
-        await loadData(true);
-        currentUser=users.find(u=>u.id===currentUser.id);
-        addNotification(task.creatorId,`${currentUser.name} выполнил задание "${task.description.substring(0,30)}..."`,id);
-        showToast('✅ Задание выполнено! Ожидайте подтверждения',false);
-        if(btn) btn.disabled=false;
-        renderApp();
-    }
-
-    async function confirmReceipt(id, btn) {
-        if(btn) btn.disabled=true;
-        let task = tasks.find(t => t.id == id);
-        if(!task) {
-            showToast('❌ Задание не найдено', true);
-            if(btn) btn.disabled=false;
-            return;
-        }
-        if(task.status !== 'awaiting_confirmation') {
-            showToast('❌ Задание не ожидает подтверждения', true);
-            if(btn) btn.disabled=false;
-            return;
-        }
-        if(task.creatorId !== currentUser.id) {
-            showToast('❌ Вы не можете подтвердить это задание', true);
-            if(btn) btn.disabled=false;
-            return;
-        }
-        if(task.paymentProcessed === 'true') {
-            showToast('❌ Оплата по этому заданию уже произведена', true);
-            if(btn) btn.disabled=false;
-            return;
-        }
+// ========== API ЗАПРОСЫ ==========
+async function callAPI(action, params = {}) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    
+    try {
+        const url = new URL(SCRIPT_URL);
+        url.searchParams.append('action', action);
+        Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
         
-        let executor = users.find(u => u.id === task.takerId);
-        if(!executor) {
-            showToast('❌ Исполнитель не найден', true);
-            if(btn) btn.disabled=false;
-            return;
-        }
-        
-        let total = parseFloat(task.price);
-        let gain = total * 0.95;
-        
-        executor.balance = (parseFloat(executor.balance) || 0) + gain;
-        executor.bonus_balance = (parseFloat(executor.bonus_balance) || 0) + 10;
-        executor.totalEarned = (parseFloat(executor.totalEarned) || 0) + gain;
-        executor.tasksCompleted = (parseInt(executor.tasksCompleted) || 0) + 1;
-        
-        await saveToGoogle('updateUser', { 
-            id: executor.id, 
-            balance: executor.balance, 
-            bonus_balance: executor.bonus_balance, 
-            totalEarned: executor.totalEarned, 
-            tasksCompleted: executor.tasksCompleted 
+        const response = await fetch(url.toString(), {
+            signal: controller.signal,
+            cache: 'no-cache'
         });
+        clearTimeout(timeoutId);
         
-        await saveToGoogle('addTaskCompleteBonus', { userId: executor.id });
-        
-        await saveToGoogle('updateTask', { 
-            id: task.id, 
-            status: 'completed', 
-            completedAt: new Date().toISOString(),
-            paymentProcessed: 'true'
-        });
-        
-        addNotification(executor.id, `💰 Задание "${task.description.substring(0,30)}..." подтверждено! +${gain.toFixed(2)} ₽`, id);
-        
-        await loadData(true);
-        currentUser = users.find(u => u.id === currentUser.id);
-        showToast(`💰 Подтверждено! Исполнитель получил ${gain.toFixed(2)} ₽`, false);
-        
-        if(btn) btn.disabled=false;
-        renderApp();
-    }
-
-    async function rejectReceipt(id,btn) {
-        if(btn) btn.disabled=true;
-        let task=tasks.find(t=>t.id==id);
-        if(!task||task.status!=='awaiting_confirmation'){ if(btn) btn.disabled=false; return; }
-        if(task.creatorId!==currentUser.id){ if(btn) btn.disabled=false; return; }
-        if(task.payment_type==='bonus') currentUser.bonus_balance+=parseFloat(task.price);
-        else currentUser.balance+=parseFloat(task.price);
-        await saveToGoogle('updateUser',{ id:currentUser.id, balance:currentUser.balance, bonus_balance:currentUser.bonus_balance });
-        await saveToGoogle('updateTask',{ id:task.id, status:'disputed' });
-        await loadData(true);
-        currentUser=users.find(u=>u.id===currentUser.id);
-        showToast('⚠️ Деньги возвращены',false);
-        if(btn) btn.disabled=false;
-        renderApp();
-    }
-
-    async function deleteTask(id,btn) {
-        if(btn) btn.disabled=true;
-        if(!confirm('Удалить задание? Деньги вернутся на счёт.')){ if(btn) btn.disabled=false; return; }
-        let task=tasks.find(t=>t.id==id);
-        if(task&&task.status==='open'&&task.creatorId===currentUser.id){
-            const taskPrice=parseFloat(task.price);
-            if(!isNaN(taskPrice)&&taskPrice>0){
-                if(task.payment_type==='bonus') currentUser.bonus_balance+=taskPrice;
-                else currentUser.balance+=taskPrice;
-                await saveToGoogle('updateUser',{ id:currentUser.id, balance:currentUser.balance, bonus_balance:currentUser.bonus_balance });
-                showToast(`💰 Возвращено ${taskPrice} ₽`,false);
-            }
+        const text = await response.text();
+        try {
+            return JSON.parse(text);
+        } catch(e) {
+            return null;
         }
-        await saveToGoogle('deleteTask',{ id });
-        await loadData(true);
-        currentUser=users.find(u=>u.id===currentUser.id);
-        showToast('🗑️ Задание удалено',false);
-        if(btn) btn.disabled=false;
-        renderApp();
+    } catch (error) {
+        clearTimeout(timeoutId);
+        return null;
     }
+}
 
-    function showEditModal(task) {
-        let newDesc=prompt('Новое описание:',task.description);
-        if(!newDesc) return;
-        let newPrice=parseFloat(prompt('Новая цена:',task.price));
-        if(isNaN(newPrice)||newPrice<=0){ showToast('❌ Цена должна быть положительной',true); return; }
-        let newLoc=prompt('Новое место:',task.location);
-        if(!newLoc) return;
-        let newScope=confirm('Для всех участников?')?'all':'school';
-        saveToGoogle('updateTask',{ id:task.id, description:newDesc, price:newPrice, location:newLoc, scope:newScope }).then(async()=>{ await loadData(true); currentUser=users.find(u=>u.id===currentUser.id); showToast('✅ Задание обновлено',false); renderApp(); });
-    }
-
-    async function addReview(toUserId,taskId,rating,comment) {
-        let result=await saveToGoogle('addReview',{ id:Date.now().toString(), fromUserId:currentUser.id, toUserId, taskId, rating:parseInt(rating), comment:comment||'', createdAt:new Date().toISOString() });
-        if(result&&result.success){
-            showToast('✅ Отзыв добавлен!',false);
-            await loadData(true);
-            currentUser=users.find(u=>u.id===currentUser.id);
-            renderApp();
-        } else { showToast('❌ Ошибка',true); }
-    }
-    function showReviewModal(taskId,toUserId) { let rating=prompt('Оценка (1-5):','5'); if(!rating) return; let rn=parseInt(rating); if(rn<1||rn>5){ showToast('❌ Оценка от 1 до 5',true); return; } let comment=prompt('Комментарий:',''); addReview(toUserId,taskId,rn,comment||''); }
-    function showReportModal(taskId,toUserId) { let reason=prompt('Причина жалобы:'); if(!reason) return; saveToGoogle('addReport',{ id:Date.now().toString(), reporterId:currentUser.id, reportedId:toUserId, taskId, reason, createdAt:new Date().toISOString() }).then(()=>{ showToast('✅ Жалоба отправлена'); renderApp(); }); }
-
-    async function adminChangeBalance(uid,amt,isBonus) {
-        let user=users.find(u=>u.id===uid);
-        if(!user) return;
-        if(isBonus){ user.bonus_balance=(parseFloat(user.bonus_balance)||0)+amt; if(currentUser && currentUser.id===uid) currentUser.bonus_balance=user.bonus_balance; }
-        else { user.balance=(parseFloat(user.balance)||0)+amt; if(currentUser && currentUser.id===uid) currentUser.balance=user.balance; }
-        showToast((amt>0?'+':'')+amt+' ₽ для '+user.name,false);
-        await saveToGoogle('updateUser',{ id:uid, balance:user.balance, bonus_balance:user.bonus_balance });
-        await loadData(true);
-        renderApp();
-    }
-    function showBanModal(uid) { let user=users.find(u=>u.id===uid); if(!user) return; let reason=prompt('Причина блокировки:','Нарушение правил'); if(!reason) return; saveToGoogle('updateUser',{ id:uid, isBanned:'true', banReason:reason }).then(async()=>{ await loadData(true); if(currentUser && currentUser.id===uid) logout(); else showToast('⛔ '+user.name+' заблокирован',false); renderApp(); }); }
-    function unbanUser(uid) { saveToGoogle('updateUser',{ id:uid, isBanned:'false', banReason:'' }).then(async()=>{ await loadData(true); showToast('✅ Пользователь разблокирован',false); renderApp(); }); }
-    function requestAdminAccess() { let pwd=prompt("Пароль администратора:"); if(pwd==='dsl382dAZX'){ adminMode=true; showToast("👑 Админ-панель активирована",false); renderApp(); } else showToast("❌ Неверный пароль",true); }
-    function exitAdminMode() { adminMode=false; renderApp(); }
-    function deleteAllTasks() { if(confirm('Удалить ВСЕ задания?')){ Promise.all(tasks.map(t=>saveToGoogle('deleteTask',{id:t.id}))).then(async()=>{ await loadData(true); showToast('✅ Все задания удалены',false); renderApp(); }); } }
-    function getStatusText(s) { switch(s){ case 'open':return{ text:'📋 Доступно', class:'status-open' }; case 'in_progress':return{ text:'⏳ Выполняется', class:'status-progress' }; case 'awaiting_confirmation':return{ text:'🕐 Ожидает', class:'status-awaiting' }; case 'completed':return{ text:'✅ Выполнено', class:'status-completed' }; default:return{ text:s, class:'status-open' }; } }
-    function getRatingStars(r) { let stars=''; for(let i=1;i<=5;i++) stars+= i<=r?'⭐':'☆'; return stars; }
-    function getTop3() { return [...users].sort((a,b)=> (parseInt(b.tasksCompleted)||0)-(parseInt(a.tasksCompleted)||0)).slice(0,3); }
-    function renderNotifications() { const un=notifications.filter(n=>n.userId===currentUser?.id).sort((a,b)=>b.id-a.id); const uc=un.filter(n=>!n.read).length; return `<div class="notifications-panel"><h4>🔔 Уведомления ${uc>0?`<span class="notification-badge">${uc}</span>`:''}</h4>${un.length===0?'<p>Нет уведомлений</p>':un.map(n=>`<div class="notification-item ${!n.read?'unread':''}" data-notif-id="${n.id}">📌 ${escapeHtml(n.text)}<br><small>${formatDate(n.createdAt)}</small></div>`).join('')}${un.length>0?'<button id="markNotifReadBtn" class="btn-info" style="margin-top:10px;width:100%;">Пометить все прочитанными</button>':''}</div>`; }
-    function markNotificationsRead() { notifications.forEach(n=>{ if(n.userId===currentUser?.id) n.read=true; }); saveLocalData(); renderApp(); }
-
-    // -------------------- АВТОРИЗАЦИЯ --------------------
-    async function login(name, school, corp, pass) {
-        await loadData();
-        const user = users.find(u => u.name === name && String(u.school) === String(school) && String(u.corp) === String(corp));
-        if (!user) { showToast('❌ Пользователь не найден', true); return; }
-        if (String(user.password) !== String(pass)) { showToast('❌ Неверный пароль', true); return; }
-        if (user.isBanned === 'true') { showToast('⛔ Аккаунт заблокирован', true); return; }
-        currentUser = user;
-        localStorage.setItem('schooltask_session', JSON.stringify({ id: user.id, name: user.name, school: user.school, corp: user.corp }));
-        showToast(`✅ Добро пожаловать, ${user.name}!`);
-        renderApp();
-    }
-
-    async function register(name, school, corp, pass) {
-        if (name.length < 3 || name.length > 10 || !/^[a-zA-Zа-яА-Я0-9_]+$/.test(name)) {
-            showToast('❌ Имя 3-10 символов (буквы/цифры)', true);
-            return;
+// Фоновая синхронизация баланса (без блокировки интерфейса)
+async function syncUserBalanceBackground() {
+    if (!currentUser || pendingBalanceSync) return;
+    pendingBalanceSync = true;
+    
+    // Запускаем синхронизацию в фоне
+    setTimeout(async () => {
+        try {
+            await callAPI('updateUser', {
+                id: currentUser.id,
+                balance: currentUser.balance,
+                bonus_balance: currentUser.bonus_balance
+            });
+            console.log('Баланс синхронизирован в фоне');
+        } catch(e) {
+            console.error('Фоновая синхронизация не удалась');
+        } finally {
+            pendingBalanceSync = false;
         }
-        if (!school || !/^\d+$/.test(school)) { showToast('❌ Школа только цифры', true); return; }
-        if (!corp || !/^\d+$/.test(corp)) { showToast('❌ Корпус только цифры', true); return; }
-        if (pass.length < 3) { showToast('❌ Пароль минимум 3', true); return; }
+    }, 100);
+}
+
+async function loadUsers() {
+    const result = await callAPI('getUsers');
+    if (result && !result.error) {
+        allUsers = Array.isArray(result) ? result : (result.users || []);
+    }
+    return allUsers;
+}
+
+async function loadTasks() {
+    const result = await callAPI('getTasks');
+    if (result && !result.error) {
+        allTasks = Array.isArray(result) ? result : (result.tasks || []);
+    }
+    return allTasks;
+}
+
+async function loadNotifications() {
+    if (!currentUser) return;
+    const result = await callAPI('getNotifications', { userId: currentUser.id });
+    if (result && !result.error) {
+        allNotifications = Array.isArray(result) ? result : (result.notifications || []);
+    }
+}
+
+async function loadAllData() {
+    showLoading(true);
+    try {
+        await Promise.all([loadUsers(), loadTasks()]);
+        if (currentUser) await loadNotifications();
+    } catch(e) {
+        console.error('Load error:', e);
+    }
+    showLoading(false);
+}
+
+async function refreshUserFromAPI() {
+    await loadUsers();
+    const updatedUser = allUsers.find(u => u.id === currentUser.id);
+    if (updatedUser) {
+        currentUser.balance = updatedUser.balance;
+        currentUser.bonus_balance = updatedUser.bonus_balance;
+        currentUser.tasksCompleted = updatedUser.tasksCompleted;
+        currentUser.tasksCreated = updatedUser.tasksCreated;
+        return true;
+    }
+    return false;
+}
+
+// ========== ФУНКЦИИ ПОЛЬЗОВАТЕЛЕЙ ==========
+async function register(name, school, corp, password, referralCode) {
+    if (name.length < 3 || name.length > 10 || !/^[a-zA-Zа-яА-Я0-9_]+$/.test(name)) {
+        showToast('❌ Имя 3-10 символов', true);
+        return false;
+    }
+    if (!school || !/^\d+$/.test(school)) {
+        showToast('❌ Школа только цифры', true);
+        return false;
+    }
+    if (!corp || !/^\d+$/.test(corp)) {
+        showToast('❌ Корпус только цифры', true);
+        return false;
+    }
+    if (password.length < 3) {
+        showToast('❌ Пароль минимум 3 символа', true);
+        return false;
+    }
+    
+    await loadUsers();
+    const existing = allUsers.find(u => u.name === name && u.school === school && u.corp === corp);
+    if (existing) {
+        showToast('❌ Пользователь уже существует', true);
+        return false;
+    }
+    
+    const userId = 'u' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+    const userReferralCode = name + '_' + Math.random().toString(36).substr(2, 4).toUpperCase();
+    
+    showLoading(true);
+    const result = await callAPI('registerUser', {
+        id: userId,
+        name: name,
+        school: school,
+        corp: corp,
+        password: password,
+        referral_code: userReferralCode,
+        referred_by: referralCode || '',
+        registeredAt: new Date().toISOString()
+    });
+    showLoading(false);
+    
+    if (result && result.success) {
+        showToast('✅ Регистрация успешна! Войдите');
+        renderAuth();
+        return true;
+    } else {
+        showToast('❌ ' + (result?.error || 'Ошибка регистрации'), true);
+        return false;
+    }
+}
+
+async function login(name, school, corp, password) {
+    showLoading(true);
+    await loadUsers();
+    showLoading(false);
+    
+    const user = allUsers.find(u => u.name === name && u.school === school && u.corp === corp);
+    
+    if (!user) {
+        showToast('❌ Пользователь не найден', true);
+        return false;
+    }
+    
+    if (user.password !== password) {
+        showToast('❌ Неверный пароль', true);
+        return false;
+    }
+    
+    currentUser = JSON.parse(JSON.stringify(user));
+    localStorage.setItem('schooltask_user', JSON.stringify({ id: currentUser.id }));
+    
+    await loadAllData();
+    
+    showToast(`✅ Добро пожаловать, ${user.name}!`);
+    renderMain();
+    return true;
+}
+
+function logout() {
+    currentUser = null;
+    localStorage.removeItem('schooltask_user');
+    renderAuth();
+}
+
+function toggleTheme() {
+    isDark = !isDark;
+    localStorage.setItem('dark', isDark);
+    document.body.classList.toggle('dark', isDark);
+    if (currentUser) renderMain(); else renderAuth();
+}
+
+// ========== ФУНКЦИИ ЗАДАНИЙ ==========
+async function createTask(desc, price, location, paymentType, btn) {
+    if (!desc || !price || !location) {
+        showToast('❌ Заполните все поля', true);
+        if (btn) btn.disabled = false;
+        return;
+    }
+    
+    const p = parseFloat(price);
+    if (isNaN(p) || p <= 0) {
+        showToast('❌ Цена > 0', true);
+        if (btn) btn.disabled = false;
+        return;
+    }
+    
+    const balance = paymentType === 'bonus' ? parseFloat(currentUser.bonus_balance) : parseFloat(currentUser.balance);
+    if (balance < p) {
+        showToast('❌ Недостаточно средств', true);
+        if (btn) btn.disabled = false;
+        return;
+    }
+    
+    const taskId = 'task_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+    
+    if (paymentType === 'bonus') {
+        currentUser.bonus_balance = (parseFloat(currentUser.bonus_balance) - p).toString();
+    } else {
+        currentUser.balance = (parseFloat(currentUser.balance) - p).toString();
+    }
+    
+    showLoading(true);
+    const result = await callAPI('createTask', {
+        id: taskId,
+        creatorId: currentUser.id,
+        creatorSchool: currentUser.school,
+        creatorCorp: currentUser.corp,
+        description: desc,
+        price: p,
+        location: location,
+        payment_type: paymentType,
+        createdAt: new Date().toISOString()
+    });
+    showLoading(false);
+    
+    if (result && result.success) {
+        await loadTasks();
+        showToast('✅ Задание создано!');
+        if (btn) btn.disabled = false;
+        renderMain();
+    } else {
+        showToast('❌ Ошибка создания', true);
+        if (btn) btn.disabled = false;
+    }
+}
+
+async function takeTask(taskId, btn) {
+    if (btn) btn.disabled = true;
+    
+    showLoading(true);
+    const result = await callAPI('takeTaskSafe', {
+        taskId: taskId,
+        userId: currentUser.id
+    });
+    showLoading(false);
+    
+    if (result && result.success) {
+        showToast('📢 Вы взяли задание!');
+        await loadTasks();
+        renderMain();
+    } else {
+        showToast('❌ ' + (result?.error || 'Не удалось'), true);
+        if (btn) btn.disabled = false;
+    }
+}
+
+async function completeTask(taskId, btn) {
+    if (btn) btn.disabled = true;
+    
+    showLoading(true);
+    const result = await callAPI('updateTask', {
+        id: taskId,
+        status: 'awaiting_confirmation'
+    });
+    showLoading(false);
+    
+    if (result && result.success) {
+        showToast('✅ Выполнено! Ждите подтверждения');
+        await loadTasks();
+        renderMain();
+    } else {
+        showToast('❌ Ошибка', true);
+        if (btn) btn.disabled = false;
+    }
+}
+
+async function confirmTask(taskId, price, executorId, btn) {
+    if (btn) btn.disabled = true;
+    const gain = price * 0.95;
+    
+    showLoading(true);
+    const result = await callAPI('updateTask', {
+        id: taskId,
+        status: 'completed',
+        completedAt: new Date().toISOString()
+    });
+    showLoading(false);
+    
+    if (result && result.success) {
+        await loadTasks();
+        await refreshUserFromAPI();
+        showToast(`💰 Подтверждено! +${gain.toFixed(2)} ₽`);
+        renderMain();
+    } else {
+        showToast('❌ Ошибка', true);
+        if (btn) btn.disabled = false;
+    }
+}
+
+async function deleteTask(taskId, btn) {
+    if (btn) btn.disabled = true;
+    
+    showLoading(true);
+    const result = await callAPI('deleteTask', { id: taskId });
+    showLoading(false);
+    
+    if (result && result.success) {
+        await loadTasks();
+        showToast('🗑️ Задание удалено');
+        renderMain();
+    } else {
+        showToast('❌ Ошибка удаления', true);
+        if (btn) btn.disabled = false;
+    }
+}
+
+// ========== БУРМАЛДА (без задержек) ==========
+function computeChance(bet, target) {
+    if (bet <= 0 || target <= 0) return 0;
+    return Math.min((bet / target) * 100, MAX_CHANCE);
+}
+
+function getResultAngle(visible) {
+    const real = upgradeAccount === 'main' ? visible * MAIN_PENALTY : visible;
+    const winAngle = (visible / 100) * Math.PI * 2;
+    const start = -Math.PI / 2 - winAngle / 2;
+    const end = start + winAngle;
+    if (Math.random() < real / 100) return start + Math.random() * winAngle;
+    else return end + Math.random() * (Math.PI * 2 - winAngle);
+}
+
+function drawWheel(p) {
+    if (!upgradeCtx || !upgradeCanvas) return;
+    const canvas = upgradeCanvas;
+    canvas.width = 400;
+    canvas.height = 400;
+    const ctx = upgradeCtx;
+    const r = 170, cx = 200, cy = 200;
+    
+    ctx.clearRect(0, 0, 400, 400);
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fillStyle = isDark ? '#2c423d' : '#e2e8f0';
+    ctx.fill();
+    
+    if (p > 0) {
+        const a = (p / 100) * Math.PI * 2;
+        const s = -Math.PI / 2 - a / 2;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, r, s, s + a);
+        ctx.fillStyle = isDark ? '#f7b32b' : '#1a73e8';
+        ctx.fill();
         
-        await loadData();
-        const exists = users.find(u => u.name === name && String(u.school) === school && String(u.corp) === corp);
-        if (exists) { showToast('❌ Уже существует', true); return; }
+        if (p < 100) {
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.arc(cx, cy, r, s + a, s + Math.PI * 2);
+            ctx.fillStyle = isDark ? '#3e5a54' : '#cbd5e1';
+            ctx.fill();
+        }
+    }
+    
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.strokeStyle = isDark ? '#fdcc6e' : '#64748b';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    
+    ctx.beginPath();
+    ctx.arc(cx, cy, 28, 0, Math.PI * 2);
+    ctx.fillStyle = isDark ? '#1d2d28' : '#f1f5f9';
+    ctx.fill();
+    ctx.fillStyle = isDark ? '#ffcd7e' : '#1a73e8';
+    ctx.font = 'bold 20px system-ui';
+    ctx.fillText("⚡", cx - 10, cy + 8);
+}
+
+function drawArrow(a) {
+    if (!upgradeCtx) return;
+    const ctx = upgradeCtx;
+    const cx = 200, cy = 200, len = 160, wid = 18;
+    const tipX = cx + Math.cos(a) * len;
+    const tipY = cy + Math.sin(a) * len;
+    const backX = cx - Math.cos(a) * (len * 0.2);
+    const backY = cy - Math.sin(a) * (len * 0.2);
+    const p = a + Math.PI / 2;
+    const lx = tipX - Math.cos(p) * wid;
+    const ly = tipY - Math.sin(p) * wid;
+    const rx = tipX + Math.cos(p) * wid;
+    const ry = tipY + Math.sin(p) * wid;
+    
+    ctx.beginPath();
+    ctx.moveTo(tipX, tipY);
+    ctx.lineTo(lx, ly);
+    ctx.lineTo(backX, backY);
+    ctx.lineTo(rx, ry);
+    ctx.fillStyle = isDark ? '#ffc857' : '#ef4444';
+    ctx.fill();
+    ctx.fillStyle = '#000';
+    ctx.font = 'bold 20px system-ui';
+    ctx.fillText("▼", tipX - 10, tipY - 6);
+}
+
+function refreshWheel() {
+    const betInput = document.getElementById('bet');
+    const targetInput = document.getElementById('target');
+    if (!betInput || !targetInput || !currentUser) return;
+    
+    let bet = parseFloat(betInput.value) || 0;
+    let target = parseFloat(targetInput.value) || 0;
+    
+    let chance = (bet / target) * 100;
+    if (chance > MAX_CHANCE && bet > 0 && target > 0) {
+        const maxBet = (target * MAX_CHANCE) / 100;
+        betInput.value = maxBet.toFixed(0);
+        bet = maxBet;
+    }
+    
+    upgradeVisible = computeChance(bet, target);
+    
+    const chanceSpan = document.getElementById('chance');
+    if (chanceSpan) chanceSpan.innerText = upgradeVisible.toFixed(1) + '%';
+    
+    const centerSpan = document.getElementById('centerPercent');
+    if (centerSpan) centerSpan.innerText = upgradeVisible.toFixed(0) + '%';
+    
+    const warningSpan = document.getElementById('chanceWarning');
+    if (warningSpan) {
+        warningSpan.style.display = upgradeVisible >= MAX_CHANCE ? 'block' : 'none';
+        if (upgradeVisible >= MAX_CHANCE) warningSpan.innerHTML = '⚠️ Макс. шанс ' + MAX_CHANCE + '%';
+    }
+    
+    const available = upgradeAccount === 'main' ? parseFloat(currentUser.balance) : parseFloat(currentUser.bonus_balance);
+    const spinBtn = document.getElementById('spinBtn');
+    if (spinBtn) spinBtn.disabled = !(bet > 0 && target > 0 && upgradeVisible > 0 && available >= bet && !upgradeSpinning);
+    
+    drawWheel(upgradeVisible);
+    drawArrow(upgradeAngle);
+}
+
+async function startSpin() {
+    if (upgradeSpinning) return;
+    const spinBtn = document.getElementById('spinBtn');
+    if (spinBtn.disabled) return;
+    
+    let bet = parseFloat(document.getElementById('bet').value);
+    let target = parseFloat(document.getElementById('target').value);
+    
+    let chance = (bet / target) * 100;
+    if (chance > MAX_CHANCE) {
+        showToast(`❌ Шанс не может превышать ${MAX_CHANCE}%`, true);
+        return;
+    }
+    
+    if (isNaN(bet) || bet <= 0 || target <= 0) {
+        showToast('❌ Введите ставку и выигрыш', true);
+        return;
+    }
+    
+    const visible = computeChance(bet, target);
+    const available = upgradeAccount === 'main' ? parseFloat(currentUser.balance) : parseFloat(currentUser.bonus_balance);
+    
+    if (available < bet) {
+        showToast('❌ Недостаточно средств', true);
+        return;
+    }
+    
+    // СПИСЫВАЕМ СТАВКУ (мгновенно, без ожидания API)
+    if (upgradeAccount === 'main') {
+        currentUser.balance = (parseFloat(currentUser.balance) - bet).toString();
+    } else {
+        currentUser.bonus_balance = (parseFloat(currentUser.bonus_balance) - bet).toString();
+    }
+    
+    // Обновляем отображение баланса сразу
+    const mainBalSpan = document.getElementById('mainBal');
+    const bonusBalSpan = document.getElementById('bonusBal');
+    if (mainBalSpan) mainBalSpan.innerText = parseFloat(currentUser.balance).toFixed(2) + ' ₽';
+    if (bonusBalSpan) bonusBalSpan.innerText = parseFloat(currentUser.bonus_balance).toFixed(2) + ' ₽';
+    
+    // Запускаем фоновую синхронизацию (не блокирует вращение)
+    syncUserBalanceBackground();
+    
+    refreshWheel();
+    spinBtn.disabled = true;
+    upgradeSpinning = true;
+    
+    const resultDiv = document.getElementById('result');
+    if (resultDiv) resultDiv.innerHTML = '🌀 Вращение...';
+    
+    const finalAngle = getResultAngle(visible);
+    const extraRevolutions = 12;
+    const extra = extraRevolutions * Math.PI * 2;
+    const startAngle = upgradeAngle;
+    const startTime = performance.now();
+    const duration = 2500;
+    
+    function animate(now) {
+        const t = Math.min(1, (now - startTime) / duration);
+        const ease = 1 - Math.pow(1 - t, 3);
+        upgradeAngle = startAngle + (finalAngle + extra - startAngle) * ease;
+        drawWheel(upgradeVisible);
+        drawArrow(upgradeAngle);
         
-        const newUser = {
-            id: 'u' + Date.now(),
-            name, school, corp,
-            password: pass,
-            balance: 0,
-            bonus_balance: 0,
-            referral_code: 'REF' + Math.random().toString(36).substring(2, 10).toUpperCase(),
-            referred_by: ''
-        };
-        
-        const result = await saveToGoogle('registerUser', newUser);
-        if (result?.success) {
-            showToast('✅ Регистрация успешна! Теперь войдите');
-            renderApp();
+        if (t < 1) {
+            upgradeAnim = requestAnimationFrame(animate);
         } else {
-            showToast('❌ Ошибка регистрации', true);
-        }
-    }
-
-    function logout() { currentUser = null; localStorage.removeItem('schooltask_session'); renderApp(); }
-
-    // -------------------- БУРМАЛДА --------------------
-    let upgradeCanvas=null, upgradeCtx=null;
-    let upgradeFairWinPercent=0;
-    let upgradeArrowAngle=0;
-    let upgradeIsSpinning=false;
-    let upgradeSpinAnimationId=null;
-    const MAIN_PENALTY = 0.45;
-
-    function computeFairChance(bet,target){ if(bet<=0||target<=0) return 0; let raw=(bet/target)*100; return Math.min(raw,100); }
-    
-    function getArrowAngleWithRealChance(fair,account){
-        let realWinPercent = (account === 'main') ? fair * MAIN_PENALTY : fair;
-        if(realWinPercent >= 100) realWinPercent = 100;
-        let winAngle = (fair / 100) * Math.PI * 2;
-        let startSector = -Math.PI / 2 - winAngle / 2;
-        let endSector = startSector + winAngle;
-        let r = Math.random();
-        let angle;
-        if(r < realWinPercent / 100){
-            let t = Math.random();
-            angle = startSector + t * winAngle;
-        } else {
-            let darkAngle = Math.PI * 2 - winAngle;
-            let darkStart = endSector;
-            let t = Math.random();
-            angle = darkStart + t * darkAngle;
-        }
-        return angle;
-    }
-    
-    function drawUpgradeWheel(winPercent){
-        if(!upgradeCtx) return;
-        const w=upgradeCanvas.width=500;
-        const h=upgradeCanvas.height=500;
-        const radius=220;
-        const cx=w/2, cy=h/2;
-        upgradeCtx.clearRect(0,0,w,h);
-        upgradeCtx.beginPath();
-        upgradeCtx.arc(cx,cy,radius,0,Math.PI*2);
-        upgradeCtx.fillStyle='#2c423d';
-        upgradeCtx.fill();
-        if(winPercent<=0){
-            upgradeCtx.beginPath();
-            upgradeCtx.arc(cx,cy,radius,0,Math.PI*2);
-            upgradeCtx.fillStyle='#3e5a54';
-            upgradeCtx.fill();
-        } else {
-            let winAngle=(winPercent/100)*Math.PI*2;
-            let startAngle=-Math.PI/2-winAngle/2;
-            upgradeCtx.beginPath();
-            upgradeCtx.moveTo(cx,cy);
-            upgradeCtx.arc(cx,cy,radius,startAngle,startAngle+winAngle);
-            upgradeCtx.closePath();
-            upgradeCtx.fillStyle='#f7b32b';
-            upgradeCtx.fill();
-            if(winPercent<100){
-                upgradeCtx.beginPath();
-                upgradeCtx.moveTo(cx,cy);
-                upgradeCtx.arc(cx,cy,radius,startAngle+winAngle,startAngle+Math.PI*2);
-                upgradeCtx.closePath();
-                upgradeCtx.fillStyle='#3e5a54';
-                upgradeCtx.fill();
-            }
-        }
-        upgradeCtx.beginPath();
-        upgradeCtx.arc(cx,cy,radius,0,Math.PI*2);
-        upgradeCtx.strokeStyle='#fdcc6e';
-        upgradeCtx.lineWidth=4;
-        upgradeCtx.stroke();
-        if(winPercent>0&&winPercent<100){
-            let winAngle=(winPercent/100)*Math.PI*2;
-            let startAngle=-Math.PI/2-winAngle/2;
-            upgradeCtx.beginPath();
-            upgradeCtx.moveTo(cx,cy);
-            upgradeCtx.lineTo(cx+radius*0.92*Math.cos(startAngle),cy+radius*0.92*Math.sin(startAngle));
-            upgradeCtx.strokeStyle='#ffeaac';
-            upgradeCtx.lineWidth=2.8;
-            upgradeCtx.stroke();
-            upgradeCtx.beginPath();
-            upgradeCtx.moveTo(cx,cy);
-            upgradeCtx.lineTo(cx+radius*0.92*Math.cos(startAngle+winAngle),cy+radius*0.92*Math.sin(startAngle+winAngle));
-            upgradeCtx.stroke();
-        }
-        upgradeCtx.beginPath();
-        upgradeCtx.arc(cx,cy,34,0,Math.PI*2);
-        upgradeCtx.fillStyle='#1d2d28';
-        upgradeCtx.fill();
-        upgradeCtx.fillStyle='#ffcd7e';
-        upgradeCtx.font='bold 23px "Segoe UI"';
-        upgradeCtx.fillText("⚡",cx-12,cy+10);
-    }
-    
-    function drawUpgradeArrow(angleRad){
-        if(!upgradeCtx) return;
-        const w=upgradeCanvas.width;
-        const h=upgradeCanvas.height;
-        const cx=w/2, cy=h/2;
-        const arrowLen=210, arrowWidth=22;
-        const tipX=cx+Math.cos(angleRad)*arrowLen;
-        const tipY=cy+Math.sin(angleRad)*arrowLen;
-        const backX=cx-Math.cos(angleRad)*(arrowLen*0.2);
-        const backY=cy-Math.sin(angleRad)*(arrowLen*0.2);
-        upgradeCtx.beginPath();
-        upgradeCtx.moveTo(tipX,tipY);
-        const anglePerp=angleRad+Math.PI/2;
-        const leftX=tipX-Math.cos(anglePerp)*arrowWidth;
-        const leftY=tipY-Math.sin(anglePerp)*arrowWidth;
-        const rightX=tipX+Math.cos(anglePerp)*arrowWidth;
-        const rightY=tipY+Math.sin(anglePerp)*arrowWidth;
-        upgradeCtx.lineTo(leftX,leftY);
-        upgradeCtx.lineTo(backX,backY);
-        upgradeCtx.lineTo(rightX,rightY);
-        upgradeCtx.closePath();
-        upgradeCtx.fillStyle='#ffc857';
-        upgradeCtx.shadowBlur=4;
-        upgradeCtx.fill();
-        upgradeCtx.fillStyle='#000000cc';
-        upgradeCtx.font='bold 26px "Segoe UI"';
-        upgradeCtx.fillText("▼",tipX-13,tipY-8);
-        upgradeCtx.shadowBlur=0;
-    }
-    
-    function renderUpgradeFull(){ drawUpgradeWheel(upgradeFairWinPercent); drawUpgradeArrow(upgradeArrowAngle); }
-    
-    function refreshUpgradeUI(){
-        let bet=parseFloat(document.getElementById('upgradeBet')?.value);
-        let target=parseFloat(document.getElementById('upgradeTarget')?.value);
-        if(isNaN(bet)) bet=0; if(isNaN(target)) target=0;
-        let fair=computeFairChance(bet,target);
-        upgradeFairWinPercent=fair;
-        let chanceSpan=document.getElementById('upgradeChancePercent');
-        if(chanceSpan) chanceSpan.innerHTML=`${fair.toFixed(1)}%`;
-        let spinBtn=document.getElementById('upgradeSpinBtn');
-        if(bet<=0||target<=0){ if(spinBtn) spinBtn.disabled=true; } else { if(spinBtn) spinBtn.disabled=false; }
-        let centerSpan=document.getElementById('upgradeCenterPercent');
-        if(centerSpan) centerSpan.innerHTML=`${fair.toFixed(0)}%`;
-        renderUpgradeFull();
-    }
-    
-    async function upgradeStartSpin(){
-        let spinBtn=document.getElementById('upgradeSpinBtn');
-        if(spinBtn.disabled) return;
-        let bet=parseFloat(document.getElementById('upgradeBet').value);
-        let target=parseFloat(document.getElementById('upgradeTarget').value);
-        if(isNaN(bet)||isNaN(target)||bet<=0||target<=0){ alert('Введите положительные числа'); return; }
-        let upgradeActiveAccount=document.getElementById('upgradeBtnMain').classList.contains('active')?'main':'bonus';
-        let available=(upgradeActiveAccount==='main')?(parseFloat(currentUser.balance)||0):(parseFloat(currentUser.bonus_balance)||0);
-        if(available<bet){ alert(`Недостаточно средств на ${upgradeActiveAccount==='main'?'основном':'бонусном'} счету`); return; }
-        
-        refreshUpgradeUI();
-        let fair=upgradeFairWinPercent;
-        let realWin=(upgradeActiveAccount==='main')?fair * MAIN_PENALTY:fair;
-        if(realWin<=0&&upgradeActiveAccount==='main'){ alert('Реальный шанс слишком низкий, увеличьте желаемый выигрыш'); return; }
-        
-        if(upgradeActiveAccount==='main') currentUser.balance=(parseFloat(currentUser.balance)||0)-bet;
-        else currentUser.bonus_balance=(parseFloat(currentUser.bonus_balance)||0)-bet;
-        await saveToGoogle('updateUser',{ id:currentUser.id, balance:currentUser.balance, bonus_balance:currentUser.bonus_balance });
-        updateUpgradeBalancesUI();
-        
-        spinBtn.disabled=true;
-        spinBtn.innerText='🌀 КРУТИМ... 🌀';
-        document.getElementById('upgradeResult').innerHTML='<span style="color:#ffd966;">⚙️ вращение...</span>';
-        
-        let targetAngle=getArrowAngleWithRealChance(fair,upgradeActiveAccount);
-        const extraRot=7*Math.PI*2;
-        let startAngle=upgradeArrowAngle;
-        let startTime=performance.now();
-        let duration=900;
-        
-        function animate(now){
-            if(!upgradeIsSpinning) return;
-            let elapsed=now-startTime;
-            let t=Math.min(1,elapsed/duration);
-            let ease=1-Math.pow(1-t,3);
-            let curAngle=startAngle+(targetAngle+extraRot-startAngle)*ease;
-            upgradeArrowAngle=curAngle;
-            renderUpgradeFull();
-            if(t<1){ upgradeSpinAnimationId=requestAnimationFrame(animate); }
-            else{
-                upgradeArrowAngle=(targetAngle+extraRot)%(Math.PI*2);
-                renderUpgradeFull();
-                upgradeIsSpinning=false;
-                if(upgradeSpinAnimationId) cancelAnimationFrame(upgradeSpinAnimationId);
-                upgradeSpinAnimationId=null;
-                finishUpgradeSpin(bet,target,upgradeActiveAccount, fair);
-            }
-        }
-        upgradeIsSpinning=true;
-        upgradeSpinAnimationId=requestAnimationFrame(animate);
-    }
-    
-    async function finishUpgradeSpin(bet,target,acc, fair){
-        let angleNorm=(upgradeArrowAngle+2*Math.PI)%(Math.PI*2);
-        let winAngle=(fair/100)*Math.PI*2;
-        let startSector=-Math.PI/2-winAngle/2;
-        let isWin=false;
-        if(fair>0){ let diff=(angleNorm-startSector+2*Math.PI)%(Math.PI*2); isWin=diff<=winAngle; }
-        
-        let resultDiv = document.getElementById('upgradeResult');
-        
-        if(isWin){
-            let winAmount=target;
-            if(acc==='main') currentUser.balance=(parseFloat(currentUser.balance)||0)+winAmount;
-            else currentUser.bonus_balance=(parseFloat(currentUser.bonus_balance)||0)+winAmount;
-            await saveToGoogle('updateUser',{ id:currentUser.id, balance:currentUser.balance, bonus_balance:currentUser.bonus_balance });
-            await loadData(true);
-            currentUser=users.find(u=>u.id===currentUser.id);
-            resultDiv.innerHTML=`<span style="color:#bef264;">✨ ПОБЕДА! ✨<br>+${winAmount.toFixed(2)} ₽</span>`;
-            showToast(`🎉 Вы выиграли ${winAmount.toFixed(2)} ₽!`, false);
-        } else {
-            resultDiv.innerHTML=`<span style="color:#fca5a5;">💥 ПРОИГРЫШ 💥<br>потеряно ${bet.toFixed(2)} ₽</span>`;
-            showToast(`😞 Вы проиграли ${bet.toFixed(2)} ₽`, true);
-        }
-        let spinBtn=document.getElementById('upgradeSpinBtn');
-        spinBtn.disabled=false;
-        spinBtn.innerText='🎯 КРУТИТЬ СТРЕЛКУ 🎯';
-        updateUpgradeBalancesUI();
-        renderApp();
-    }
-    
-    function updateUpgradeBalancesUI(){
-        document.getElementById('upgradeMainBalanceAmount').innerHTML=`${(parseFloat(currentUser?.balance)||0).toFixed(2)} ₽`;
-        document.getElementById('upgradeBonusBalanceAmount').innerHTML=`${(parseFloat(currentUser?.bonus_balance)||0).toFixed(2)} ₽`;
-        refreshUpgradeUI();
-    }
-    
-    function switchUpgradeToMain(){
-        document.getElementById('upgradeBtnMain').classList.add('active');
-        document.getElementById('upgradeBtnBonus').classList.remove('active');
-        updateUpgradeBalancesUI();
-    }
-    
-    function switchUpgradeToBonus(){
-        document.getElementById('upgradeBtnBonus').classList.add('active');
-        document.getElementById('upgradeBtnMain').classList.remove('active');
-        updateUpgradeBalancesUI();
-    }
-
-    // -------------------- ОСНОВНОЙ РЕНДЕР --------------------
-    let renderTimer=null;
-    async function renderApp() {
-        if(renderTimer) clearTimeout(renderTimer);
-        renderTimer=setTimeout(async()=>{
-            let appDiv=document.getElementById('app');
-            if(users.length===0) await loadData(false);
-            if(!currentUser){
-                let isLogin=authMode==='login';
-                let refCode=new URLSearchParams(window.location.search).get('ref');
-                appDiv.innerHTML=`<div class="container"><div class="header"><div class="logo"><h1>🏫 SchoolTask</h1><span>Биржа поручений + Бурмалда</span></div><button class="theme-toggle" id="themeToggleBtn">${isDarkTheme?'☀️':'🌙'}</button></div><div class="announcement"><h2>🔥 НУЖНА ВАША ПОМОЩЬ! 🔥</h2><p>Поделитесь ссылкой, получайте бонусы!</p><div class="share-buttons"><div class="share-btn share-tg" onclick="shareTelegram()">📱 Telegram</div><div class="share-btn share-vk" onclick="shareVK()">📱 ВКонтакте</div><div class="share-btn copy-link" onclick="copyReferralLink()">🔗 Скопировать ссылку</div></div></div><div class="help-box"><h4>🎁 Бонусный счёт</h4><p>+5₽ за друга, +10₽ за выполнение, +20₽ за отзыв 5⭐</p></div><div class="video-rule"><h4>🎥 ВАЖНОЕ ПРАВИЛО!</h4><p>При выполнении задания ОБЯЗАТЕЛЬНО запишите видео!</p></div><div class="card"><div class="tabs"><div class="tab ${isLogin?'active':''}" id="loginTab">🔐 Вход</div><div class="tab ${!isLogin?'active':''}" id="registerTab">📝 Регистрация</div></div>${isLogin?`<input type="text" id="loginName" placeholder="Имя" maxlength="10"><input type="text" id="loginSchool" placeholder="Школа (только цифры)"><div class="input-hint">📌 Только цифры</div><input type="text" id="loginCorp" placeholder="Корпус (только цифры)"><div class="input-hint">📌 Только цифры</div><input type="password" id="loginPassword" placeholder="Пароль"><button class="btn-primary" id="loginBtn">Войти</button>`:`<input type="text" id="regName" placeholder="Имя (3-10 символов, буквы)" maxlength="10"><div id="regNameError" class="error-text"></div><input type="text" id="regSchool" placeholder="Школа (только цифры)"><div class="input-hint">📌 Только цифры</div><div id="regSchoolError" class="error-text"></div><input type="text" id="regCorp" placeholder="Корпус (только цифры)"><div class="input-hint">📌 Только цифры</div><div id="regCorpError" class="error-text"></div><input type="password" id="regPassword" placeholder="Пароль (мин. 3 символа)">${refCode?`<div style="background:#e2e8f0;padding:8px;border-radius:18px;margin:8px 0;text-align:center;">🔗 Вы перешли по реферальной ссылке!</div>`:''}<button class="btn-primary" id="registerBtn">Зарегистрироваться</button>`}</div><div class="support-link">📞 Поддержка: <strong>@leshr_ak47</strong></div></div>`;
-                document.getElementById('loginTab').onclick=()=>{ authMode='login'; renderApp(); };
-                document.getElementById('registerTab').onclick=()=>{ authMode='register'; renderApp(); };
-                document.getElementById('loginBtn').onclick=async()=>{
-                    let name=document.getElementById('loginName').value.trim();
-                    let school=document.getElementById('loginSchool').value.trim();
-                    let corp=document.getElementById('loginCorp').value.trim();
-                    let pass=document.getElementById('loginPassword').value.trim();
-                    if(!name||!school||!corp||!pass) return showToast('Заполните все поля',true);
-                    await loadData(true);
-                    let user=users.find(u=>u.name===name && u.school===school && u.corp===corp);
-                    if(!user) return showToast('Пользователь не найден',true);
-                    if(user.password!==pass) return showToast('Неверный пароль',true);
-                    if(user.isBanned==='true') return showToast('Аккаунт заблокирован',true);
-                    currentUser=user;
-                    saveSession();
-                    showToast(`С возвращением, ${user.name}!`);
-                    renderApp();
-                };
-                document.getElementById('registerBtn').onclick=async()=>{
-                    let name=document.getElementById('regName').value.trim();
-                    let school=document.getElementById('regSchool').value.trim();
-                    let corp=document.getElementById('regCorp').value.trim();
-                    let pass=document.getElementById('regPassword').value.trim();
-                    if(name.length<3||name.length>10||!/[a-zA-Zа-яА-Я]/.test(name)) return showToast('Имя 3-10 символов, буквы',true);
-                    if(!school||!/^\d+$/.test(school)) return showToast('Школа только цифры',true);
-                    if(!corp||!/^\d+$/.test(corp)) return showToast('Корпус только цифры',true);
-                    if(pass.length<3) return showToast('Пароль минимум 3 символа',true);
-                    let id='u'+Date.now();
-                    let refCode=new URLSearchParams(window.location.search).get('ref');
-                    let res=await saveToGoogle('registerUser',{ id, name, school, corp, balance:0, bonus_balance:0, password:pass, referral_code:'REF'+Math.random().toString(36).substring(2,8).toUpperCase(), referred_by:refCode||'' });
-                    if(res?.success){
-                        await loadData(true);
-                        currentUser=users.find(u=>u.id===id)||users.find(u=>u.name===name);
-                        if(currentUser){ saveSession(); showToast(`Добро пожаловать!`); renderApp(); }
-                        else showToast('Ошибка получения данных',true);
-                    } else showToast('Ошибка регистрации',true);
-                };
-                document.getElementById('themeToggleBtn').onclick=()=>{ isDarkTheme=!isDarkTheme; localStorage.setItem('darkTheme',isDarkTheme); document.body.classList.toggle('dark-theme',isDarkTheme); renderApp(); };
-                return;
-            }
-
-            const top3=getTop3();
-            const isAdmin=currentUser.name==='leshr_ak47';
-            const rankInfo = getUserRankInfo(currentUser);
-            let adminHtml='';
-            if(isAdmin&&adminMode){
-                let fu=users.filter(u=>adminSearchTerm===''||u.name.toLowerCase().includes(adminSearchTerm.toLowerCase()));
-                adminHtml=`<div class="admin-panel"><div class="admin-header"><h2>👑 Админ-панель</h2><button class="btn-danger" id="exitAdminBtn">Выйти</button></div><div class="admin-header"><div class="search-box">🔍 <input type="text" id="adminSearch" placeholder="Поиск..." value="${adminSearchTerm}"></div><button id="clearTasksBtn" class="btn-danger">🗑️ Удалить все задания</button><button id="showStatsBtn" class="btn-info">📊 Статистика</button><button id="showReportsBtn" class="btn-warning">⚠️ Жалобы (${reports.length})</button></div><div class="users-table"></table><thead><tr><th>Имя</th><th>Школа</th><th>Корпус</th><th>Основной</th><th>Бонусный</th><th>Рейтинг</th><th>Статус</th><th>Управление</th><th>Действия</th></tr></thead><tbody>${fu.map(u=>{ let banned=u.isBanned==='true'; let rating=parseFloat(u.rating)||0; return `<tr><td style="padding:10px;"><strong>${escapeHtml(u.name)}</strong><br><small>${escapeHtml(u.id).slice(-8)}</small></td><td style="padding:10px;">${escapeHtml(u.school)}</td><td style="padding:10px;">${escapeHtml(u.corp)}</td><td style="color:#2c6e4f;">${(parseFloat(u.balance)||0).toFixed(2)} ₽</td><td style="color:#eab308;">${(parseFloat(u.bonus_balance)||0).toFixed(2)} ₽</td><td style="padding:10px;">${getRatingStars(rating)} (${u.ratingCount||0})</td><td style="padding:10px;">${banned?'⛔ Забанен':'✅ Активен'}${banned&&u.banReason?`<br><small>${escapeHtml(u.banReason)}</small>`:''}</td><td style="padding:10px;"><div><input type="number" id="amount-${u.id}" value="100" style="width:70px;"><button class="topup-btn" data-userid="${u.id}" data-bonus="false">+💰</button><button class="withdraw-btn" data-userid="${u.id}" data-bonus="false">-💰</button></div><div><input type="number" id="bonus-${u.id}" value="100" style="width:70px;"><button class="topup-btn" data-userid="${u.id}" data-bonus="true">+🎁</button><button class="withdraw-btn" data-userid="${u.id}" data-bonus="true">-🎁</button></div></td><td style="padding:10px;">${!banned?`<button class="ban-btn" data-userid="${u.id}">⛔ Бан</button>`:`<button class="unban-btn" data-userid="${u.id}">✅ Разбан</button>`}<br><button class="reviews-btn" data-userid="${u.id}">⭐ Отзывы</button><br><button class="user-tasks-btn" data-userid="${u.id}">📋 Задания</button></table></tr>`}).join('')}</tbody>}</div></div>`;
-            }
-            let adminBtn=isAdmin?`<button id="adminPanelBtn" class="btn-warning">🔐 Админка</button>`:'';
-
-            let openTasks=tasks.filter(t=> t.status==='open' && (t.scope==='all' || (t.creatorSchool===currentUser.school && t.creatorCorp===currentUser.corp)));
-            if(filters.minPrice) openTasks=openTasks.filter(t=>parseFloat(t.price)>=parseFloat(filters.minPrice));
-            if(filters.maxPrice) openTasks=openTasks.filter(t=>parseFloat(t.price)<=parseFloat(filters.maxPrice));
-            let myCreated=tasks.filter(t=>t.creatorId===currentUser.id);
-            let myExec=tasks.filter(t=>t.takerId===currentUser.id&&t.status!=='completed');
-            let myCompleted=tasks.filter(t=>t.status==='completed'&&(t.creatorId===currentUser.id||t.takerId===currentUser.id));
-            let userRating=parseFloat(currentUser.rating)||0;
-            let userRatingCnt=parseInt(currentUser.ratingCount)||0;
-            let reviewNeeded = 5 - ((userRatingCnt % 5) || 5);
-            if (reviewNeeded === 5 && userRatingCnt > 0) reviewNeeded = 5;
-
-            let honorHtml=`<div class="honor-board"><h3>🏅 Доска почёта</h3><div class="honor-list">${top3.map((u,idx)=>`<div class="honor-item"><div class="honor-medal">${idx===0?'🥇':idx===1?'🥈':'🥉'}</div><strong>${escapeHtml(u.name)}</strong><br>✅ ${u.tasksCompleted||0}</div>`).join('')}</div></div>`;
-            let helpBlock=`<div class="help-box"><h4>🎁 Бонусный счёт</h4><p>+5₽ за друга, +10₽ за выполнение, +20₽ за отзыв 5⭐</p><div class="share-buttons"><div class="share-btn share-tg" onclick="shareTelegram()">📱 Telegram</div><div class="share-btn share-vk" onclick="shareVK()">📱 ВКонтакте</div><div class="share-btn copy-link" onclick="copyReferralLink()">🔗 Скопировать ссылку</div></div></div>`;
-
-            let taskCard=(task,showTakeBtn=true,showEditDelete=false)=>{
-                let creator=users.find(u=>u.id===task.creatorId);
-                let st=getStatusText(task.status);
-                let btns='';
-                if(showTakeBtn&&task.status==='open'&&task.creatorId!==currentUser.id) btns=`<button class="btn-primary take-btn" data-id="${task.id}">📌 Взять</button>`;
-                if(task.status==='in_progress'&&task.takerId===currentUser.id) btns=`<button class="btn-success complete-btn" data-id="${task.id}">✅ Подтвердить</button>`;
-                if(task.status==='awaiting_confirmation'&&task.creatorId===currentUser.id) btns=`<div><button class="btn-success confirm-btn" data-id="${task.id}">💰 Подтвердить</button><button class="btn-danger reject-btn" data-id="${task.id}">❌ Отклонить</button></div>`;
-                if(task.status==='completed'&&task.creatorId===currentUser.id&&!reviews.some(r=>r.taskId===task.id&&r.fromUserId===currentUser.id)) btns+=`<button class="btn-info review-btn" data-id="${task.id}" data-userid="${task.takerId}">⭐ Отзыв</button>`;
-                if(task.status==='completed'&&task.creatorId===currentUser.id) btns+=`<button class="btn-danger report-btn" data-id="${task.id}" data-userid="${task.takerId}">⚠️ Жалоба</button>`;
-                if(showEditDelete&&task.creatorId===currentUser.id&&task.status==='open') btns+=`<div><button class="btn-edit edit-btn" data-id="${task.id}">✏️ Ред</button><button class="btn-danger delete-btn" data-id="${task.id}">🗑️ Удалить</button></div>`;
-                return `<div class="task-card"><div class="task-header"><div class="task-price">${task.price} ₽</div><div class="task-status ${st.class}">${st.text}</div></div><div class="task-desc">📌 ${escapeHtml(task.description)}</div><div class="task-meta">📍 ${escapeHtml(task.location)}</div><div>👤 ${creator?.name||'?'} (${creator?.school||''}, к.${creator?.corp||''})</div><div class="action-buttons">${btns}</div></div>`;
-            };
-
-            let createForm=`<div class="card"><h3>📝 Создать задание</h3><textarea id="taskDesc" rows="2" placeholder="Что нужно сделать?"></textarea><input type="number" id="taskPrice" placeholder="Цена"><input type="text" id="taskLocation" placeholder="Место"><select id="paymentType"><option value="main">💰 Основной (${(parseFloat(currentUser.balance)||0).toFixed(2)} ₽)</option><option value="bonus">🎁 Бонусный (${(parseFloat(currentUser.bonus_balance)||0).toFixed(2)} ₽)</option></select><select id="taskScope"><option value="school">🏫 Только моя школа</option><option value="all">🌍 Для всех</option></select><button class="btn-primary" id="createBtn">Создать</button></div>`;
+            upgradeAngle = (finalAngle + extra) % (Math.PI * 2);
+            drawWheel(upgradeVisible);
+            drawArrow(upgradeAngle);
+            upgradeSpinning = false;
+            if (upgradeAnim) cancelAnimationFrame(upgradeAnim);
             
-            let profileHtml = `<div class="card"><h3>👤 Профиль</h3>
-                <p><strong>Имя:</strong> ${escapeHtml(currentUser.name)}</p>
-                <p><strong>Школа/Корпус:</strong> ${escapeHtml(currentUser.school)} / ${escapeHtml(currentUser.corp)}</p>
-                <p><strong>💰 Основной:</strong> ${(parseFloat(currentUser.balance)||0).toFixed(2)} ₽</p>
-                <p><strong>🎁 Бонусный:</strong> ${(parseFloat(currentUser.bonus_balance)||0).toFixed(2)} ₽</p>
-                <p><strong>👥 Приглашено:</strong> ${currentUser.referral_count||0}</p>
-                <p><strong>⭐ Рейтинг:</strong> ${getRatingStars(userRating)} (${userRatingCnt})</p>
-                <p><strong>📊 Выполнено заданий:</strong> ${currentUser.tasksCompleted||0}</p>
-                <p><strong>💰 Заработано:</strong> ${(parseFloat(currentUser.totalEarned)||0).toFixed(2)} ₽</p>
-                <div class="referral-code" onclick="copyReferralLink()">🔗 ${getReferralLink()}</div>
-                
-                <div style="margin-top: 20px;"><strong>🏆 Текущее звание:</strong> <span style="color:${rankInfo.currentRank.color}">${rankInfo.currentRank.emoji} ${rankInfo.currentRank.name}</span></div>
-                ${rankInfo.nextRank ? `
-                    <div class="progress-container">
-                        <div class="progress-fill" style="width: ${rankInfo.progress}%;"></div>
-                    </div>
-                    <div class="rank-progress-text">${rankInfo.completed} / ${rankInfo.currentRank.tasksNeeded + (rankInfo.nextRank ? (rankInfo.nextRank.tasksNeeded - rankInfo.currentRank.tasksNeeded) : 0)} заданий</div>
-                    <div class="next-rank-info">📌 До звания "${rankInfo.nextRank.emoji} ${rankInfo.nextRank.name}": осталось ${rankInfo.remaining} заданий</div>
-                ` : '<div class="next-rank-info">👑 Вы достигли максимального звания!</div>'}
-                
-                <div style="margin-top: 15px;"><strong>⭐ Прогресс рейтинга:</strong></div>
-                <div class="progress-container">
-                    <div class="progress-fill" style="width: ${(userRatingCnt % 5) / 5 * 100}%;"></div>
+            const norm = (upgradeAngle + 2 * Math.PI) % (Math.PI * 2);
+            const winAngle = (visible / 100) * Math.PI * 2;
+            const startSector = -Math.PI / 2 - winAngle / 2;
+            const isWin = (norm - startSector + 2 * Math.PI) % (Math.PI * 2) <= winAngle;
+            
+            if (isWin) {
+                if (upgradeAccount === 'main') {
+                    currentUser.balance = (parseFloat(currentUser.balance) + target).toString();
+                } else {
+                    currentUser.bonus_balance = (parseFloat(currentUser.bonus_balance) + target).toString();
+                }
+                if (resultDiv) resultDiv.innerHTML = '✨ ПОБЕДА! +' + target.toFixed(2) + ' ₽ ✨';
+                showToast('🎉 Вы выиграли ' + target.toFixed(2) + ' ₽!');
+            } else {
+                if (resultDiv) resultDiv.innerHTML = '💥 ПРОИГРЫШ! -' + bet.toFixed(2) + ' ₽ 💥';
+                showToast('😞 Проигрыш ' + bet.toFixed(2) + ' ₽', true);
+            }
+            
+            // Обновляем отображение после выигрыша/проигрыша
+            if (mainBalSpan) mainBalSpan.innerText = parseFloat(currentUser.balance).toFixed(2) + ' ₽';
+            if (bonusBalSpan) bonusBalSpan.innerText = parseFloat(currentUser.bonus_balance).toFixed(2) + ' ₽';
+            
+            // Фоновая синхронизация финального баланса
+            syncUserBalanceBackground();
+            
+            refreshWheel();
+            spinBtn.disabled = false;
+        }
+    }
+    
+    upgradeAnim = requestAnimationFrame(animate);
+}
+
+function setAccount(acc) {
+    upgradeAccount = acc;
+    const btnMain = document.getElementById('btnMain');
+    const btnBonus = document.getElementById('btnBonus');
+    if (btnMain) btnMain.classList.toggle('active', acc === 'main');
+    if (btnBonus) btnBonus.classList.toggle('active', acc === 'bonus');
+    refreshWheel();
+}
+
+// ========== ОТОБРАЖЕНИЕ ==========
+function getStatusText(s) {
+    const map = { open: '📋 Доступно', in_progress: '⏳ Выполняется', awaiting_confirmation: '🕐 Ожидает', completed: '✅ Выполнено' };
+    return { text: map[s] || s, class: 'status-' + s };
+}
+
+function getUserRank(user) {
+    const c = parseInt(user.tasksCompleted) || 0;
+    if (c >= 200) return { emoji: '👑', name: 'Легенда', min: 200 };
+    if (c >= 100) return { emoji: '💎', name: 'Мастер', min: 100 };
+    if (c >= 50) return { emoji: '⭐', name: 'Продвинутый', min: 50 };
+    if (c >= 20) return { emoji: '📌', name: 'Опытный', min: 20 };
+    if (c >= 10) return { emoji: '🌱', name: 'Ученик', min: 10 };
+    return { emoji: '🐣', name: 'Новичок', min: 0 };
+}
+
+function getRatingStars(rating) {
+    const r = parseFloat(rating) || 0;
+    let stars = '';
+    for (let i = 1; i <= 5; i++) stars += i <= r ? '⭐' : '☆';
+    return stars;
+}
+
+function getTop3() {
+    return [...allUsers].sort((a, b) => (parseInt(b.tasksCompleted) || 0) - (parseInt(a.tasksCompleted) || 0)).slice(0, 3);
+}
+
+// ========== РЕНДЕР ==========
+function renderAuth() {
+    document.getElementById('app').innerHTML = `
+        <div class="container">
+            <div class="header">
+                <div class="logo">
+                    <h1>🏫 SchoolTask</h1>
+                    <span>Биржа поручений + Бурмалда</span>
                 </div>
-                <div class="rank-progress-text">До следующей звезды: ${reviewNeeded} отзыв(ов)</div>
-                <div class="next-rank-info">💡 Получите отзывы 5⭐, чтобы повысить рейтинг!</div>
-            </div>`;
-            
-            let upgradeHtml=`<div class="upgrade-panel"><h3>🎲 БУРМАЛДА (АПГРЕЙД)</h3><div class="wheel-container"><canvas id="upgradeCanvas" width="500" height="500"></canvas><div class="center-badge" id="upgradeCenterPercent">🎯</div></div><div class="balance-switch"><div id="upgradeBtnMain" class="balance-btn">💰 ОСНОВНОЙ<br><span id="upgradeMainBalanceAmount" class="balance-amount">${(parseFloat(currentUser.balance)||0).toFixed(2)} ₽</span></div><div id="upgradeBtnBonus" class="balance-btn active">🎁 БОНУСНЫЙ<br><span id="upgradeBonusBalanceAmount" class="balance-amount">${(parseFloat(currentUser.bonus_balance)||0).toFixed(2)} ₽</span></div></div><div class="upgrade-inputs"><div class="input-block"><label>💰 СТАВКА</label><input type="number" id="upgradeBet" value="50" step="10" min="1"></div><div class="input-block"><label>🎯 ЖЕЛАЕМЫЙ ВЫИГРЫШ</label><input type="number" id="upgradeTarget" value="100" step="10" min="1"></div></div><div class="chance-panel"><div>ВИДИМЫЙ ШАНС (на колесе)</div><div class="chance-digits" id="upgradeChancePercent">—%</div></div><button class="spin-button" id="upgradeSpinBtn">🎯 КРУТИТЬ СТРЕЛКУ 🎯</button><div class="result-area" id="upgradeResult">⚡ нажми на кнопку</div></div>`;
+                <button class="theme-toggle" id="themeBtn">${isDark ? '☀️' : '🌙'}</button>
+            </div>
+            <div class="card">
+                <div class="tabs">
+                    <div class="tab active" id="tabLogin">🔐 Вход</div>
+                    <div class="tab" id="tabReg">📝 Регистрация</div>
+                </div>
+                <div id="authForm">
+                    <input type="text" id="loginName" placeholder="Имя">
+                    <input type="text" id="loginSchool" placeholder="Школа">
+                    <input type="text" id="loginCorp" placeholder="Корпус">
+                    <input type="password" id="loginPass" placeholder="Пароль">
+                    <button class="btn-primary" id="actionBtn">🔐 Войти</button>
+                </div>
+                <div class="support-link">📞 Поддержка: @leshr_ak47 | Реферальный код при регистрации</div>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('themeBtn').onclick = toggleTheme;
+    
+    document.getElementById('tabReg').onclick = () => {
+        document.getElementById('authForm').innerHTML = `
+            <input type="text" id="regName" placeholder="Имя (3-10)">
+            <input type="text" id="regSchool" placeholder="Школа">
+            <input type="text" id="regCorp" placeholder="Корпус">
+            <input type="password" id="regPass" placeholder="Пароль (мин.3)">
+            <input type="text" id="regReferral" placeholder="Реферальный код">
+            <button class="btn-primary" id="actionBtn2">📝 Зарегистрироваться</button>
+        `;
+        document.getElementById('actionBtn2').onclick = async () => {
+            const name = document.getElementById('regName').value.trim();
+            const school = document.getElementById('regSchool').value.trim();
+            const corp = document.getElementById('regCorp').value.trim();
+            const pass = document.getElementById('regPass').value;
+            const ref = document.getElementById('regReferral').value.trim();
+            await register(name, school, corp, pass, ref);
+        };
+        document.getElementById('tabLogin').classList.remove('active');
+        document.getElementById('tabReg').classList.add('active');
+    };
+    
+    document.getElementById('tabLogin').onclick = () => {
+        document.getElementById('authForm').innerHTML = `
+            <input type="text" id="loginName" placeholder="Имя">
+            <input type="text" id="loginSchool" placeholder="Школа">
+            <input type="text" id="loginCorp" placeholder="Корпус">
+            <input type="password" id="loginPass" placeholder="Пароль">
+            <button class="btn-primary" id="actionBtn3">🔐 Войти</button>
+        `;
+        document.getElementById('actionBtn3').onclick = async () => {
+            const name = document.getElementById('loginName').value.trim();
+            const school = document.getElementById('loginSchool').value.trim();
+            const corp = document.getElementById('loginCorp').value.trim();
+            const pass = document.getElementById('loginPass').value;
+            await login(name, school, corp, pass);
+        };
+        document.getElementById('tabReg').classList.remove('active');
+        document.getElementById('tabLogin').classList.add('active');
+    };
+    
+    document.getElementById('actionBtn').onclick = async () => {
+        const name = document.getElementById('loginName').value.trim();
+        const school = document.getElementById('loginSchool').value.trim();
+        const corp = document.getElementById('loginCorp').value.trim();
+        const pass = document.getElementById('loginPass').value;
+        await login(name, school, corp, pass);
+    };
+}
 
-            let activeTab=window._activeTab||'allTasks';
-            let content='';
-            if(activeTab==='allTasks') content=`<h3>📋 Доступные задания (твоя школа ${currentUser.school}, корпус ${currentUser.corp})</h3><div class="filter-group"><select id="filterScope"><option value="school" ${filters.scope==='school'?'selected':''}>🏫 Только моя школа</option><option value="all" ${filters.scope==='all'?'selected':''}>🌍 Для всех</option></select><input type="number" id="filterMinPrice" placeholder="Цена от" value="${filters.minPrice}"><input type="number" id="filterMaxPrice" placeholder="Цена до" value="${filters.maxPrice}"><button id="applyFilters" class="btn-info">🔍 Применить</button></div><div class="tasks-grid">${openTasks.map(t=>taskCard(t,true,false)).join('')||'<div style="text-align:center;padding:30px;">✨ Нет заданий</div>'}</div>`;
-            else if(activeTab==='myTasks') content=`<h3>📌 Мои задания</h3><div class="tasks-grid">${myCreated.map(t=>taskCard(t,false,true)).join('')||'<div style="text-align:center;padding:30px;">✨ Нет созданных заданий</div>'}</div>`;
-            else if(activeTab==='myExecutions') content=`<h3>⚡ В работе</h3><div class="tasks-grid">${myExec.map(t=>taskCard(t,false,false)).join('')||'<div style="text-align:center;padding:30px;">✨ Нет заданий в работе</div>'}</div>`;
-            else if(activeTab==='completed') content=`<h3>✅ Завершённые</h3><div class="tasks-grid">${myCompleted.map(t=>taskCard(t,false,false)).join('')||'<div style="text-align:center;padding:30px;">✨ Нет завершённых заданий</div>'}</div>`;
-            else if(activeTab==='profile') content=profileHtml;
-            else if(activeTab==='create') content=createForm;
-            else if(activeTab==='upgrade') content=upgradeHtml;
-
-            appDiv.innerHTML=`<div class="container"><div class="header"><div class="logo"><h1>🏫 SchoolTask</h1></div><div class="user-info"><div>👋 ${escapeHtml(currentUser.name)} | ${escapeHtml(currentUser.school)} <span class="rank-badge">${rankInfo.currentRank.emoji} ${rankInfo.currentRank.name}</span></div><div class="balance-card" onclick="openWalletModal()">💰 ${(parseFloat(currentUser.balance)||0).toFixed(2)} ₽</div><div class="bonus-card" onclick="showBonusHelp()">🎁 ${(parseFloat(currentUser.bonus_balance)||0).toFixed(2)} ₽</div><button class="theme-toggle" id="themeToggleBtn">${isDarkTheme?'☀️':'🌙'}</button><button class="btn-danger" id="logoutBtn">Выйти</button></div></div><div style="margin-bottom:12px;">${adminBtn}</div>${adminHtml}${renderNotifications()}${honorHtml}${helpBlock}<div class="tabs"><div class="tab ${activeTab==='allTasks'?'active':''}" data-tab="allTasks">📋 Все</div><div class="tab ${activeTab==='myTasks'?'active':''}" data-tab="myTasks">📦 Мои</div><div class="tab ${activeTab==='myExecutions'?'active':''}" data-tab="myExecutions">⚡ В работе</div><div class="tab ${activeTab==='completed'?'active':''}" data-tab="completed">✅ Готово</div><div class="tab ${activeTab==='profile'?'active':''}" data-tab="profile">👤 Профиль</div><div class="tab ${activeTab==='create'?'active':''}" data-tab="create">➕ Создать</div><div class="tab ${activeTab==='upgrade'?'active':''}" data-tab="upgrade">🎲 Бурмалда</div></div>${content}<div class="support-link">📞 Поддержка: <strong>@leshr_ak47</strong></div></div>`;
-
-            document.querySelectorAll('.tab').forEach(tab=>{ tab.onclick=()=>{ window._activeTab=tab.getAttribute('data-tab'); renderApp(); }; });
-            if(document.getElementById('logoutBtn')) document.getElementById('logoutBtn').onclick=()=>{ currentUser=null; localStorage.removeItem('schooltask_session'); renderApp(); };
-            if(document.getElementById('themeToggleBtn')) document.getElementById('themeToggleBtn').onclick=()=>{ isDarkTheme=!isDarkTheme; localStorage.setItem('darkTheme',isDarkTheme); document.body.classList.toggle('dark-theme',isDarkTheme); renderApp(); };
-            if(document.getElementById('createBtn')) document.getElementById('createBtn').onclick=()=>{ createTask(document.getElementById('taskDesc').value, document.getElementById('taskPrice').value, document.getElementById('taskLocation').value, document.getElementById('paymentType').value, document.getElementById('taskScope').value, document.getElementById('createBtn')); };
-            if(document.getElementById('applyFilters')) document.getElementById('applyFilters').onclick=()=>{ filters.scope=document.getElementById('filterScope').value; filters.minPrice=document.getElementById('filterMinPrice').value; filters.maxPrice=document.getElementById('filterMaxPrice').value; renderApp(); };
-            if(document.getElementById('markNotifReadBtn')) document.getElementById('markNotifReadBtn').onclick=markNotificationsRead;
-            document.querySelectorAll('.notification-item').forEach(item=>{ item.onclick=()=>{ let nid=item.getAttribute('data-notif-id'); let n=notifications.find(n=>n.id==nid); if(n&&!n.read){ n.read=true; saveLocalData(); renderApp(); } }; });
-
-            if(isAdmin){
-                if(document.getElementById('adminPanelBtn')) document.getElementById('adminPanelBtn').onclick=()=>adminMode?exitAdminMode():requestAdminAccess();
-                if(document.getElementById('exitAdminBtn')) document.getElementById('exitAdminBtn').onclick=exitAdminMode;
-                if(document.getElementById('clearTasksBtn')) document.getElementById('clearTasksBtn').onclick=deleteAllTasks;
-                if(document.getElementById('showStatsBtn')) document.getElementById('showStatsBtn').onclick=()=>{ alert(`📊 СТАТИСТИКА\n👥 ${users.length}\n📋 ${tasks.length}\n⭐ ${reviews.length}`); };
-                if(document.getElementById('showReportsBtn')) document.getElementById('showReportsBtn').onclick=()=>{ if(reports.length===0) alert('📋 Жалоб нет.'); else alert('⚠️ Жалобы:\n'+reports.slice(0,10).map(r=>`${r.reason}`).join('\n')); };
-                if(document.getElementById('adminSearch')) document.getElementById('adminSearch').oninput=e=>{ adminSearchTerm=e.target.value; renderApp(); };
-                document.querySelectorAll('.topup-btn').forEach(btn=>{ btn.onclick=()=>{ let uid=btn.getAttribute('data-userid'); let isBonus=btn.getAttribute('data-bonus')==='true'; let amountField=isBonus?document.getElementById('bonus-'+uid):document.getElementById('amount-'+uid); let amt=parseFloat(amountField?.value||100); if(amt>0) adminChangeBalance(uid,amt,isBonus); }; });
-                document.querySelectorAll('.withdraw-btn').forEach(btn=>{ btn.onclick=()=>{ let uid=btn.getAttribute('data-userid'); let isBonus=btn.getAttribute('data-bonus')==='true'; let amountField=isBonus?document.getElementById('bonus-'+uid):document.getElementById('amount-'+uid); let amt=parseFloat(amountField?.value||100); if(amt>0) adminChangeBalance(uid,-amt,isBonus); }; });
-                document.querySelectorAll('.ban-btn').forEach(btn=>{ btn.onclick=()=>showBanModal(btn.getAttribute('data-userid')); });
-                document.querySelectorAll('.unban-btn').forEach(btn=>{ btn.onclick=()=>unbanUser(btn.getAttribute('data-userid')); });
-                document.querySelectorAll('.reviews-btn').forEach(btn=>{ btn.onclick=()=>{ let uid=btn.getAttribute('data-userid'); let uRev=reviews.filter(r=>r.toUserId===uid); let uObj=users.find(u=>u.id===uid); if(uRev.length===0) alert(`⭐ У ${uObj?.name} нет отзывов.`); else alert(`⭐ ОТЗЫВЫ О ${uObj?.name}\nСр.оценка: ${(uRev.reduce((s,r)=>s+parseInt(r.rating),0)/uRev.length).toFixed(1)}\nВсего: ${uRev.length}`); }; });
-                document.querySelectorAll('.user-tasks-btn').forEach(btn=>{ btn.onclick=()=>{ let uid=btn.getAttribute('data-userid'); let uTasks=tasks.filter(t=>t.creatorId===uid||t.takerId===uid); let uObj=users.find(u=>u.id===uid); alert(`📋 ЗАДАНИЯ ${uObj?.name}\n📝 Создал: ${uTasks.filter(t=>t.creatorId===uid).length}\n🔧 Взял: ${uTasks.filter(t=>t.takerId===uid).length}`); }; });
-            }
-
-            document.querySelectorAll('.take-btn').forEach(btn=>{ btn.onclick=()=>takeTask(btn.getAttribute('data-id'),btn); });
-            document.querySelectorAll('.delete-btn').forEach(btn=>{ btn.onclick=()=>deleteTask(btn.getAttribute('data-id'),btn); });
-            document.querySelectorAll('.edit-btn').forEach(btn=>{ let tid=btn.getAttribute('data-id'); let task=tasks.find(t=>t.id==tid); if(task) btn.onclick=()=>showEditModal(task); });
-            document.querySelectorAll('.complete-btn').forEach(btn=>{ btn.onclick=()=>confirmCompletion(btn.getAttribute('data-id'),btn); });
-            document.querySelectorAll('.confirm-btn').forEach(btn=>{ btn.onclick=()=>confirmReceipt(btn.getAttribute('data-id'),btn); });
-            document.querySelectorAll('.reject-btn').forEach(btn=>{ btn.onclick=()=>rejectReceipt(btn.getAttribute('data-id'),btn); });
-            document.querySelectorAll('.review-btn').forEach(btn=>{ btn.onclick=()=>showReviewModal(btn.getAttribute('data-id'),btn.getAttribute('data-userid')); });
-            document.querySelectorAll('.report-btn').forEach(btn=>{ btn.onclick=()=>showReportModal(btn.getAttribute('data-id'),btn.getAttribute('data-userid')); });
-
-            if(document.getElementById('upgradeCanvas')){
-                upgradeCanvas=document.getElementById('upgradeCanvas');
-                upgradeCtx=upgradeCanvas.getContext('2d');
-                refreshUpgradeUI();
-                document.getElementById('upgradeBet').addEventListener('input',refreshUpgradeUI);
-                document.getElementById('upgradeTarget').addEventListener('input',refreshUpgradeUI);
-                document.getElementById('upgradeSpinBtn').addEventListener('click',upgradeStartSpin);
-                document.getElementById('upgradeBtnMain').addEventListener('click',switchUpgradeToMain);
-                document.getElementById('upgradeBtnBonus').addEventListener('click',switchUpgradeToBonus);
-            }
-        },10);
+function renderMain() {
+    if (!currentUser) {
+        renderAuth();
+        return;
     }
+    
+    const top3 = getTop3();
+    const rank = getUserRank(currentUser);
+    const progress = Math.min(100, ((parseInt(currentUser.tasksCompleted) || 0) / 200) * 100);
+    
+    const userTasks = allTasks.filter(t => t.creatorSchool === currentUser.school);
+    const openTasks = userTasks.filter(t => t.status === 'open' && t.creatorId !== currentUser.id);
+    const myCreated = allTasks.filter(t => t.creatorId === currentUser.id);
+    const myWork = allTasks.filter(t => t.takerId === currentUser.id && t.status === 'in_progress');
+    const awaiting = allTasks.filter(t => t.creatorId === currentUser.id && t.status === 'awaiting_confirmation');
+    const completed = allTasks.filter(t => t.status === 'completed' && (t.creatorId === currentUser.id || t.takerId === currentUser.id));
+    
+    const userNotifications = allNotifications.filter(n => n.userId === currentUser.id);
+    const unreadCount = userNotifications.filter(n => n.read !== 'true').length;
+    
+    function taskCard(t, showTake, showDel, showComp, showConf) {
+        const creator = allUsers.find(u => u.id === t.creatorId);
+        const st = getStatusText(t.status);
+        let btns = '';
+        if (showTake && t.status === 'open' && t.creatorId !== currentUser.id) btns += `<button class="btn-primary take-btn" data-id="${t.id}">📌 Взять</button>`;
+        if (showDel && t.creatorId === currentUser.id && t.status === 'open') btns += `<button class="btn-danger del-btn" data-id="${t.id}">🗑️ Удалить</button>`;
+        if (showComp && t.takerId === currentUser.id && t.status === 'in_progress') btns += `<button class="btn-success comp-btn" data-id="${t.id}">✅ Выполнить</button>`;
+        if (showConf && t.creatorId === currentUser.id && t.status === 'awaiting_confirmation') btns += `<button class="btn-success conf-btn" data-id="${t.id}" data-price="${t.price}" data-executor="${t.takerId}">💰 Подтвердить</button>`;
+        return `<div class="task-card">
+            <div class="task-header">
+                <div class="task-price">${parseFloat(t.price).toFixed(2)} ₽</div>
+                <div class="task-status ${st.class}">${st.text}</div>
+            </div>
+            <div>📌 ${escapeHtml(t.description)}</div>
+            <div>📍 ${escapeHtml(t.location)}</div>
+            <div>👤 ${escapeHtml(creator?.name || '?')} (${creator?.school || ''})</div>
+            <div class="action-buttons">${btns}</div>
+        </div>`;
+    }
+    
+    let content = '';
+    if (currentTab === 'allTasks') {
+        content = `<h3>📋 Доступные задания</h3><div class="tasks-grid">${openTasks.map(t => taskCard(t, true, false, false, false)).join('') || '<div style="text-align:center;padding:30px;">✨ Нет заданий</div>'}</div>`;
+    } else if (currentTab === 'myTasks') {
+        content = `<h3>📌 Мои задания</h3><div class="tasks-grid">${myCreated.map(t => taskCard(t, false, true, false, false)).join('') || '<div style="text-align:center;padding:30px;">✨ Нет заданий</div>'}</div>`;
+    } else if (currentTab === 'myWork') {
+        content = `<h3>⚡ В работе</h3><div class="tasks-grid">${myWork.map(t => taskCard(t, false, false, true, false)).join('') || '<div style="text-align:center;padding:30px;">✨ Нет заданий</div>'}</div>`;
+    } else if (currentTab === 'awaiting') {
+        content = `<h3>🕐 Ожидают</h3><div class="tasks-grid">${awaiting.map(t => taskCard(t, false, false, false, true)).join('') || '<div style="text-align:center;padding:30px;">✨ Нет заданий</div>'}</div>`;
+    } else if (currentTab === 'completed') {
+        content = `<h3>✅ Завершённые</h3><div class="tasks-grid">${completed.map(t => taskCard(t, false, false, false, false)).join('') || '<div style="text-align:center;padding:30px;">✨ Нет заданий</div>'}</div>`;
+    } else if (currentTab === 'profile') {
+        content = `<div class="card">
+            <h3>👤 Профиль</h3>
+            <p><strong>Имя:</strong> ${escapeHtml(currentUser.name)}</p>
+            <p><strong>Школа/Корпус:</strong> ${currentUser.school} / ${currentUser.corp}</p>
+            <p><strong>💰 Основной:</strong> ${(parseFloat(currentUser.balance) || 0).toFixed(2)} ₽</p>
+            <p><strong>🎁 Бонусный:</strong> ${(parseFloat(currentUser.bonus_balance) || 0).toFixed(2)} ₽</p>
+            <p><strong>⭐ Рейтинг:</strong> ${getRatingStars(currentUser.rating)} (${parseInt(currentUser.ratingCount) || 0})</p>
+            <p><strong>📊 Выполнено:</strong> ${parseInt(currentUser.tasksCompleted) || 0}</p>
+            <p><strong>📝 Создано:</strong> ${parseInt(currentUser.tasksCreated) || 0}</p>
+            <div class="referral-code" onclick="navigator.clipboard.writeText('${currentUser.referral_code || ''}'); showToast('✅ Код скопирован!')">🔗 Реферальный код: <strong>${currentUser.referral_code || 'Нет'}</strong></div>
+            <div style="margin-top:20px"><strong>🏆 Звание:</strong> <span class="rank-badge">${rank.emoji} ${rank.name}</span></div>
+            <div class="progress-container"><div class="progress-fill" style="width: ${progress}%"></div></div>
+            <div class="support-link" style="margin-top:15px">📌 До след. звания: ${rank.min > (parseInt(currentUser.tasksCompleted) || 0) ? (rank.min - (parseInt(currentUser.tasksCompleted) || 0)) + ' заданий' : 'Максимум!'}</div>
+        </div>`;
+    } else if (currentTab === 'create') {
+        content = `<div class="card">
+            <h3>📝 Создать задание</h3>
+            <textarea id="taskDesc" rows="2" placeholder="Что нужно сделать?"></textarea>
+            <input type="number" id="taskPrice" placeholder="Цена">
+            <input type="text" id="taskLocation" placeholder="Место">
+            <select id="paymentType">
+                <option value="main">💰 Основной (${(parseFloat(currentUser.balance) || 0).toFixed(2)} ₽)</option>
+                <option value="bonus">🎁 Бонусный (${(parseFloat(currentUser.bonus_balance) || 0).toFixed(2)} ₽)</option>
+            </select>
+            <button class="btn-primary" id="createBtn">Создать</button>
+        </div>`;
+    } else if (currentTab === 'upgrade') {
+        content = `<div class="upgrade-panel">
+            <h3>🎲 БУРМАЛДА (макс. шанс ${MAX_CHANCE}%)</h3>
+            <div class="wheel-container">
+                <canvas id="wheelCanvas"></canvas>
+                <div class="center-badge" id="centerPercent">0%</div>
+            </div>
+            <div class="balance-switch">
+                <div class="balance-btn" id="btnMain">💰<br><span id="mainBal">${(parseFloat(currentUser.balance) || 0).toFixed(2)} ₽</span></div>
+                <div class="balance-btn active" id="btnBonus">🎁<br><span id="bonusBal">${(parseFloat(currentUser.bonus_balance) || 0).toFixed(2)} ₽</span></div>
+            </div>
+            <div class="upgrade-inputs">
+                <input type="number" id="bet" placeholder="💰 СТАВКА" value="50" step="10">
+                <input type="number" id="target" placeholder="🎯 ВЫИГРЫШ" value="100" step="10">
+            </div>
+            <div class="chance-panel">
+                <div>ШАНС НА КОЛЕСЕ</div>
+                <div class="chance-digits" id="chance">—%</div>
+            </div>
+            <div class="chance-warning" id="chanceWarning"></div>
+            <button class="spin-button" id="spinBtn">🎯 КРУТИТЬ</button>
+            <div class="result-area" id="result">⚡ Нажми на кнопку</div>
+        </div>`;
+    }
+    
+    let notifPanel = '';
+    if (showNotifs) {
+        if (userNotifications.length > 0) {
+            notifPanel = `<div class="notifications-panel">
+                <div style="padding:10px; border-bottom:1px solid #e2e8f0; font-weight:bold;">Уведомления</div>
+                ${userNotifications.map(n => `<div class="notification-item ${n.read !== 'true' ? 'unread' : ''}">
+                    <div class="notification-text">${escapeHtml(n.text)}</div>
+                    <div class="notification-time">${new Date(n.createdAt).toLocaleString()}</div>
+                </div>`).join('')}
+            </div>`;
+        } else {
+            notifPanel = `<div class="notifications-panel"><div class="notification-item">Нет уведомлений</div></div>`;
+        }
+    }
+    
+    document.getElementById('app').innerHTML = `
+        <div class="container">
+            <div class="header">
+                <div class="logo"><h1>🏫 SchoolTask</h1></div>
+                <div class="user-info">
+                    <div>👋 ${escapeHtml(currentUser.name)} | ${currentUser.school}</div>
+                    <div class="balance-card" id="balanceCard">💰 ${(parseFloat(currentUser.balance) || 0).toFixed(2)} ₽</div>
+                    <div class="bonus-card" id="bonusCard">🎁 ${(parseFloat(currentUser.bonus_balance) || 0).toFixed(2)} ₽</div>
+                    <div class="notification-badge" id="notifBtn">
+                        <button class="btn-info">🔔 ${unreadCount > 0 ? `(${unreadCount})` : ''}</button>
+                        ${unreadCount > 0 ? '<div class="notification-dot"></div>' : ''}
+                    </div>
+                    <button class="theme-toggle" id="themeBtn">${isDark ? '☀️' : '🌙'}</button>
+                    <button class="btn-danger" id="logoutBtn">Выйти</button>
+                </div>
+            </div>
+            <div class="honor-board">
+                <h3>🏅 Доска почёта</h3>
+                <div class="honor-list">${top3.map((u, i) => `<div class="honor-item"><div>${i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'}</div><strong>${escapeHtml(u.name)}</strong><br>✅ ${parseInt(u.tasksCompleted) || 0}</div>`).join('')}</div>
+            </div>
+            <div class="tabs">
+                <div class="tab ${currentTab === 'allTasks' ? 'active' : ''}" data-tab="allTasks">📋 Все</div>
+                <div class="tab ${currentTab === 'myTasks' ? 'active' : ''}" data-tab="myTasks">📦 Мои</div>
+                <div class="tab ${currentTab === 'myWork' ? 'active' : ''}" data-tab="myWork">⚡ В работе</div>
+                <div class="tab ${currentTab === 'awaiting' ? 'active' : ''}" data-tab="awaiting">🕐 Ожидают</div>
+                <div class="tab ${currentTab === 'completed' ? 'active' : ''}" data-tab="completed">✅ Готово</div>
+                <div class="tab ${currentTab === 'profile' ? 'active' : ''}" data-tab="profile">👤 Профиль</div>
+                <div class="tab ${currentTab === 'create' ? 'active' : ''}" data-tab="create">➕ Создать</div>
+                <div class="tab ${currentTab === 'upgrade' ? 'active' : ''}" data-tab="upgrade">🎲 Бурмалда</div>
+            </div>
+            ${content}
+            <div class="support-link">📞 Поддержка: <strong>@leshr_ak47</strong> | Реферальная система: +5 бонусов за приглашение</div>
+        </div>
+        ${notifPanel}
+    `;
+    
+    // При входе в бурмалду - синхронизируем баланс
+    if (currentTab === 'upgrade') {
+        refreshUserFromAPI().then(() => {
+            const mainBalSpan = document.getElementById('mainBal');
+            const bonusBalSpan = document.getElementById('bonusBal');
+            if (mainBalSpan) mainBalSpan.innerText = parseFloat(currentUser.balance).toFixed(2) + ' ₽';
+            if (bonusBalSpan) bonusBalSpan.innerText = parseFloat(currentUser.bonus_balance).toFixed(2) + ' ₽';
+            refreshWheel();
+        });
+    }
+    
+    document.getElementById('balanceCard')?.addEventListener('click', () => {
+        showModal('💰 Основной кошелёк', 'Вывод и пополнение средств производится через поддержку.\n\nНапишите @leshr_ak47 в Telegram');
+    });
+    
+    document.getElementById('bonusCard')?.addEventListener('click', () => {
+        showModal('🎁 Бонусный счёт', 'Бонусный счёт используется для:\n\n• Создания заданий\n• Участия в бурмалде\n• Получения наград\n• Реферальных бонусов\n\nБонусы нельзя вывести на реальные деньги.', true);
+    });
+    
+    document.querySelectorAll('[data-tab]').forEach(t => t.onclick = () => { currentTab = t.dataset.tab; renderMain(); });
+    document.getElementById('logoutBtn').onclick = logout;
+    document.getElementById('themeBtn').onclick = toggleTheme;
+    document.getElementById('notifBtn').onclick = () => { showNotifs = !showNotifs; renderMain(); };
+    document.getElementById('createBtn')?.addEventListener('click', () => {
+        const btn = document.getElementById('createBtn');
+        btn.disabled = true;
+        createTask(
+            document.getElementById('taskDesc').value,
+            document.getElementById('taskPrice').value,
+            document.getElementById('taskLocation').value,
+            document.getElementById('paymentType').value,
+            btn
+        );
+    });
+    
+    document.querySelectorAll('.take-btn').forEach(b => b.onclick = () => takeTask(b.dataset.id, b));
+    document.querySelectorAll('.del-btn').forEach(b => b.onclick = () => deleteTask(b.dataset.id, b));
+    document.querySelectorAll('.comp-btn').forEach(b => b.onclick = () => completeTask(b.dataset.id, b));
+    document.querySelectorAll('.conf-btn').forEach(b => b.onclick = () => confirmTask(b.dataset.id, parseFloat(b.dataset.price), b.dataset.executor, b));
+    
+    if (currentTab === 'upgrade') {
+        setTimeout(() => {
+            upgradeCanvas = document.getElementById('wheelCanvas');
+            if (upgradeCanvas) {
+                upgradeCtx = upgradeCanvas.getContext('2d');
+                upgradeAngle = -Math.PI / 2;
+                refreshWheel();
+                document.getElementById('bet')?.addEventListener('input', refreshWheel);
+                document.getElementById('target')?.addEventListener('input', refreshWheel);
+                document.getElementById('spinBtn')?.addEventListener('click', startSpin);
+                document.getElementById('btnMain')?.addEventListener('click', () => setAccount('main'));
+                document.getElementById('btnBonus')?.addEventListener('click', () => setAccount('bonus'));
+            }
+        }, 50);
+    }
+}
 
-    loadLocalData();
-    (async()=>{ await loadData(false); await restoreSession(); renderApp(); })();
+async function renderApp() {
+    if (currentUser) {
+        await loadAllData();
+        renderMain();
+    } else {
+        renderAuth();
+    }
+}
+
+// ========== ЗАПУСК ==========
+(async function init() {
+    const saved = localStorage.getItem('schooltask_user');
+    if (saved) {
+        try {
+            const ses = JSON.parse(saved);
+            await loadUsers();
+            const user = allUsers.find(u => u.id === ses.id);
+            if (user) {
+                currentUser = JSON.parse(JSON.stringify(user));
+            }
+        } catch(e) {}
+    }
+    await renderApp();
+})();
 </script>
 </body>
 </html>
