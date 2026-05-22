@@ -16,6 +16,7 @@
             background: linear-gradient(135deg, #f5f7fa 0%, #eef2f7 100%);
             min-height: 100vh;
             padding: 20px;
+            transition: background 0.3s ease;
         }
 
         body.dark {
@@ -33,7 +34,7 @@
             padding: 20px;
             margin-bottom: 20px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-            transition: all 0.2s;
+            transition: all 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
         }
 
         body.dark .header,
@@ -65,13 +66,20 @@
             background-clip: text;
         }
 
-        .logo span {
-            font-size: 0.8rem;
-            color: #64748b;
+        .warning-banner {
+            background: linear-gradient(135deg, #dc2626, #991b1b);
+            color: white;
+            padding: 20px;
+            border-radius: 24px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: bold;
+            animation: pulseWarning 2s infinite;
         }
 
-        body.dark .logo span {
-            color: #bbaa66;
+        @keyframes pulseWarning {
+            0%, 100% { transform: scale(1); background: linear-gradient(135deg, #dc2626, #991b1b); }
+            50% { transform: scale(1.01); background: linear-gradient(135deg, #ef4444, #dc2626); }
         }
 
         .user-info {
@@ -93,26 +101,13 @@
             border-radius: 40px;
             font-weight: bold;
             cursor: pointer;
-            transition: all 0.15s;
+            transition: all 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1);
         }
 
-        .balance-card:hover, .bonus-card:hover {
-            transform: scale(1.03);
-        }
-
-        .balance-card:active, .bonus-card:active {
-            transform: scale(0.97);
-        }
-
-        .balance-card {
-            background: #1a73e8;
-            color: white;
-        }
-
-        .bonus-card {
-            background: #f7b32b;
-            color: #1f2a1b;
-        }
+        .balance-card:hover, .bonus-card:hover { transform: scale(1.05); }
+        .balance-card:active, .bonus-card:active { transform: scale(0.95); }
+        .balance-card { background: #1a73e8; color: white; }
+        .bonus-card { background: #f7b32b; color: #1f2a1b; }
 
         button {
             cursor: pointer;
@@ -120,26 +115,16 @@
             border-radius: 40px;
             padding: 10px 20px;
             font-weight: bold;
-            transition: all 0.15s;
+            transition: all 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1);
         }
-
-        button:hover {
-            transform: scale(1.02);
-        }
-
-        button:active {
-            transform: scale(0.97);
-        }
-
-        button:disabled {
-            opacity: 0.6;
-            transform: none;
-            cursor: not-allowed;
-        }
+        button:hover { transform: scale(1.02); }
+        button:active { transform: scale(0.97); }
+        button:disabled { opacity: 0.6; transform: none; cursor: not-allowed; }
 
         .btn-primary { background: #1a73e8; color: white; }
         .btn-success { background: #10b981; color: white; }
         .btn-danger { background: #dc2626; color: white; }
+        .btn-warning { background: #f59e0b; color: white; }
         .btn-info { background: #3b82f6; color: white; }
         .theme-toggle { background: #64748b; color: white; padding: 8px 16px; border-radius: 60px; }
 
@@ -152,6 +137,7 @@
             font-size: 1rem;
             background: white;
             color: #1e293b;
+            transition: all 0.2s ease;
         }
 
         body.dark input, body.dark textarea, body.dark select {
@@ -163,6 +149,7 @@
         input:focus, textarea:focus, select:focus {
             outline: none;
             border-color: #1a73e8;
+            transform: scale(1.01);
         }
 
         .tabs {
@@ -178,8 +165,8 @@
             border-radius: 60px;
             cursor: pointer;
             font-weight: 600;
+            transition: all 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1);
             color: #1e293b;
-            transition: all 0.15s;
         }
 
         body.dark .tab {
@@ -199,11 +186,11 @@
         }
 
         .task-card {
-            transition: all 0.2s;
+            transition: all 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
         }
         .task-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
         }
 
         .task-header {
@@ -219,6 +206,7 @@
         .status-in_progress { background: #f59e0b; color: white; }
         .status-awaiting_confirmation { background: #3b82f6; color: white; }
         .status-completed { background: #64748b; color: white; }
+        .status-disputed { background: #dc2626; color: white; }
         .action-buttons { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
 
         .toast {
@@ -231,7 +219,7 @@
             padding: 12px 24px;
             border-radius: 60px;
             z-index: 1000;
-            animation: slideUp 0.2s ease, fadeOut 0.2s ease 2.5s forwards;
+            animation: slideUp 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1), fadeOut 0.3s ease 2.7s forwards;
         }
         @keyframes slideUp {
             from { opacity: 0; transform: translateX(-50%) translateY(20px); }
@@ -249,12 +237,10 @@
             text-align: center;
             font-size: 12px;
             color: #1a73e8;
+            transition: all 0.2s;
         }
-
-        body.dark .support-link {
-            background: #0f1c19;
-            color: #bbaa66;
-        }
+        body.dark .support-link { background: #0f1c19; color: #bbaa66; }
+        .support-link:hover { transform: scale(1.01); }
 
         .honor-list {
             display: flex;
@@ -269,10 +255,233 @@
             padding: 10px 15px;
             min-width: 100px;
             text-align: center;
+            transition: all 0.2s;
         }
-        body.dark .honor-item {
-            background: #0f1c19;
-            border: 1px solid #ffd96655;
+        body.dark .honor-item { background: #0f1c19; border: 1px solid #ffd96655; }
+        .honor-item:hover { transform: translateY(-3px); }
+
+        /* Бурмалда */
+        .upgrade-panel .wheel-container {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            margin: 0 auto 20px;
+        }
+        .upgrade-panel canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100% !important;
+            height: 100% !important;
+            border-radius: 50%;
+            box-shadow: 0 0 0 6px #e2e8f0;
+            transition: box-shadow 0.3s;
+        }
+        body.dark .upgrade-panel canvas { box-shadow: 0 0 0 6px #2c3e2f; }
+        .upgrade-panel canvas:hover { box-shadow: 0 0 0 8px #1a73e8; }
+        body.dark .upgrade-panel canvas:hover { box-shadow: 0 0 0 8px #f7b32b; }
+        .upgrade-panel .center-badge {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(8px);
+            border-radius: 60px;
+            padding: 6px 12px;
+            color: #f7b32b;
+            font-weight: bold;
+            font-size: 0.85rem;
+        }
+        .upgrade-inputs { display: flex; gap: 12px; margin: 15px 0; flex-wrap: wrap; }
+        .upgrade-inputs input { flex: 1; margin: 0; }
+        .balance-switch { display: flex; gap: 12px; margin: 10px 0; }
+        .balance-btn {
+            flex: 1;
+            background: #e2e8f0;
+            border-radius: 60px;
+            padding: 10px;
+            cursor: pointer;
+            text-align: center;
+            color: #1e293b;
+            transition: all 0.2s;
+        }
+        body.dark .balance-btn { background: #0f1c19; border: 1px solid #ffd96688; color: #ddd; }
+        .balance-btn:hover { transform: scale(1.02); }
+        .balance-btn.active { background: #1a73e8; color: white; }
+        body.dark .balance-btn.active { background: #f7b32b; color: #1f2a1b; }
+        .chance-panel {
+            text-align: center;
+            background: #e8f0fe;
+            border-radius: 60px;
+            padding: 12px;
+            margin-bottom: 15px;
+        }
+        body.dark .chance-panel { background: #07131299; }
+        .chance-digits { font-size: 1.6rem; font-weight: 800; color: #1a73e8; }
+        body.dark .chance-digits { color: #ffd966; }
+        .spin-button {
+            width: 100%;
+            background: linear-gradient(95deg, #1a73e8, #0d47a1);
+            padding: 14px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 60px;
+            box-shadow: 0 4px 0 #0d47a1;
+            transition: all 0.1s;
+        }
+        body.dark .spin-button { background: linear-gradient(95deg, #f0a500, #ff7b00); box-shadow: 0 4px 0 #8b4600; }
+        .spin-button:active { transform: translateY(2px); box-shadow: 0 2px 0 #0d47a1; }
+        .result-area {
+            margin-top: 15px;
+            background: #e8f0fe;
+            border-radius: 50px;
+            padding: 12px;
+            text-align: center;
+            color: #1a73e8;
+        }
+        body.dark .result-area { background: #00000066; color: #ffeca2; }
+        .rank-badge {
+            display: inline-block;
+            background: #e2e8f0;
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            margin-left: 8px;
+            color: #1a73e8;
+        }
+        body.dark .rank-badge { background: #2c3e2f; color: #ffd966; }
+        .progress-container {
+            background: #e2e8f0;
+            border-radius: 20px;
+            height: 8px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+        body.dark .progress-container { background: #2c3e2f; }
+        .progress-fill {
+            background: linear-gradient(90deg, #1a73e8, #0d47a1);
+            height: 100%;
+            width: 0%;
+            border-radius: 20px;
+            transition: width 0.5s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+        }
+        body.dark .progress-fill { background: linear-gradient(90deg, #f7b32b, #ffd966); }
+
+        .notification-badge { position: relative; cursor: pointer; }
+        .notification-dot {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #ef4444;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+
+        .notifications-panel {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            width: 350px;
+            max-height: 500px;
+            background: white;
+            border-radius: 20px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+            z-index: 1000;
+            overflow-y: auto;
+            animation: slideInRight 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+        }
+        body.dark .notifications-panel { background: #1e2a1e; border-color: #ffd966; }
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(100px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .notification-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid #e2e8f0;
+            transition: background 0.2s;
+        }
+        body.dark .notification-item { border-color: #ffd96633; }
+        .notification-item:hover { background: #e8f0fe; }
+        body.dark .notification-item:hover { background: #2c3e2f; }
+        .notification-item.unread { background: #dbeafe; border-left: 3px solid #1a73e8; }
+        body.dark .notification-item.unread { background: #2c6e4f33; border-left-color: #f7b32b; }
+        .notification-text { font-size: 0.9rem; color: #1e293b; }
+        body.dark .notification-text { color: #ffdf8c; }
+        .notification-time { font-size: 0.7rem; color: #888; margin-top: 5px; }
+
+        .referral-code {
+            background: #e8f0fe;
+            padding: 10px;
+            border-radius: 40px;
+            cursor: pointer;
+            text-align: center;
+            margin-top: 15px;
+            transition: all 0.2s;
+        }
+        body.dark .referral-code { background: #0f1c19; }
+        .referral-code:hover { transform: scale(1.02); }
+        .referral-code:active { transform: scale(0.98); }
+
+        .user-rating {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: #e8f0fe;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+        }
+        body.dark .user-rating { background: #0f1c19; }
+
+        .review-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .review-modal.show { display: flex; }
+        .review-content {
+            background: white;
+            border-radius: 32px;
+            padding: 30px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            animation: modalSlideUp 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+        }
+        @keyframes modalSlideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        body.dark .review-content { background: #1e2a1e; border: 1px solid #ffd966; }
+        .review-stars { display: flex; justify-content: center; gap: 10px; margin: 20px 0; }
+        .review-star { font-size: 2rem; cursor: pointer; color: #cbd5e1; transition: all 0.1s; }
+        .review-star.selected { color: #f7b32b; }
+        .review-star:hover { transform: scale(1.1); }
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border-radius: 16px;
+            border: 2px solid #e2e8f0;
+            margin: 15px 0;
+            resize: vertical;
         }
 
         .modal {
@@ -295,21 +504,12 @@
             max-width: 400px;
             width: 90%;
             text-align: center;
+            animation: modalSlideUp 0.3s;
         }
-        body.dark .modal-content {
-            background: #1e2a1e;
-            border: 1px solid #ffd966;
-        }
-        .modal-content h3 {
-            margin-bottom: 15px;
-            color: #1a73e8;
-        }
+        body.dark .modal-content { background: #1e2a1e; border: 1px solid #ffd966; }
+        .modal-content h3 { margin-bottom: 15px; color: #1a73e8; }
         body.dark .modal-content h3 { color: #ffd966; }
-        .modal-content p {
-            margin-bottom: 20px;
-            color: #1e293b;
-            line-height: 1.5;
-        }
+        .modal-content p { margin-bottom: 20px; color: #1e293b; line-height: 1.5; }
         body.dark .modal-content p { color: #ffdf8c; }
         .modal-content .telegram-link {
             background: #1a73e8;
@@ -338,214 +538,6 @@
         }
         body.dark .bonus-info { background: #0f1c19; }
 
-        .upgrade-panel .wheel-container {
-            position: relative;
-            width: 300px;
-            height: 300px;
-            margin: 0 auto 20px;
-        }
-        .upgrade-panel canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100% !important;
-            height: 100% !important;
-            border-radius: 50%;
-            box-shadow: 0 0 0 6px #e2e8f0;
-        }
-        body.dark .upgrade-panel canvas { box-shadow: 0 0 0 6px #2c3e2f; }
-        .upgrade-panel .center-badge {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.8);
-            backdrop-filter: blur(8px);
-            border-radius: 60px;
-            padding: 6px 12px;
-            color: #f7b32b;
-            font-weight: bold;
-            font-size: 0.85rem;
-        }
-        .upgrade-inputs {
-            display: flex;
-            gap: 12px;
-            margin: 15px 0;
-            flex-wrap: wrap;
-        }
-        .upgrade-inputs input {
-            flex: 1;
-            margin: 0;
-        }
-        .balance-switch {
-            display: flex;
-            gap: 12px;
-            margin: 10px 0;
-        }
-        .balance-btn {
-            flex: 1;
-            background: #e2e8f0;
-            border-radius: 60px;
-            padding: 10px;
-            cursor: pointer;
-            text-align: center;
-            color: #1e293b;
-            transition: all 0.15s;
-        }
-        body.dark .balance-btn {
-            background: #0f1c19;
-            border: 1px solid #ffd96688;
-            color: #ddd;
-        }
-        .balance-btn.active {
-            background: #1a73e8;
-            color: white;
-        }
-        body.dark .balance-btn.active {
-            background: #f7b32b;
-            color: #1f2a1b;
-        }
-        .chance-panel {
-            text-align: center;
-            background: #e8f0fe;
-            border-radius: 60px;
-            padding: 12px;
-            margin-bottom: 15px;
-        }
-        body.dark .chance-panel { background: #07131299; }
-        .chance-digits {
-            font-size: 1.6rem;
-            font-weight: 800;
-            color: #1a73e8;
-        }
-        body.dark .chance-digits { color: #ffd966; }
-        .spin-button {
-            width: 100%;
-            background: linear-gradient(95deg, #1a73e8, #0d47a1);
-            padding: 14px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            border-radius: 60px;
-            transition: all 0.15s;
-        }
-        body.dark .spin-button {
-            background: linear-gradient(95deg, #f0a500, #ff7b00);
-        }
-        .spin-button:active { transform: scale(0.98); }
-        .result-area {
-            margin-top: 15px;
-            background: #e8f0fe;
-            border-radius: 50px;
-            padding: 12px;
-            text-align: center;
-            color: #1a73e8;
-        }
-        body.dark .result-area {
-            background: #00000066;
-            color: #ffeca2;
-        }
-        .rank-badge {
-            display: inline-block;
-            background: #e2e8f0;
-            border-radius: 20px;
-            padding: 4px 12px;
-            font-size: 0.7rem;
-            font-weight: bold;
-            margin-left: 8px;
-            color: #1a73e8;
-        }
-        body.dark .rank-badge {
-            background: #2c3e2f;
-            color: #ffd966;
-        }
-        .progress-container {
-            background: #e2e8f0;
-            border-radius: 20px;
-            height: 8px;
-            margin: 10px 0;
-            overflow: hidden;
-        }
-        body.dark .progress-container { background: #2c3e2f; }
-        .progress-fill {
-            background: linear-gradient(90deg, #1a73e8, #0d47a1);
-            height: 100%;
-            width: 0%;
-            border-radius: 20px;
-            transition: width 0.3s;
-        }
-        body.dark .progress-fill {
-            background: linear-gradient(90deg, #f7b32b, #ffd966);
-        }
-
-        .notification-badge {
-            position: relative;
-            cursor: pointer;
-        }
-        .notification-dot {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background: #ef4444;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            animation: pulse 1s infinite;
-        }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.5; transform: scale(1.2); }
-        }
-
-        .notifications-panel {
-            position: fixed;
-            top: 80px;
-            right: 20px;
-            width: 350px;
-            max-height: 500px;
-            background: white;
-            border-radius: 20px;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
-            z-index: 1000;
-            overflow-y: auto;
-        }
-        body.dark .notifications-panel {
-            background: #1e2a1e;
-            border-color: #ffd966;
-        }
-        .notification-item {
-            padding: 12px 16px;
-            border-bottom: 1px solid #e2e8f0;
-        }
-        body.dark .notification-item { border-color: #ffd96633; }
-        .notification-item.unread { background: #dbeafe; border-left: 3px solid #1a73e8; }
-        body.dark .notification-item.unread { background: #2c6e4f33; border-left-color: #f7b32b; }
-        .notification-text { font-size: 0.9rem; color: #1e293b; }
-        body.dark .notification-text { color: #ffdf8c; }
-        .notification-time { font-size: 0.7rem; color: #888; margin-top: 5px; }
-
-        .referral-code {
-            background: #e8f0fe;
-            padding: 10px;
-            border-radius: 40px;
-            cursor: pointer;
-            text-align: center;
-            margin-top: 15px;
-            font-family: monospace;
-            font-size: 1.1rem;
-            letter-spacing: 1px;
-        }
-        body.dark .referral-code { background: #0f1c19; }
-
-        .chance-warning {
-            color: #dc2626;
-            font-size: 0.75rem;
-            text-align: center;
-            margin-top: 5px;
-            display: none;
-        }
-        body.dark .chance-warning { color: #f87171; }
-
         .loading-overlay {
             position: fixed;
             top: 0;
@@ -559,15 +551,22 @@
             z-index: 2000;
         }
         .spinner {
-            width: 40px;
-            height: 40px;
-            border: 3px solid #ffd966;
+            width: 50px;
+            height: 50px;
+            border: 4px solid #ffd966;
             border-top-color: transparent;
             border-radius: 50%;
-            animation: spin 0.6s linear infinite;
+            animation: spin 0.8s linear infinite;
         }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .animate-pulse {
+            animation: btnPulse 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+        }
+        @keyframes btnPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
         }
 
         @media (max-width: 700px) {
@@ -575,9 +574,6 @@
             .tabs { gap: 8px; }
             .tab { padding: 8px 16px; font-size: 0.85rem; }
             .notifications-panel { width: calc(100% - 40px); right: 20px; left: 20px; }
-            .user-info { gap: 8px; }
-            .balance-card, .bonus-card { padding: 4px 10px; font-size: 0.85rem; }
-            .referral-code { font-size: 0.85rem; }
         }
     </style>
 </head>
@@ -586,7 +582,7 @@
 
 <script>
 // ========== КОНФИГУРАЦИЯ ==========
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw12Uc86PqXNiZEm8CIz-4CUlymbAqEFrQkzIo1woMPj8cAiFqSWhl1IYiH9h_N43qh/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzYa1MyUsNPiacrZmj9i7_fUUh_0R1W8mZEGGFy_2zNqR7Ttl_gdwzAJlzJwvwBjYHT/exec';
 
 let currentUser = null;
 let currentTab = 'allTasks';
@@ -594,14 +590,15 @@ let isDark = localStorage.getItem('dark') === 'true';
 let showNotifs = false;
 let allUsers = [];
 let allTasks = [];
+let allReviews = [];
 let allNotifications = [];
+let isLoading = false;
 
 // Бурмалда переменные
 let upgradeCanvas, upgradeCtx;
 let upgradeVisible = 0, upgradeAngle = -Math.PI / 2;
 let upgradeSpinning = false, upgradeAnim = null;
 let upgradeAccount = 'bonus';
-let pendingBalanceSync = false;
 const MAIN_PENALTY = 0.45;
 const MAX_CHANCE = 75;
 
@@ -619,19 +616,13 @@ function showToast(msg, isError) {
     t.textContent = msg;
     if (isError) t.style.background = '#dc2626';
     document.body.appendChild(t);
-    setTimeout(() => t.remove(), 2700);
+    setTimeout(() => t.remove(), 3000);
 }
 
-function showLoading(show) {
-    let existing = document.querySelector('.loading-overlay');
-    if (show && !existing) {
-        let overlay = document.createElement('div');
-        overlay.className = 'loading-overlay';
-        overlay.innerHTML = '<div class="spinner"></div>';
-        document.body.appendChild(overlay);
-    } else if (!show && existing) {
-        existing.remove();
-    }
+function animateElement(element, animation) {
+    if (!element) return;
+    element.classList.add(animation);
+    setTimeout(() => element.classList.remove(animation), 300);
 }
 
 function showModal(title, message, showBonusInfo = false) {
@@ -651,25 +642,17 @@ function showModal(title, message, showBonusInfo = false) {
     modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
 }
 
-// Генерация сложного реферального кода (16 символов)
-function generateReferralCode(name) {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ0123456789';
-    let result = '';
-    for (let i = 0; i < 16; i++) {
-        result += chars[Math.floor(Math.random() * chars.length)];
-    }
-    return result;
-}
-
-// ========== API ЗАПРОСЫ ==========
+// ========== API ЗАПРОСЫ С ТАЙМАУТОМ ==========
 async function callAPI(action, params = {}) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    if (isLoading) return null;
     
     try {
         const url = new URL(SCRIPT_URL);
         url.searchParams.append('action', action);
         Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
         
         const response = await fetch(url.toString(), {
             signal: controller.signal,
@@ -681,42 +664,20 @@ async function callAPI(action, params = {}) {
         try {
             return JSON.parse(text);
         } catch(e) {
+            console.error('JSON parse error:', text.substring(0, 200));
             return null;
         }
     } catch (error) {
-        clearTimeout(timeoutId);
+        console.error('API Error:', error);
         return null;
     }
-}
-
-async function syncUserBalanceBackground() {
-    if (!currentUser || pendingBalanceSync) return;
-    pendingBalanceSync = true;
-    
-    setTimeout(async () => {
-        try {
-            await callAPI('updateUser', {
-                id: currentUser.id,
-                balance: currentUser.balance,
-                bonus_balance: currentUser.bonus_balance
-            });
-        } catch(e) {}
-        finally {
-            pendingBalanceSync = false;
-        }
-    }, 100);
 }
 
 async function loadUsers() {
     const result = await callAPI('getUsers');
     if (result && !result.error) {
-        if (Array.isArray(result)) {
-            allUsers = result;
-        } else if (result.users && Array.isArray(result.users)) {
-            allUsers = result.users;
-        } else {
-            allUsers = [];
-        }
+        allUsers = Array.isArray(result) ? result : (result.users || []);
+        console.log('Загружено пользователей:', allUsers.length);
     }
     return allUsers;
 }
@@ -724,35 +685,32 @@ async function loadUsers() {
 async function loadTasks() {
     const result = await callAPI('getTasks');
     if (result && !result.error) {
-        if (Array.isArray(result)) {
-            allTasks = result;
-        } else if (result.tasks && Array.isArray(result.tasks)) {
-            allTasks = result.tasks;
-        } else {
-            allTasks = [];
-        }
+        allTasks = Array.isArray(result) ? result : (result.tasks || []);
+        console.log('Загружено заданий:', allTasks.length);
     }
     return allTasks;
+}
+
+async function loadReviews() {
+    const result = await callAPI('getReviews');
+    if (result && !result.error) {
+        allReviews = Array.isArray(result) ? result : (result.reviews || []);
+    }
+    return allReviews;
 }
 
 async function loadNotifications() {
     if (!currentUser) return;
     const result = await callAPI('getNotifications', { userId: currentUser.id });
     if (result && !result.error) {
-        if (Array.isArray(result)) {
-            allNotifications = result;
-        } else if (result.notifications && Array.isArray(result.notifications)) {
-            allNotifications = result.notifications;
-        } else {
-            allNotifications = [];
-        }
+        allNotifications = Array.isArray(result) ? result : (result.notifications || []);
     }
 }
 
-// ========== ФУНКЦИИ ПОЛЬЗОВАТЕЛЕЙ ==========
+// ========== ЛОКАЛЬНЫЕ ФУНКЦИИ (РЕЗЕРВ) ==========
 async function register(name, school, corp, password, referralCode) {
     if (name.length < 3 || name.length > 10 || !/^[a-zA-Zа-яА-Я0-9_]+$/.test(name)) {
-        showToast('❌ Имя 3-10 символов, только буквы и цифры', true);
+        showToast('❌ Имя 3-10 символов', true);
         return false;
     }
     if (!school || !/^\d+$/.test(school)) {
@@ -776,9 +734,8 @@ async function register(name, school, corp, password, referralCode) {
     }
     
     const userId = 'u' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
-    const userReferralCode = generateReferralCode(name);
+    const userReferralCode = name + '_' + Math.random().toString(36).substr(2, 4).toUpperCase();
     
-    showLoading(true);
     const result = await callAPI('registerUser', {
         id: userId,
         name: name,
@@ -789,10 +746,9 @@ async function register(name, school, corp, password, referralCode) {
         referred_by: referralCode || '',
         registeredAt: new Date().toISOString()
     });
-    showLoading(false);
     
     if (result && result.success) {
-        showToast('✅ Регистрация успешна! Теперь войдите');
+        showToast('✅ Регистрация успешна! Войдите');
         renderAuth();
         return true;
     } else {
@@ -802,9 +758,7 @@ async function register(name, school, corp, password, referralCode) {
 }
 
 async function login(name, school, corp, password) {
-    showLoading(true);
     await loadUsers();
-    showLoading(false);
     
     const user = allUsers.find(u => u.name === name && String(u.school) === String(school) && String(u.corp) === String(corp));
     
@@ -822,6 +776,7 @@ async function login(name, school, corp, password) {
     localStorage.setItem('schooltask_user', JSON.stringify({ id: currentUser.id, name: currentUser.name }));
     
     await loadTasks();
+    await loadReviews();
     await loadNotifications();
     
     showToast(`✅ Добро пожаловать, ${user.name}!`);
@@ -872,7 +827,6 @@ async function createTask(desc, price, location, paymentType, btn) {
         currentUser.balance = (parseFloat(currentUser.balance) - p).toString();
     }
     
-    showLoading(true);
     const result = await callAPI('createTask', {
         id: taskId,
         creatorId: currentUser.id,
@@ -884,10 +838,10 @@ async function createTask(desc, price, location, paymentType, btn) {
         payment_type: paymentType,
         createdAt: new Date().toISOString()
     });
-    showLoading(false);
     
     if (result && result.success) {
         await loadTasks();
+        await callAPI('updateUser', { id: currentUser.id, balance: currentUser.balance, bonus_balance: currentUser.bonus_balance });
         showToast('✅ Задание создано!');
         if (btn) btn.disabled = false;
         renderMain();
@@ -898,14 +852,15 @@ async function createTask(desc, price, location, paymentType, btn) {
 }
 
 async function takeTask(taskId, btn) {
-    if (btn) btn.disabled = true;
+    if (btn) {
+        btn.disabled = true;
+        animateElement(btn, 'animate-pulse');
+    }
     
-    showLoading(true);
     const result = await callAPI('takeTaskSafe', {
         taskId: taskId,
         userId: currentUser.id
     });
-    showLoading(false);
     
     if (result && result.success) {
         showToast('📢 Вы взяли задание!');
@@ -918,14 +873,15 @@ async function takeTask(taskId, btn) {
 }
 
 async function completeTask(taskId, btn) {
-    if (btn) btn.disabled = true;
+    if (btn) {
+        btn.disabled = true;
+        animateElement(btn, 'animate-pulse');
+    }
     
-    showLoading(true);
     const result = await callAPI('updateTask', {
         id: taskId,
         status: 'awaiting_confirmation'
     });
-    showLoading(false);
     
     if (result && result.success) {
         showToast('✅ Выполнено! Ожидайте подтверждения');
@@ -938,39 +894,76 @@ async function completeTask(taskId, btn) {
 }
 
 async function confirmTask(taskId, price, executorId, btn) {
-    if (btn) btn.disabled = true;
+    if (btn) {
+        btn.disabled = true;
+        animateElement(btn, 'animate-pulse');
+    }
     const gain = price * 0.95;
     
-    showLoading(true);
+    const executor = allUsers.find(u => u.id === executorId);
+    if (executor) {
+        const newBalance = (parseFloat(executor.balance) || 0) + gain;
+        await callAPI('updateUser', { id: executorId, balance: newBalance, tasksCompleted: (parseInt(executor.tasksCompleted) || 0) + 1 });
+    }
+    
     const result = await callAPI('updateTask', {
         id: taskId,
         status: 'completed',
         completedAt: new Date().toISOString()
     });
-    showLoading(false);
     
     if (result && result.success) {
         await loadTasks();
         await loadUsers();
+        await loadReviews();
         const updatedUser = allUsers.find(u => u.id === currentUser.id);
         if (updatedUser) {
             currentUser.balance = updatedUser.balance;
             currentUser.bonus_balance = updatedUser.bonus_balance;
+            currentUser.tasksCompleted = updatedUser.tasksCompleted;
         }
-        showToast(`💰 Подтверждено! +${gain.toFixed(2)} ₽ исполнителю`);
+        showToast(`💰 Подтверждено! +${gain.toFixed(2)} ₽ исполнителю`, false);
         renderMain();
+        
+        setTimeout(() => {
+            showReviewModal(taskId, executorId);
+        }, 500);
     } else {
         showToast('❌ Ошибка', true);
         if (btn) btn.disabled = false;
     }
 }
 
-async function deleteTask(taskId, btn) {
-    if (btn) btn.disabled = true;
+async function disputeTask(taskId, price, executorId, btn) {
+    if (btn) {
+        btn.disabled = true;
+        animateElement(btn, 'animate-pulse');
+    }
     
-    showLoading(true);
+    const result = await callAPI('addDispute', {
+        taskId: taskId,
+        executorId: executorId,
+        creatorId: currentUser.id
+    });
+    
+    if (result && result.success) {
+        await loadTasks();
+        await loadUsers();
+        showToast(`⚠️ Исполнитель забанен на 2 часа, средства возвращены`, false);
+        renderMain();
+    } else {
+        showToast('❌ Ошибка при отправке жалобы', true);
+        if (btn) btn.disabled = false;
+    }
+}
+
+async function deleteTask(taskId, btn) {
+    if (btn) {
+        btn.disabled = true;
+        animateElement(btn, 'animate-pulse');
+    }
+    
     const result = await callAPI('deleteTask', { id: taskId });
-    showLoading(false);
     
     if (result && result.success) {
         await loadTasks();
@@ -980,6 +973,71 @@ async function deleteTask(taskId, btn) {
         showToast('❌ Ошибка удаления', true);
         if (btn) btn.disabled = false;
     }
+}
+
+// ========== СИСТЕМА ОТЗЫВОВ ==========
+function showReviewModal(taskId, executorId) {
+    let selectedRating = 0;
+    
+    const modal = document.createElement('div');
+    modal.className = 'review-modal show';
+    modal.innerHTML = `
+        <div class="review-content">
+            <h3>⭐ Оцените выполнение задания</h3>
+            <div class="review-stars" id="reviewStars">
+                ${[1,2,3,4,5].map(i => `<span class="review-star" data-rating="${i}">☆</span>`).join('')}
+            </div>
+            <textarea id="reviewComment" rows="3" placeholder="Ваш отзыв (необязательно)"></textarea>
+            <button class="btn-primary" id="submitReviewBtn">📝 Отправить отзыв</button>
+            <button class="btn-danger" id="skipReviewBtn" style="margin-top: 10px;">Пропустить</button>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    
+    const stars = modal.querySelectorAll('.review-star');
+    stars.forEach(star => {
+        star.addEventListener('click', () => {
+            selectedRating = parseInt(star.dataset.rating);
+            stars.forEach((s, i) => {
+                s.textContent = i < selectedRating ? '★' : '☆';
+                if (i < selectedRating) s.classList.add('selected');
+                else s.classList.remove('selected');
+            });
+        });
+    });
+    
+    modal.querySelector('#submitReviewBtn').onclick = async () => {
+        if (selectedRating === 0) {
+            showToast('❌ Выберите оценку от 1 до 5', true);
+            return;
+        }
+        
+        const comment = modal.querySelector('#reviewComment').value;
+        
+        const result = await callAPI('addReview', {
+            id: 'rev_' + Date.now(),
+            fromUserId: currentUser.id,
+            toUserId: executorId,
+            taskId: taskId,
+            rating: selectedRating,
+            comment: comment,
+            createdAt: new Date().toISOString()
+        });
+        
+        if (result && result.success) {
+            showToast('✅ Отзыв оставлен!', false);
+            await loadReviews();
+            renderMain();
+        } else {
+            showToast('❌ ' + (result?.error || 'Ошибка при сохранении отзыва'), true);
+        }
+        
+        modal.remove();
+    };
+    
+    modal.querySelector('#skipReviewBtn').onclick = () => {
+        modal.remove();
+    };
 }
 
 // ========== БУРМАЛДА ==========
@@ -1113,6 +1171,8 @@ async function startSpin() {
     const spinBtn = document.getElementById('spinBtn');
     if (spinBtn.disabled) return;
     
+    animateElement(spinBtn, 'animate-pulse');
+    
     let bet = parseFloat(document.getElementById('bet').value);
     let target = parseFloat(document.getElementById('target').value);
     
@@ -1135,7 +1195,6 @@ async function startSpin() {
         return;
     }
     
-    // Мгновенное списание
     if (upgradeAccount === 'main') {
         currentUser.balance = (parseFloat(currentUser.balance) - bet).toString();
     } else {
@@ -1146,8 +1205,6 @@ async function startSpin() {
     const bonusBalSpan = document.getElementById('bonusBal');
     if (mainBalSpan) mainBalSpan.innerText = parseFloat(currentUser.balance).toFixed(2) + ' ₽';
     if (bonusBalSpan) bonusBalSpan.innerText = parseFloat(currentUser.bonus_balance).toFixed(2) + ' ₽';
-    
-    syncUserBalanceBackground();
     
     refreshWheel();
     spinBtn.disabled = true;
@@ -1190,19 +1247,25 @@ async function startSpin() {
                 } else {
                     currentUser.bonus_balance = (parseFloat(currentUser.bonus_balance) + target).toString();
                 }
-                if (resultDiv) resultDiv.innerHTML = '✨ ПОБЕДА! +' + target.toFixed(2) + ' ₽ ✨';
+                if (resultDiv) {
+                    resultDiv.innerHTML = '✨ ПОБЕДА! +' + target.toFixed(2) + ' ₽ ✨';
+                    animateElement(resultDiv, 'animate-pulse');
+                }
                 showToast('🎉 Вы выиграли ' + target.toFixed(2) + ' ₽!');
             } else {
-                if (resultDiv) resultDiv.innerHTML = '💥 ПРОИГРЫШ! -' + bet.toFixed(2) + ' ₽ 💥';
+                if (resultDiv) {
+                    resultDiv.innerHTML = '💥 ПРОИГРЫШ! -' + bet.toFixed(2) + ' ₽ 💥';
+                    animateElement(resultDiv, 'animate-pulse');
+                }
                 showToast('😞 Проигрыш ' + bet.toFixed(2) + ' ₽', true);
             }
             
             if (mainBalSpan) mainBalSpan.innerText = parseFloat(currentUser.balance).toFixed(2) + ' ₽';
             if (bonusBalSpan) bonusBalSpan.innerText = parseFloat(currentUser.bonus_balance).toFixed(2) + ' ₽';
-            
-            syncUserBalanceBackground();
             refreshWheel();
             spinBtn.disabled = false;
+            
+            callAPI('updateUser', { id: currentUser.id, balance: currentUser.balance, bonus_balance: currentUser.bonus_balance });
         }
     }
     
@@ -1220,7 +1283,7 @@ function setAccount(acc) {
 
 // ========== ОТОБРАЖЕНИЕ ==========
 function getStatusText(s) {
-    const map = { open: '📋 Доступно', in_progress: '⏳ Выполняется', awaiting_confirmation: '🕐 Ожидает', completed: '✅ Выполнено' };
+    const map = { open: '📋 Доступно', in_progress: '⏳ Выполняется', awaiting_confirmation: '🕐 Ожидает', completed: '✅ Выполнено', disputed: '⚠️ Спорный' };
     return { text: map[s] || s, class: 'status-' + s };
 }
 
@@ -1232,13 +1295,6 @@ function getUserRank(user) {
     if (c >= 20) return { emoji: '📌', name: 'Опытный', min: 20 };
     if (c >= 10) return { emoji: '🌱', name: 'Ученик', min: 10 };
     return { emoji: '🐣', name: 'Новичок', min: 0 };
-}
-
-function getRatingStars(rating) {
-    const r = parseFloat(rating) || 0;
-    let stars = '';
-    for (let i = 1; i <= 5; i++) stars += i <= r ? '⭐' : '☆';
-    return stars;
 }
 
 function getTop3() {
@@ -1256,6 +1312,11 @@ function renderAuth() {
                 </div>
                 <button class="theme-toggle" id="themeBtn">${isDark ? '☀️' : '🌙'}</button>
             </div>
+            <div class="warning-banner">
+                <h2>⚠️ ВАЖНОЕ ПРЕДУПРЕЖДЕНИЕ ⚠️</h2>
+                <p>ОБЯЗАТЕЛЬНО ЗАПИСЫВАЙТЕ НА ВИДЕО ПРОЦЕСС ВЫПОЛНЕНИЯ ЗАДАНИЯ!</p>
+                <p>ЕСЛИ ВАС ЗАСКАМЯТ, А ВИДЕО В ДОКАЗАТЕЛЬСТВО НЕ БУДЕТ - МЫ НИЧЕГО НЕ СМОЖЕМ СДЕЛАТЬ</p>
+            </div>
             <div class="card">
                 <div class="tabs">
                     <div class="tab active" id="tabLogin">🔐 Вход</div>
@@ -1268,7 +1329,7 @@ function renderAuth() {
                     <input type="password" id="loginPass" placeholder="Пароль">
                     <button class="btn-primary" id="actionBtn">🔐 Войти</button>
                 </div>
-                <div class="support-link">📞 Поддержка: @leshr_ak47 | Реферальный код при регистрации (16 символов)</div>
+                <div class="support-link">📞 Поддержка: @leshr_ak47 | Реферальный код при регистрации</div>
             </div>
         </div>
     `;
@@ -1276,12 +1337,13 @@ function renderAuth() {
     document.getElementById('themeBtn').onclick = toggleTheme;
     
     document.getElementById('tabReg').onclick = () => {
+        animateElement(document.getElementById('tabReg'), 'animate-pulse');
         document.getElementById('authForm').innerHTML = `
             <input type="text" id="regName" placeholder="Имя (3-10)">
             <input type="text" id="regSchool" placeholder="Школа">
             <input type="text" id="regCorp" placeholder="Корпус">
             <input type="password" id="regPass" placeholder="Пароль (мин.3)">
-            <input type="text" id="regReferral" placeholder="Реферальный код (16 символов)">
+            <input type="text" id="regReferral" placeholder="Реферальный код">
             <button class="btn-primary" id="actionBtn2">📝 Зарегистрироваться</button>
         `;
         document.getElementById('actionBtn2').onclick = async () => {
@@ -1297,6 +1359,7 @@ function renderAuth() {
     };
     
     document.getElementById('tabLogin').onclick = () => {
+        animateElement(document.getElementById('tabLogin'), 'animate-pulse');
         document.getElementById('authForm').innerHTML = `
             <input type="text" id="loginName" placeholder="Имя">
             <input type="text" id="loginSchool" placeholder="Школа">
@@ -1316,6 +1379,7 @@ function renderAuth() {
     };
     
     document.getElementById('actionBtn').onclick = async () => {
+        animateElement(document.getElementById('actionBtn'), 'animate-pulse');
         const name = document.getElementById('loginName').value.trim();
         const school = document.getElementById('loginSchool').value.trim();
         const corp = document.getElementById('loginCorp').value.trim();
@@ -1344,14 +1408,33 @@ function renderMain() {
     const userNotifications = allNotifications.filter(n => n.userId === currentUser.id);
     const unreadCount = userNotifications.filter(n => n.read !== 'true').length;
     
-    function taskCard(t, showTake, showDel, showComp, showConf) {
+    function taskCard(t, showTake, showDel, showComp, showConf, showDispute) {
         const creator = allUsers.find(u => u.id === t.creatorId);
         const st = getStatusText(t.status);
         let btns = '';
-        if (showTake && t.status === 'open' && t.creatorId !== currentUser.id) btns += `<button class="btn-primary take-btn" data-id="${t.id}">📌 Взять</button>`;
-        if (showDel && t.creatorId === currentUser.id && t.status === 'open') btns += `<button class="btn-danger del-btn" data-id="${t.id}">🗑️ Удалить</button>`;
-        if (showComp && t.takerId === currentUser.id && t.status === 'in_progress') btns += `<button class="btn-success comp-btn" data-id="${t.id}">✅ Выполнить</button>`;
-        if (showConf && t.creatorId === currentUser.id && t.status === 'awaiting_confirmation') btns += `<button class="btn-success conf-btn" data-id="${t.id}" data-price="${t.price}" data-executor="${t.takerId}">💰 Подтвердить</button>`;
+        
+        if (showTake && t.status === 'open' && t.creatorId !== currentUser.id) {
+            btns += `<button class="btn-primary take-btn" data-id="${t.id}">📌 Взять</button>`;
+        }
+        if (showDel && t.creatorId === currentUser.id && t.status === 'open') {
+            btns += `<button class="btn-danger del-btn" data-id="${t.id}">🗑️ Удалить</button>`;
+        }
+        if (showComp && t.takerId === currentUser.id && t.status === 'in_progress') {
+            btns += `<button class="btn-success comp-btn" data-id="${t.id}">✅ Выполнить</button>`;
+        }
+        if (showConf && t.creatorId === currentUser.id && t.status === 'awaiting_confirmation') {
+            btns += `<button class="btn-success conf-btn" data-id="${t.id}" data-price="${t.price}" data-executor="${t.takerId}">💰 Получил</button>`;
+            btns += `<button class="btn-warning dispute-btn" data-id="${t.id}" data-price="${t.price}" data-executor="${t.takerId}">❌ Не получил</button>`;
+        }
+        
+        // Кнопка для отзыва на завершённом задании
+        if (t.status === 'completed' && t.takerId === currentUser.id) {
+            const hasReviewFlag = allReviews.some(r => r.taskId === t.id && r.fromUserId === currentUser.id);
+            if (!hasReviewFlag) {
+                btns += `<button class="btn-info review-btn" data-id="${t.id}" data-executor="${t.creatorId}">⭐ Оставить отзыв</button>`;
+            }
+        }
+        
         return `<div class="task-card">
             <div class="task-header">
                 <div class="task-price">${parseFloat(t.price).toFixed(2)} ₽</div>
@@ -1366,29 +1449,29 @@ function renderMain() {
     
     let content = '';
     if (currentTab === 'allTasks') {
-        content = `<h3>📋 Доступные задания</h3><div class="tasks-grid">${openTasks.map(t => taskCard(t, true, false, false, false)).join('') || '<div style="text-align:center;padding:30px;">✨ Нет заданий</div>'}</div>`;
+        content = `<h3>📋 Доступные задания</h3><div class="tasks-grid">${openTasks.map(t => taskCard(t, true, false, false, false, false)).join('') || '<div style="text-align:center;padding:30px;">✨ Нет заданий</div>'}</div>`;
     } else if (currentTab === 'myTasks') {
-        content = `<h3>📌 Мои задания</h3><div class="tasks-grid">${myCreated.map(t => taskCard(t, false, true, false, false)).join('') || '<div style="text-align:center;padding:30px;">✨ Нет заданий</div>'}</div>`;
+        content = `<h3>📌 Мои задания</h3><div class="tasks-grid">${myCreated.map(t => taskCard(t, false, true, false, false, false)).join('') || '<div style="text-align:center;padding:30px;">✨ Нет заданий</div>'}</div>`;
     } else if (currentTab === 'myWork') {
-        content = `<h3>⚡ В работе</h3><div class="tasks-grid">${myWork.map(t => taskCard(t, false, false, true, false)).join('') || '<div style="text-align:center;padding:30px;">✨ Нет заданий</div>'}</div>`;
+        content = `<h3>⚡ В работе</h3><div class="tasks-grid">${myWork.map(t => taskCard(t, false, false, true, false, false)).join('') || '<div style="text-align:center;padding:30px;">✨ Нет заданий</div>'}</div>`;
     } else if (currentTab === 'awaiting') {
-        content = `<h3>🕐 Ожидают</h3><div class="tasks-grid">${awaiting.map(t => taskCard(t, false, false, false, true)).join('') || '<div style="text-align:center;padding:30px;">✨ Нет заданий</div>'}</div>`;
+        content = `<h3>🕐 Ожидают подтверждения</h3><div class="tasks-grid">${awaiting.map(t => taskCard(t, false, false, false, true, true)).join('') || '<div style="text-align:center;padding:30px;">✨ Нет заданий</div>'}</div>`;
     } else if (currentTab === 'completed') {
-        content = `<h3>✅ Завершённые</h3><div class="tasks-grid">${completed.map(t => taskCard(t, false, false, false, false)).join('') || '<div style="text-align:center;padding:30px;">✨ Нет заданий</div>'}</div>`;
+        content = `<h3>✅ Завершённые задания</h3><div class="tasks-grid">${completed.map(t => taskCard(t, false, false, false, false, false)).join('') || '<div style="text-align:center;padding:30px;">✨ Нет заданий</div>'}</div>`;
     } else if (currentTab === 'profile') {
         content = `<div class="card">
             <h3>👤 Профиль</h3>
             <p><strong>Имя:</strong> ${escapeHtml(currentUser.name)}</p>
             <p><strong>Школа/Корпус:</strong> ${currentUser.school} / ${currentUser.corp}</p>
-            <p><strong>💰 Основной:</strong> ${(parseFloat(currentUser.balance) || 0).toFixed(2)} ₽</p>
-            <p><strong>🎁 Бонусный:</strong> ${(parseFloat(currentUser.bonus_balance) || 0).toFixed(2)} ₽</p>
-            <p><strong>⭐ Рейтинг:</strong> ${getRatingStars(currentUser.rating)} (${parseInt(currentUser.ratingCount) || 0})</p>
-            <p><strong>📊 Выполнено:</strong> ${parseInt(currentUser.tasksCompleted) || 0}</p>
-            <p><strong>📝 Создано:</strong> ${parseInt(currentUser.tasksCreated) || 0}</p>
-            <div class="referral-code" onclick="navigator.clipboard.writeText('${currentUser.referral_code || ''}'); showToast('✅ Код скопирован!')">🔗 Реферальный код: <strong>${currentUser.referral_code || 'Нет'}</strong></div>
+            <p><strong>💰 Основной баланс:</strong> ${(parseFloat(currentUser.balance) || 0).toFixed(2)} ₽</p>
+            <p><strong>🎁 Бонусный баланс:</strong> ${(parseFloat(currentUser.bonus_balance) || 0).toFixed(2)} ₽</p>
+            <p><strong>⭐ Рейтинг:</strong> ${allReviews.filter(r => r.toUserId === currentUser.id).length > 0 ? '⭐'.repeat(Math.min(5, Math.round(allReviews.reduce((a,b)=>a+parseInt(b.rating),0)/allReviews.length))) : 'Нет отзывов'}</p>
+            <p><strong>📊 Выполнено заданий:</strong> ${parseInt(currentUser.tasksCompleted) || 0}</p>
+            <p><strong>📝 Создано заданий:</strong> ${parseInt(currentUser.tasksCreated) || 0}</p>
+            <div class="referral-code" onclick="navigator.clipboard.writeText('${currentUser.referral_code || ''}'); showToast('✅ Код скопирован!')">🔗 Ваш реферальный код: <strong>${currentUser.referral_code || 'Нет'}</strong></div>
             <div style="margin-top:20px"><strong>🏆 Звание:</strong> <span class="rank-badge">${rank.emoji} ${rank.name}</span></div>
             <div class="progress-container"><div class="progress-fill" style="width: ${progress}%"></div></div>
-            <div class="support-link" style="margin-top:15px">📌 До след. звания: ${rank.min > (parseInt(currentUser.tasksCompleted) || 0) ? (rank.min - (parseInt(currentUser.tasksCompleted) || 0)) + ' заданий' : 'Максимум!'}</div>
+            <div class="support-link" style="margin-top:15px">📌 До следующего звания: ${rank.min > (parseInt(currentUser.tasksCompleted) || 0) ? (rank.min - (parseInt(currentUser.tasksCompleted) || 0)) + ' заданий' : 'Максимальное звание!'}</div>
         </div>`;
     } else if (currentTab === 'create') {
         content = `<div class="card">
@@ -1400,11 +1483,11 @@ function renderMain() {
                 <option value="main">💰 Основной (${(parseFloat(currentUser.balance) || 0).toFixed(2)} ₽)</option>
                 <option value="bonus">🎁 Бонусный (${(parseFloat(currentUser.bonus_balance) || 0).toFixed(2)} ₽)</option>
             </select>
-            <button class="btn-primary" id="createBtn">Создать</button>
+            <button class="btn-primary" id="createBtn">Создать задание</button>
         </div>`;
     } else if (currentTab === 'upgrade') {
         content = `<div class="upgrade-panel">
-            <h3>🎲 БУРМАЛДА (макс. шанс ${MAX_CHANCE}%)</h3>
+            <h3>🎲 БУРМАЛДА (максимальный шанс ${MAX_CHANCE}%)</h3>
             <div class="wheel-container">
                 <canvas id="wheelCanvas"></canvas>
                 <div class="center-badge" id="centerPercent">0%</div>
@@ -1458,8 +1541,13 @@ function renderMain() {
                     <button class="btn-danger" id="logoutBtn">Выйти</button>
                 </div>
             </div>
+            <div class="warning-banner">
+                <h2>⚠️ ВАЖНОЕ ПРЕДУПРЕЖДЕНИЕ ⚠️</h2>
+                <p>ОБЯЗАТЕЛЬНО ЗАПИСЫВАЙТЕ НА ВИДЕО ПРОЦЕСС ВЫПОЛНЕНИЯ ЗАДАНИЯ!</p>
+                <p>ЕСЛИ ВАС ЗАСКАМЯТ, А ВИДЕО В ДОКАЗАТЕЛЬСТВО НЕ БУДЕТ - МЫ НИЧЕГО НЕ СМОЖЕМ СДЕЛАТЬ</p>
+            </div>
             <div class="honor-board">
-                <h3>🏅 Доска почёта</h3>
+                <h3>🏅 Доска почёта (по выполненным заданиям)</h3>
                 <div class="honor-list">${top3.map((u, i) => `<div class="honor-item"><div>${i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉'}</div><strong>${escapeHtml(u.name)}</strong><br>✅ ${parseInt(u.tasksCompleted) || 0}</div>`).join('')}</div>
             </div>
             <div class="tabs">
@@ -1478,30 +1566,37 @@ function renderMain() {
         ${notifPanel}
     `;
     
-    if (currentTab === 'upgrade') {
-        setTimeout(() => {
-            const mainBalSpan = document.getElementById('mainBal');
-            const bonusBalSpan = document.getElementById('bonusBal');
-            if (mainBalSpan) mainBalSpan.innerText = parseFloat(currentUser.balance).toFixed(2) + ' ₽';
-            if (bonusBalSpan) bonusBalSpan.innerText = parseFloat(currentUser.bonus_balance).toFixed(2) + ' ₽';
-            refreshWheel();
-        }, 100);
-    }
-    
     document.getElementById('balanceCard')?.addEventListener('click', () => {
+        animateElement(document.getElementById('balanceCard'), 'animate-pulse');
         showModal('💰 Основной кошелёк', 'Вывод и пополнение средств производится через поддержку.\n\nНапишите @leshr_ak47 в Telegram');
     });
     
     document.getElementById('bonusCard')?.addEventListener('click', () => {
+        animateElement(document.getElementById('bonusCard'), 'animate-pulse');
         showModal('🎁 Бонусный счёт', 'Бонусный счёт используется для:\n\n• Создания заданий\n• Участия в бурмалде\n• Получения наград\n• Реферальных бонусов\n\nБонусы нельзя вывести на реальные деньги.', true);
     });
     
-    document.querySelectorAll('[data-tab]').forEach(t => t.onclick = () => { currentTab = t.dataset.tab; renderMain(); });
-    document.getElementById('logoutBtn').onclick = logout;
-    document.getElementById('themeBtn').onclick = toggleTheme;
-    document.getElementById('notifBtn').onclick = () => { showNotifs = !showNotifs; renderMain(); };
+    document.querySelectorAll('[data-tab]').forEach(t => t.onclick = () => { 
+        animateElement(t, 'animate-pulse');
+        currentTab = t.dataset.tab; 
+        renderMain(); 
+    });
+    document.getElementById('logoutBtn').onclick = () => {
+        animateElement(document.getElementById('logoutBtn'), 'animate-pulse');
+        logout();
+    };
+    document.getElementById('themeBtn').onclick = () => {
+        animateElement(document.getElementById('themeBtn'), 'animate-pulse');
+        toggleTheme();
+    };
+    document.getElementById('notifBtn').onclick = () => { 
+        animateElement(document.getElementById('notifBtn'), 'animate-pulse');
+        showNotifs = !showNotifs; 
+        renderMain(); 
+    };
     document.getElementById('createBtn')?.addEventListener('click', () => {
         const btn = document.getElementById('createBtn');
+        animateElement(btn, 'animate-pulse');
         btn.disabled = true;
         createTask(
             document.getElementById('taskDesc').value,
@@ -1516,6 +1611,8 @@ function renderMain() {
     document.querySelectorAll('.del-btn').forEach(b => b.onclick = () => deleteTask(b.dataset.id, b));
     document.querySelectorAll('.comp-btn').forEach(b => b.onclick = () => completeTask(b.dataset.id, b));
     document.querySelectorAll('.conf-btn').forEach(b => b.onclick = () => confirmTask(b.dataset.id, parseFloat(b.dataset.price), b.dataset.executor, b));
+    document.querySelectorAll('.dispute-btn').forEach(b => b.onclick = () => disputeTask(b.dataset.id, parseFloat(b.dataset.price), b.dataset.executor, b));
+    document.querySelectorAll('.review-btn').forEach(b => b.onclick = () => showReviewModal(b.dataset.id, b.dataset.executor));
     
     if (currentTab === 'upgrade') {
         setTimeout(() => {
@@ -1537,6 +1634,7 @@ function renderMain() {
 async function renderApp() {
     if (currentUser) {
         await loadTasks();
+        await loadReviews();
         await loadNotifications();
         renderMain();
     } else {
@@ -1546,6 +1644,10 @@ async function renderApp() {
 
 // ========== ЗАПУСК ==========
 (async function init() {
+    // Сразу показываем экран входа, без ожидания API
+    renderAuth();
+    
+    // Фоново пробуем загрузить данные для сессии
     const saved = localStorage.getItem('schooltask_user');
     if (saved) {
         try {
@@ -1554,10 +1656,10 @@ async function renderApp() {
             const user = allUsers.find(u => u.id === ses.id);
             if (user) {
                 currentUser = JSON.parse(JSON.stringify(user));
+                await renderApp();
             }
         } catch(e) {}
     }
-    await renderApp();
 })();
 </script>
 </body>
