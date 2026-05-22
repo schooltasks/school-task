@@ -763,6 +763,14 @@ async function login(name, school, corp, password) {
         return false;
     }
     
+    // Проверка на бан
+    if (user.isBanned === 'true') {
+        const banExpires = user.banExpires;
+        let banMessage = `⚠️ Вы забанены до ${new Date(banExpires).toLocaleString()} по причине: ${user.banReason || 'Невыполненное задание'}. Если это ошибка, обратитесь в поддержку @leshr_ak47`;
+        showToast(banMessage, true);
+        return false;
+    }
+    
     if (String(user.password) !== String(password)) {
         showToast('❌ Неверный пароль', true);
         return false;
@@ -949,6 +957,7 @@ async function disputeTask(taskId, price, executorId, btn) {
     if (confirmBtn) confirmBtn.disabled = true;
     if (disputeBtn) disputeBtn.disabled = true;
     
+    // Вызываем API для бана исполнителя
     const result = await callAPI('addDispute', {
         taskId: taskId,
         executorId: executorId,
@@ -956,6 +965,21 @@ async function disputeTask(taskId, price, executorId, btn) {
     });
     
     if (result && result.success) {
+        // Если исполнитель сейчас онлайн - разлогиниваем его
+        const executor = allUsers.find(u => u.id === executorId);
+        if (executor && currentUser && currentUser.id !== executorId) {
+            // Отправляем уведомление о бане
+            await callAPI('sendNotification', {
+                userId: executorId,
+                message: `⚠️ ВАС ЗАБАНИЛИ НА 2 ЧАСА! Причина: невыполнение задания. Если это ошибка - обратитесь в поддержку @leshr_ak47`
+            });
+            
+            // Если это текущий пользователь - разлогиниваем
+            if (window.currentUser && window.currentUser.id === executorId) {
+                logout();
+            }
+        }
+        
         await loadTasks();
         await loadUsers();
         showToast(`⚠️ Исполнитель забанен на 2 часа, средства возвращены`, false);
@@ -1712,6 +1736,15 @@ async function renderApp() {
             await loadUsers();
             const user = allUsers.find(u => u.id === ses.id);
             if (user) {
+                // Проверка на бан при загрузке
+                if (user.isBanned === 'true') {
+                    const banExpires = user.banExpires;
+                    const banMessage = `⚠️ ВАС ЗАБАНИЛИ ДО ${new Date(banExpires).toLocaleString()} по причине: ${user.banReason || 'Невыполненное задание'}. Если это ошибка, обратитесь в поддержку @leshr_ak47`;
+                    showToast(banMessage, true);
+                    localStorage.removeItem('schooltask_user');
+                    renderAuth();
+                    return;
+                }
                 currentUser = JSON.parse(JSON.stringify(user));
                 await renderApp();
                 return;
