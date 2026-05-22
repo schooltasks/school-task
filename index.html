@@ -592,13 +592,12 @@ let allUsers = [];
 let allTasks = [];
 let allReviews = [];
 let allNotifications = [];
-let isLoading = false;
 
 // Бурмалда переменные
 let upgradeCanvas, upgradeCtx;
 let upgradeVisible = 0, upgradeAngle = -Math.PI / 2;
 let upgradeSpinning = false, upgradeAnim = null;
-let upgradeAccount = 'bonus';
+let upgradeAccount = 'bonus'; // 'main' или 'bonus'
 const MAIN_PENALTY = 0.45;
 const MAX_CHANCE = 75;
 
@@ -642,10 +641,8 @@ function showModal(title, message, showBonusInfo = false) {
     modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
 }
 
-// ========== API ЗАПРОСЫ С ТАЙМАУТОМ ==========
+// ========== API ЗАПРОСЫ ==========
 async function callAPI(action, params = {}) {
-    if (isLoading) return null;
-    
     try {
         const url = new URL(SCRIPT_URL);
         url.searchParams.append('action', action);
@@ -677,7 +674,6 @@ async function loadUsers() {
     const result = await callAPI('getUsers');
     if (result && !result.error) {
         allUsers = Array.isArray(result) ? result : (result.users || []);
-        console.log('Загружено пользователей:', allUsers.length);
     }
     return allUsers;
 }
@@ -686,7 +682,6 @@ async function loadTasks() {
     const result = await callAPI('getTasks');
     if (result && !result.error) {
         allTasks = Array.isArray(result) ? result : (result.tasks || []);
-        console.log('Загружено заданий:', allTasks.length);
     }
     return allTasks;
 }
@@ -707,7 +702,7 @@ async function loadNotifications() {
     }
 }
 
-// ========== ЛОКАЛЬНЫЕ ФУНКЦИИ (РЕЗЕРВ) ==========
+// ========== ФУНКЦИИ ПОЛЬЗОВАТЕЛЕЙ ==========
 async function register(name, school, corp, password, referralCode) {
     if (name.length < 3 || name.length > 10 || !/^[a-zA-Zа-яА-Я0-9_]+$/.test(name)) {
         showToast('❌ Имя 3-10 символов', true);
@@ -1040,7 +1035,7 @@ function showReviewModal(taskId, executorId) {
     };
 }
 
-// ========== БУРМАЛДА ==========
+// ========== БУРМАЛДА (ИСПРАВЛЕННАЯ) ==========
 function computeChance(bet, target) {
     if (bet <= 0 || target <= 0) return 0;
     return Math.min((bet / target) * 100, MAX_CHANCE);
@@ -1158,9 +1153,18 @@ function refreshWheel() {
         if (upgradeVisible >= MAX_CHANCE) warningSpan.innerHTML = '⚠️ Макс. шанс ' + MAX_CHANCE + '%';
     }
     
-    const available = upgradeAccount === 'main' ? parseFloat(currentUser.balance) : parseFloat(currentUser.bonus_balance);
+    // Проверка баланса для выбранного счёта
+    let available = 0;
+    if (upgradeAccount === 'main') {
+        available = parseFloat(currentUser.balance) || 0;
+    } else {
+        available = parseFloat(currentUser.bonus_balance) || 0;
+    }
+    
     const spinBtn = document.getElementById('spinBtn');
-    if (spinBtn) spinBtn.disabled = !(bet > 0 && target > 0 && upgradeVisible > 0 && available >= bet && !upgradeSpinning);
+    if (spinBtn) {
+        spinBtn.disabled = !(bet > 0 && target > 0 && upgradeVisible > 0 && available >= bet && !upgradeSpinning);
+    }
     
     drawWheel(upgradeVisible);
     drawArrow(upgradeAngle);
@@ -1188,13 +1192,21 @@ async function startSpin() {
     }
     
     const visible = computeChance(bet, target);
-    const available = upgradeAccount === 'main' ? parseFloat(currentUser.balance) : parseFloat(currentUser.bonus_balance);
+    
+    // Проверка баланса для выбранного счёта
+    let available = 0;
+    if (upgradeAccount === 'main') {
+        available = parseFloat(currentUser.balance) || 0;
+    } else {
+        available = parseFloat(currentUser.bonus_balance) || 0;
+    }
     
     if (available < bet) {
-        showToast('❌ Недостаточно средств', true);
+        showToast(`❌ Недостаточно средств на ${upgradeAccount === 'main' ? 'основном' : 'бонусном'} счету`, true);
         return;
     }
     
+    // СПИСЫВАЕМ СТАВКУ С ПРАВИЛЬНОГО СЧЁТА
     if (upgradeAccount === 'main') {
         currentUser.balance = (parseFloat(currentUser.balance) - bet).toString();
     } else {
@@ -1242,6 +1254,7 @@ async function startSpin() {
             const isWin = (norm - startSector + 2 * Math.PI) % (Math.PI * 2) <= winAngle;
             
             if (isWin) {
+                // НАЧИСЛЯЕМ ВЫИГРЫШ НА ПРАВИЛЬНЫЙ СЧЁТ
                 if (upgradeAccount === 'main') {
                     currentUser.balance = (parseFloat(currentUser.balance) + target).toString();
                 } else {
@@ -1427,7 +1440,6 @@ function renderMain() {
             btns += `<button class="btn-warning dispute-btn" data-id="${t.id}" data-price="${t.price}" data-executor="${t.takerId}">❌ Не получил</button>`;
         }
         
-        // Кнопка для отзыва на завершённом задании
         if (t.status === 'completed' && t.takerId === currentUser.id) {
             const hasReviewFlag = allReviews.some(r => r.taskId === t.id && r.fromUserId === currentUser.id);
             if (!hasReviewFlag) {
@@ -1493,8 +1505,8 @@ function renderMain() {
                 <div class="center-badge" id="centerPercent">0%</div>
             </div>
             <div class="balance-switch">
-                <div class="balance-btn" id="btnMain">💰<br><span id="mainBal">${(parseFloat(currentUser.balance) || 0).toFixed(2)} ₽</span></div>
-                <div class="balance-btn active" id="btnBonus">🎁<br><span id="bonusBal">${(parseFloat(currentUser.bonus_balance) || 0).toFixed(2)} ₽</span></div>
+                <div class="balance-btn ${upgradeAccount === 'main' ? 'active' : ''}" id="btnMain">💰<br><span id="mainBal">${(parseFloat(currentUser.balance) || 0).toFixed(2)} ₽</span></div>
+                <div class="balance-btn ${upgradeAccount === 'bonus' ? 'active' : ''}" id="btnBonus">🎁<br><span id="bonusBal">${(parseFloat(currentUser.bonus_balance) || 0).toFixed(2)} ₽</span></div>
             </div>
             <div class="upgrade-inputs">
                 <input type="number" id="bet" placeholder="💰 СТАВКА" value="50" step="10">
@@ -1644,10 +1656,8 @@ async function renderApp() {
 
 // ========== ЗАПУСК ==========
 (async function init() {
-    // Сразу показываем экран входа, без ожидания API
     renderAuth();
     
-    // Фоново пробуем загрузить данные для сессии
     const saved = localStorage.getItem('schooltask_user');
     if (saved) {
         try {
