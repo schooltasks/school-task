@@ -592,6 +592,8 @@ let allUsers = [];
 let allTasks = [];
 let allReviews = [];
 let allNotifications = [];
+let isLoggingIn = false;
+let isRegistering = false;
 
 // Бурмалда переменные
 let upgradeCanvas, upgradeCtx;
@@ -650,7 +652,7 @@ async function callAPI(action, params = {}) {
         Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
         
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
         
         const response = await fetch(url.toString(), {
             signal: controller.signal,
@@ -675,6 +677,7 @@ async function loadUsers() {
     const result = await callAPI('getUsers');
     if (result && !result.error) {
         allUsers = Array.isArray(result) ? result : (result.users || []);
+        console.log('Загружено пользователей:', allUsers.length);
     }
     return allUsers;
 }
@@ -704,33 +707,57 @@ async function loadNotifications() {
 }
 
 // ========== ФУНКЦИИ ПОЛЬЗОВАТЕЛЕЙ ==========
-async function register(name, school, corp, password, referralCode) {
+async function register(name, school, corp, password, referralCode, btn) {
+    // Защита от мультинажатий
+    if (isRegistering) return false;
+    isRegistering = true;
+    
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = '⏳ Регистрация...';
+    }
+    
     if (name.length < 3 || name.length > 10 || !/^[a-zA-Zа-яА-Я0-9_]+$/.test(name)) {
         showToast('❌ Имя 3-10 символов', true);
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = '📝 Зарегистрироваться';
+        }
+        isRegistering = false;
         return false;
     }
     if (!school || !/^\d+$/.test(school)) {
         showToast('❌ Школа только цифры', true);
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = '📝 Зарегистрироваться';
+        }
+        isRegistering = false;
         return false;
     }
     if (!corp || !/^\d+$/.test(corp)) {
         showToast('❌ Корпус только цифры', true);
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = '📝 Зарегистрироваться';
+        }
+        isRegistering = false;
         return false;
     }
     if (password.length < 3) {
         showToast('❌ Пароль минимум 3 символа', true);
-        return false;
-    }
-    
-    await loadUsers();
-    const existing = allUsers.find(u => u.name === name && u.school === school && u.corp === corp);
-    if (existing) {
-        showToast('❌ Пользователь уже существует', true);
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = '📝 Зарегистрироваться';
+        }
+        isRegistering = false;
         return false;
     }
     
     const userId = 'u' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
     const userReferralCode = name + '_' + Math.random().toString(36).substr(2, 4).toUpperCase();
+    
+    showToast('📝 Регистрация...', false);
     
     const result = await callAPI('registerUser', {
         id: userId,
@@ -744,35 +771,92 @@ async function register(name, school, corp, password, referralCode) {
     });
     
     if (result && result.success) {
-        showToast('✅ Регистрация успешна! Войдите');
-        renderAuth();
+        showToast('✅ Регистрация успешна! Теперь войдите', false);
+        allUsers = [];
+        await loadUsers();
+        
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = '📝 Зарегистрироваться';
+        }
+        isRegistering = false;
+        
+        // Переключаемся на форму входа и подставляем данные
+        document.getElementById('tabLogin').click();
+        setTimeout(() => {
+            const loginName = document.getElementById('loginName');
+            const loginSchool = document.getElementById('loginSchool');
+            const loginCorp = document.getElementById('loginCorp');
+            const loginPass = document.getElementById('loginPass');
+            if (loginName) loginName.value = name;
+            if (loginSchool) loginSchool.value = school;
+            if (loginCorp) loginCorp.value = corp;
+            if (loginPass) loginPass.value = password;
+        }, 100);
         return true;
     } else {
         showToast('❌ ' + (result?.error || 'Ошибка регистрации'), true);
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = '📝 Зарегистрироваться';
+        }
+        isRegistering = false;
         return false;
     }
 }
 
-async function login(name, school, corp, password) {
+async function login(name, school, corp, password, btn) {
+    // Защита от мультинажатий
+    if (isLoggingIn) return false;
+    isLoggingIn = true;
+    
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = '⏳ Вход...';
+    }
+    
+    showToast('🔐 Проверка данных...', false);
+    
     await loadUsers();
     
-    const user = allUsers.find(u => u.name === name && String(u.school) === String(school) && String(u.corp) === String(corp));
+    console.log('Поиск пользователя:', name, school, corp);
+    console.log('Всего пользователей в базе:', allUsers.length);
+    
+    const user = allUsers.find(u => 
+        String(u.name).toLowerCase() === String(name).toLowerCase() && 
+        String(u.school) === String(school) && 
+        String(u.corp) === String(corp)
+    );
     
     if (!user) {
-        showToast('❌ Пользователь не найден', true);
+        showToast('❌ Пользователь не найден. Проверьте имя, школу и корпус', true);
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = '🔐 Войти';
+        }
+        isLoggingIn = false;
         return false;
     }
     
-    // ПРОВЕРКА НА БАН - ОБЯЗАТЕЛЬНО
     if (user.isBanned === 'true') {
         const banExpires = user.banExpires;
         const banDate = new Date(banExpires).toLocaleString();
-        showToast(`⚠️ ВЫ ЗАБАНЕНЫ ДО ${banDate} по причине: ${user.banReason || 'Невыполненное задание'}. Если это ошибка, обратитесь в поддержку @leshr_ak47`, true);
+        showToast(`⚠️ ВЫ ЗАБАНЕНЫ ДО ${banDate} по причине: ${user.banReason || 'Невыполненное задание'}. Обратитесь в поддержку @leshr_ak47`, true);
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = '🔐 Войти';
+        }
+        isLoggingIn = false;
         return false;
     }
     
     if (String(user.password) !== String(password)) {
         showToast('❌ Неверный пароль', true);
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = '🔐 Войти';
+        }
+        isLoggingIn = false;
         return false;
     }
     
@@ -783,7 +867,14 @@ async function login(name, school, corp, password) {
     await loadReviews();
     await loadNotifications();
     
-    showToast(`✅ Добро пожаловать, ${user.name}!`);
+    showToast(`✅ Добро пожаловать, ${user.name}!`, false);
+    
+    if (btn) {
+        btn.disabled = false;
+        btn.textContent = '🔐 Войти';
+    }
+    isLoggingIn = false;
+    
     renderMain();
     return true;
 }
@@ -968,13 +1059,11 @@ async function disputeTask(taskId, price, executorId, btn) {
     if (result && result.success) {
         showToast(`⚠️ Жалоба отправлена! Исполнитель забанен на 2 часа, средства возвращены`, false);
         
-        // Обновляем данные пользователей
         await loadUsers();
         
-        // Проверяем, не забанен ли текущий пользователь (если это исполнитель)
         const updatedCurrentUser = allUsers.find(u => u.id === currentUser.id);
         if (updatedCurrentUser && updatedCurrentUser.isBanned === 'true') {
-            showToast(`⚠️ ВЫ БЫЛИ ЗАБАНЕНЫ за невыполнение задания! Обратитесь в поддержку @leshr_ak47 если это ошибка.`, true);
+            showToast(`⚠️ ВЫ БЫЛИ ЗАБАНЕНЫ за невыполнение задания! Обратитесь в поддержку @leshr_ak47`, true);
             logout();
             return;
         }
@@ -1410,14 +1499,17 @@ function renderAuth() {
             <input type="text" id="regReferral" placeholder="Реферальный код">
             <button class="btn-primary" id="actionBtn2">📝 Зарегистрироваться</button>
         `;
-        document.getElementById('actionBtn2').onclick = async () => {
-            const name = document.getElementById('regName').value.trim();
-            const school = document.getElementById('regSchool').value.trim();
-            const corp = document.getElementById('regCorp').value.trim();
-            const pass = document.getElementById('regPass').value;
-            const ref = document.getElementById('regReferral').value.trim();
-            await register(name, school, corp, pass, ref);
-        };
+        const regBtn = document.getElementById('actionBtn2');
+        if (regBtn) {
+            regBtn.onclick = async () => {
+                const name = document.getElementById('regName').value.trim();
+                const school = document.getElementById('regSchool').value.trim();
+                const corp = document.getElementById('regCorp').value.trim();
+                const pass = document.getElementById('regPass').value;
+                const ref = document.getElementById('regReferral').value.trim();
+                await register(name, school, corp, pass, ref, regBtn);
+            };
+        }
         document.getElementById('tabLogin').classList.remove('active');
         document.getElementById('tabReg').classList.add('active');
     };
@@ -1431,25 +1523,30 @@ function renderAuth() {
             <input type="password" id="loginPass" placeholder="Пароль">
             <button class="btn-primary" id="actionBtn3">🔐 Войти</button>
         `;
-        document.getElementById('actionBtn3').onclick = async () => {
-            const name = document.getElementById('loginName').value.trim();
-            const school = document.getElementById('loginSchool').value.trim();
-            const corp = document.getElementById('loginCorp').value.trim();
-            const pass = document.getElementById('loginPass').value;
-            await login(name, school, corp, pass);
-        };
+        const loginBtn = document.getElementById('actionBtn3');
+        if (loginBtn) {
+            loginBtn.onclick = async () => {
+                const name = document.getElementById('loginName').value.trim();
+                const school = document.getElementById('loginSchool').value.trim();
+                const corp = document.getElementById('loginCorp').value.trim();
+                const pass = document.getElementById('loginPass').value;
+                await login(name, school, corp, pass, loginBtn);
+            };
+        }
         document.getElementById('tabReg').classList.remove('active');
         document.getElementById('tabLogin').classList.add('active');
     };
     
-    document.getElementById('actionBtn').onclick = async () => {
-        animateElement(document.getElementById('actionBtn'), 'animate-pulse');
-        const name = document.getElementById('loginName').value.trim();
-        const school = document.getElementById('loginSchool').value.trim();
-        const corp = document.getElementById('loginCorp').value.trim();
-        const pass = document.getElementById('loginPass').value;
-        await login(name, school, corp, pass);
-    };
+    const actionBtn = document.getElementById('actionBtn');
+    if (actionBtn) {
+        actionBtn.onclick = async () => {
+            const name = document.getElementById('loginName').value.trim();
+            const school = document.getElementById('loginSchool').value.trim();
+            const corp = document.getElementById('loginCorp').value.trim();
+            const pass = document.getElementById('loginPass').value;
+            await login(name, school, corp, pass, actionBtn);
+        };
+    }
 }
 
 function renderMain() {
@@ -1458,7 +1555,6 @@ function renderMain() {
         return;
     }
     
-    // Проверка на бан при загрузке главной страницы
     if (currentUser.isBanned === 'true') {
         const banExpires = currentUser.banExpires;
         const banDate = new Date(banExpires).toLocaleString();
@@ -1741,9 +1837,8 @@ async function renderApp() {
     }
 }
 
-// ========== ЗАПУСК - СЕССИЯ ПРОВЕРЯЕТСЯ ПЕРВОЙ ==========
+// ========== ЗАПУСК ==========
 (async function init() {
-    // Сначала проверяем сохранённую сессию
     const saved = localStorage.getItem('schooltask_user');
     if (saved) {
         try {
@@ -1751,11 +1846,10 @@ async function renderApp() {
             await loadUsers();
             const user = allUsers.find(u => u.id === ses.id);
             if (user) {
-                // Проверка на бан при загрузке
                 if (user.isBanned === 'true') {
                     const banExpires = user.banExpires;
                     const banDate = new Date(banExpires).toLocaleString();
-                    showToast(`⚠️ ВЫ ЗАБАНЕНЫ ДО ${banDate} по причине: ${user.banReason || 'Невыполненное задание'}. Если это ошибка, обратитесь в поддержку @leshr_ak47`, true);
+                    showToast(`⚠️ ВЫ ЗАБАНЕНЫ ДО ${banDate} по причине: ${user.banReason || 'Невыполненное задание'}. Обратитесь в поддержку @leshr_ak47`, true);
                     localStorage.removeItem('schooltask_user');
                     renderAuth();
                     return;
@@ -1764,11 +1858,8 @@ async function renderApp() {
                 await renderApp();
                 return;
             }
-        } catch(e) {
-            console.error('Session restore error:', e);
-        }
+        } catch(e) {}
     }
-    // Если сессии нет или она недействительна - показываем форму входа
     renderAuth();
 })();
 </script>
