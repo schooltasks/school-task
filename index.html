@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>SchoolTask | Биржа поручений + Чат</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background: linear-gradient(135deg, #f5f7fa 0%, #eef2f7 100%); min-height: 100vh; padding: 20px; transition: background 0.3s ease; }
+        body.dark { background: linear-gradient(145deg, #0a0f0a 0%, #050a05 100%); }
+        .container { max-width: 1300px; margin: 0 auto; }
+        .header, .card, .task-card { background: white; border-radius: 32px; padding: 24px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); transition: all 0.2s ease; animation: slideUp 0.4s ease; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        body.dark .header, body.dark .card, body.dark .task-card { background: #1e2a1e; border: 1px solid #ffd966aa; }
+        .header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
+        .logo h1 { background: linear-gradient(135deg, #1a73e8, #0d47a1); -webkit-background-clip: text; background-clip: text; color: transparent; font-size: 1.8rem; font-weight: 800; }
+        body.dark .logo h1 { background: linear-gradient(135deg, #ffd966, #ffb347); -webkit-background-clip: text; background-clip: text; }
+        .logo span { font-size: 0.85rem; color: #64748b; font-weight: 500; }
+        body.dark .logo span { color: #aaa; }
+        .warning-banner { background: linear-gradient(135deg, #dc2626, #991b1b); color: white; padding: 24px; border-radius: 24px; margin-bottom: 20px; text-align: center; font-weight: bold; animation: pulseWarning 2s infinite; box-shadow: 0 8px 30px rgba(220,38,38,0.3); }
+        @keyframes pulseWarning { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.008); } }
+        .warning-banner h2 { font-size: 1.3rem; margin-bottom: 8px; }
+        .warning-banner p { font-size: 0.95rem; opacity: 0.95; }
+        .user-info { display: flex; align-items: center; gap: 15px; background: #e8f0fe; padding: 10px 24px; border-radius: 60px; flex-wrap: wrap; }
+        body.dark .user-info { background: #0f1c19; }
+        .balance-card, .bonus-card { padding: 8px 18px; border-radius: 40px; font-weight: 700; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); font-size: 0.9rem; position: relative; overflow: hidden; }
+        .balance-card::after, .bonus-card::after { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 60%); opacity: 0; transition: opacity 0.3s; }
+        .balance-card:hover::after, .bonus-card:hover::after { opacity: 1; animation: shimmer 1s infinite; }
+        @keyframes shimmer { 0% { transform: translate(-50%, -50%) rotate(0deg); } 100% { transform: translate(-50%, -50%) rotate(360deg); } }
+        .balance-card:hover, .bonus-card:hover { transform: scale(1.08); box-shadow: 0 8px 25px rgba(0,0,0,0.2); }
+        .balance-card:active, .bonus-card:active { transform: scale(0.93); transition: all 0.1s ease; }
+        .balance-card { background: linear-gradient(135deg, #1a73e8, #1557b0); color: white; }
+        .bonus-card { background: linear-gradient(135deg, #f7b32b, #f59e0b); color: #1f2a1b; }
+        button { cursor: pointer; border: none; border-radius: 40px; padding: 10px 22px; font-weight: 600; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; overflow: hidden; background: #e2e8f0; color: #1e293b; font-size: 0.9rem; }
+        button::after { content: ''; position: absolute; top: 50%; left: 50%; width: 0; height: 0; background: rgba(255,255,255,0.4); border-radius: 50%; transition: all 0.5s ease; transform: translate(-50%, -50%); }
+        button:active::after { width: 300px; height: 300px; opacity: 0; }
+        button:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.15); }
+        button:active { transform: translateY(2px) scale(0.96); box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: all 0.1s ease; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
+        .btn-primary { background: linear-gradient(135deg, #1a73e8, #0d47a1); color: white; }
+        .btn-success { background: linear-gradient(135deg, #10b981, #059669); color: white; }
+        .btn-danger { background: linear-gradient(135deg, #dc2626, #991b1b); color: white; }
+        .btn-warning { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; }
+        .btn-info { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; }
+        .btn-chat { background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; }
+        .theme-toggle { background: linear-gradient(135deg, #64748b, #475569); color: white; padding: 8px 18px; border-radius: 60px; font-size: 0.85rem; }
+        body.dark button { background: #2c3e2f; color: #ddd; }
+        body.dark .btn-primary { background: linear-gradient(135deg, #1a73e8, #0d47a1); color: white; }
+        body.dark .btn-success { background: linear-gradient(135deg, #10b981, #059669); color: white; }
+        body.dark .btn-danger { background: linear-gradient(135deg, #dc2626, #991b1b); color: white; }
+        body.dark .btn-warning { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; }
+        body.dark .btn-info { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; }
+        body.dark .btn-chat { background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; }
+        input, textarea, select { width: 100%; padding: 14px 18px; border: 2px solid #e2e8f0; border-radius: 28px; margin-bottom: 12px; font-size: 1rem; background: white; color: #1e293b; transition: all 0.2s ease; }
+        body.dark input, body.dark textarea, body.dark select { background: #0f1c19; border-color: #ffd96688; color: #ffdf8c; }
+        input:focus, textarea:focus, select:focus { outline: none; border-color: #1a73e8; transform: scale(1.01); box-shadow: 0 0 20px rgba(26,115,232,0.2); }
+        body.dark input:focus, body.dark textarea:focus, body.dark select:focus { border-color: #ffd966; box-shadow: 0 0 20px rgba(255,217,102,0.2); }
+        .tabs { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+        .tab { background: #e2e8f0; padding: 10px 22px; border-radius: 60px; cursor: pointer; font-weight: 600; transition: all 0.3s ease; color: #1e293b; font-size: 0.9rem; }
+        body.dark .tab { background: #0f1c19; color: #ddd; }
+        .tab:hover { transform: translateY(-3px) scale(1.03); box-shadow: 0 6px 20px rgba(0,0,0,0.12); }
+        .tab:active { transform: scale(0.95); }
+        .tab.active { background: linear-gradient(135deg, #1a73e8, #0d47a1); color: white; box-shadow: 0 4px 15px rgba(26,115,232,0.4); }
+        body.dark .tab.active { background: linear-gradient(135deg, #f7b32b, #f59e0b); color: #1f2a1b; }
+        .tasks-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 20px; }
+        .task-card { transition: all 0.3s ease; animation: slideUp 0.4s ease; }
+        .task-card:hover { transform: translateY(-5px) scale(1.01); box-shadow: 0 12px 35px rgba(0,0,0,0.12); }
+        .task-header { display: flex; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; }
+        .task-price { font-size: 1.8rem; font-weight: 800; color: #1a73e8; animation: pricePulse 2s infinite; }
+        @keyframes pricePulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.03); } }
+        body.dark .task-price { color: #ffd966; }
+        .task-status { padding: 6px 14px; border-radius: 30px; font-size: 0.8rem; font-weight: 700; }
+        .status-open { background: #10b981; color: white; }
+        .status-in_progress { background: #f59e0b; color: white; animation: progressPulse 2s infinite; }
+        @keyframes progressPulse { 0%, 100% { background: #f59e0b; } 50% { background: #fbbf24; } }
+        .status-awaiting_confirmation { background: #3b82f6; color: white; }
+        .status-completed { background: #64748b; color: white; }
+        .status-disputed { background: #dc2626; color: white; }
+        .action-buttons { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+        .task-info { margin: 8px 0; font-size: 0.9rem; color: #475569; }
+        body.dark .task-info { color: #aaa; }
+        .task-info strong { color: #1a73e8; }
+        body.dark .task-info strong { color: #ffd966; }
+        .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #1e293b, #0f172a); color: white; padding: 14px 28px; border-radius: 60px; z-index: 3000; animation: slideUpToast 0.4s ease, fadeOut 0.3s ease 2.7s forwards; box-shadow: 0 10px 30px rgba(0,0,0,0.3); font-weight: 500; }
+        @keyframes slideUpToast { from { opacity: 0; transform: translateX(-50%) translateY(30px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+        @keyframes fadeOut { to { opacity: 0; transform: translateX(-50%) translateY(30px); } }
+        .commission-table { background: linear-gradient(135deg, #fef3c7, #fde68a); border: 2px solid #f59e0b; border-radius: 24px; padding: 24px; margin-top: 20px; text-align: center; font-size: 0.95rem; font-weight: 600; color: #78350f; animation: commissionGlow 2s infinite; }
+        @keyframes commissionGlow { 0%, 100% { box-shadow: 0 0 20px rgba(245,158,11,0.3); } 50% { box-shadow: 0 0 40px rgba(245,158,11,0.6); } }
+        body.dark .commission-table { background: linear-gradient(135deg, #78350f, #92400e); border-color: #fbbf24; color: #fde68a; }
+        .commission-table a { color: #1a73e8; font-weight: 700; text-decoration: underline; }
+        body.dark .commission-table a { color: #ffd966; }
+        .honor-board { background: white; border-radius: 32px; padding: 24px; margin-bottom: 20px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        body.dark .honor-board { background: #1e2a1e; border: 1px solid #ffd966aa; }
+        .honor-board h3 { font-size: 1.3rem; margin-bottom: 15px; color: #1a73e8; }
+        body.dark .honor-board h3 { color: #ffd966; }
+        .honor-list { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; }
+        .honor-item { background: #e8f0fe; border-radius: 20px; padding: 16px 20px; min-width: 120px; text-align: center; transition: all 0.3s ease; animation: float 3s ease-in-out infinite; font-weight: 600; }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+        .honor-item:nth-child(2) { animation-delay: 0.2s; }
+        .honor-item:nth-child(3) { animation-delay: 0.4s; }
+        body.dark .honor-item { background: #0f1c19; border: 1px solid #ffd96655; color: #ddd; }
+        .honor-item:hover { transform: translateY(-8px) scale(1.05); box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
+        .honor-medal { font-size: 2rem; display: block; margin-bottom: 5px; }
+        .honor-name { font-weight: 700; color: #1a73e8; }
+        body.dark .honor-name { color: #ffd966; }
+        .honor-count { font-size: 0.85rem; color: #64748b; }
+        body.dark .honor-count { color: #aaa; }
+        .support-link { margin-top: 20px; padding: 12px; background: #e8f0fe; border-radius: 20px; text-align: center; font-size: 0.85rem; color: #1a73e8; font-weight: 500; }
+        body.dark .support-link { background: #0f1c19; color: #bbaa66; }
+        .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 2000; justify-content: center; align-items: center; animation: fadeIn 0.2s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .modal.show { display: flex; }
+        .modal-content { background: white; border-radius: 32px; padding: 30px; max-width: 500px; width: 95%; max-height: 80vh; overflow-y: auto; animation: modalSlideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        @keyframes modalSlideUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+        body.dark .modal-content { background: #1e2a1e; border: 1px solid #ffd966; }
+        .chat-modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 2000; justify-content: center; align-items: center; animation: fadeIn 0.2s ease; }
+        .chat-modal.show { display: flex; }
+        .chat-content { background: white; border-radius: 32px; width: 95%; max-width: 600px; height: 80vh; display: flex; flex-direction: column; animation: modalSlideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        body.dark .chat-content { background: #1e2a1e; border: 1px solid #ffd966; }
+        .chat-header { padding: 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; font-weight: 600; }
+        body.dark .chat-header { border-color: #ffd96633; color: #ffd966; }
+        .chat-messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+        .chat-message { max-width: 80%; padding: 12px 18px; border-radius: 20px; word-wrap: break-word; animation: slideUp 0.3s ease; font-size: 0.9rem; }
+        .chat-message.mine { background: linear-gradient(135deg, #1a73e8, #0d47a1); color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+        .chat-message.other { background: #e2e8f0; color: #1e293b; align-self: flex-start; border-bottom-left-radius: 4px; }
+        body.dark .chat-message.other { background: #2c3e2f; color: #ffdf8c; }
+        .chat-message-time { font-size: 0.7rem; opacity: 0.7; margin-top: 4px; }
+        .chat-input-container { padding: 16px; border-top: 1px solid #e2e8f0; display: flex; gap: 10px; }
+        body.dark .chat-input-container { border-color: #ffd96633; }
+        .chat-input-container input { flex: 1; margin: 0; }
+        .profile-card { text-align: left; }
+        .profile-card p { margin: 10px 0; font-size: 1rem; color: #475569; }
+        body.dark .profile-card p { color: #ddd; }
+        .profile-card strong { color: #1a73e8; }
+        body.dark .profile-card strong { color: #ffd966; }
+        .rank-badge { display: inline-block; background: linear-gradient(135deg, #1a73e8, #0d47a1); color: white; border-radius: 20px; padding: 6px 14px; font-size: 0.85rem; font-weight: 700; margin-left: 8px; }
+        body.dark .rank-badge { background: linear-gradient(135deg, #f7b32b, #f59e0b); color: #1f2a1b; }
+        .progress-container { background: #e2e8f0; border-radius: 20px; height: 10px; margin: 15px 0; overflow: hidden; }
+        body.dark .progress-container { background: #2c3e2f; }
+        .progress-fill { background: linear-gradient(90deg, #1a73e8, #0d47a1); height: 100%; width: 0%; border-radius: 20px; transition: width 0.5s ease; }
+        body.dark .progress-fill { background: linear-gradient(90deg, #f7b32b, #ffd966); }
+        .referral-code { background: #e8f0fe; padding: 12px 16px; border-radius: 40px; cursor: pointer; text-align: center; margin-top: 15px; transition: all 0.2s ease; font-weight: 500; }
+        body.dark .referral-code { background: #0f1c19; border: 1px solid #ffd96633; }
+        .referral-code:hover { transform: scale(1.02); background: #dbeafe; }
+        body.dark .referral-code:hover { background: #1a2e2a; }
+        .referral-code:active { transform: scale(0.98); }
+        @media (max-width: 700px) { .tabs { gap: 6px; } .tab { padding: 8px 14px; font-size: 0.8rem; } .tasks-grid { grid-template-columns: 1fr; } .chat-content { height: 90vh; } .header { flex-direction: column; } .honor-list { gap: 10px; } .honor-item { min-width: 90px; padding: 12px; } }
+    </style>
+</head>
+<body>
+<div id="app">Загрузка...</div>
+<script>
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzLFS58EJ2FkAofaTWjrOnRZUSgC5c4JuS0P-HKmVSaL5FTa0ZRA6BG1GvpEw8u1iYd/exec';
+let currentUser = null, currentTab = 'allTasks', isDark = localStorage.getItem('dark') === 'true';
+let allUsers = [], allTasks = [], allReviews = [], chatMessages = {};
+let updateInterval = null, chatPollInterval = null, activeChatTaskId = null, activeChatRecipient = null;
+if (isDark) document.body.classList.add('dark');
+
+function playSound(type) {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator(), gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        if (type === 'success') { osc.frequency.value = 800; gain.gain.value = 0.1; osc.start(); gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.3); osc.stop(ctx.currentTime + 0.3); }
+        else if (type === 'error') { osc.frequency.value = 200; gain.gain.value = 0.1; osc.start(); gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.5); osc.stop(ctx.currentTime + 0.5); }
+        else if (type === 'click') { osc.frequency.value = 600; gain.gain.value = 0.05; osc.start(); gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.1); osc.stop(ctx.currentTime + 0.1); }
+        else if (type === 'message') { osc.frequency.value = 1000; gain.gain.value = 0.08; osc.start(); gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.15); osc.stop(ctx.currentTime + 0.15); }
+    } catch(e) {}
+}
+
+function showToast(msg, isError) {
+    const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg;
+    if (isError) t.style.background = 'linear-gradient(135deg, #dc2626, #991b1b)';
+    document.body.appendChild(t); setTimeout(() => t.remove(), 3000);
+    playSound(isError ? 'error' : 'success');
+}
+
+function showModal(title, message) {
+    const modal = document.createElement('div'); modal.className = 'modal show';
+    modal.innerHTML = `<div class="modal-content"><h3 style="color:#1a73e8;margin-bottom:15px;">${title}</h3><p style="line-height:1.6;color:#475569;">${message}</p><button class="btn-danger" style="margin-top:20px;width:100%;">Закрыть</button></div>`;
+    document.body.appendChild(modal);
+    modal.querySelector('button').onclick = () => modal.remove();
+    modal.onclick = e => { if (e.target === modal) modal.remove(); };
+}
+
+function showWalletModal() {
+    const modal = document.createElement('div'); modal.className = 'modal show';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <h3 style="color:#1a73e8;margin-bottom:15px;">💰 Управление кошельком</h3>
+            <p style="font-size:1.1rem;"><strong>Основной баланс:</strong> ${(parseFloat(currentUser.balance)||0).toFixed(2)} ₽</p>
+            <p style="font-size:1.1rem;"><strong>Бонусный баланс:</strong> ${(parseFloat(currentUser.bonus_balance)||0).toFixed(2)} ₽</p>
+            <div style="background:#fef3c7;padding:12px;border-radius:16px;margin:15px 0;font-size:0.85rem;text-align:center;">💱 Курс: 1 рубль реальный = 0.9 ₽ на балансе сайта (комиссия платформы 10%)</div>
+            <div style="display:flex;gap:10px;">
+                <button class="btn-primary" id="md" style="flex:1;">💰 Пополнить</button>
+                <button class="btn-warning" id="mw" style="flex:1;">💸 Вывести</button>
+            </div>
+            <button class="btn-danger" style="margin-top:15px;width:100%;">Закрыть</button>
+        </div>`;
+    document.body.appendChild(modal);
+    modal.querySelector('#md').onclick = () => { modal.remove(); showModal('💰 Пополнение баланса', 'Все пополнения средств производятся только через поддержку.<br><br>Напишите <strong>@leshr_ak47</strong> в Telegram, укажите сумму пополнения и ваш ID.'); };
+    modal.querySelector('#mw').onclick = () => { modal.remove(); showModal('💸 Вывод средств', 'Все выводы средств производятся только через поддержку.<br><br>Напишите <strong>@leshr_ak47</strong> в Telegram, укажите сумму вывода и реквизиты.'); };
+    modal.querySelector('.btn-danger').onclick = () => modal.remove();
+    modal.onclick = e => { if (e.target === modal) modal.remove(); };
+}
+
+function escapeHtml(s) { return s ? String(s).replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])) : ''; }
+
+async function callAPI(action, params = {}) {
+    try {
+        const url = new URL(SCRIPT_URL);
+        url.searchParams.append('action', action);
+        Object.keys(params).forEach(k => url.searchParams.append(k, params[k]));
+        const r = await fetch(url.toString(), { signal: AbortSignal.timeout(8000), cache: 'no-cache' });
+        const t = await r.text();
+        try { return JSON.parse(t); } catch(e) { return null; }
+    } catch(e) { return null; }
+}
+
+async function loadAllData() {
+    const [u, t, rv] = await Promise.all([callAPI('getUsers'), callAPI('getTasks'), callAPI('getReviews')]);
+    if (u && !u.error) allUsers = Array.isArray(u) ? u : (u.users || []);
+    if (t && !t.error) {
+        allTasks = Array.isArray(t) ? t : (t.tasks || []);
+        allTasks.forEach(task => {
+            if (task.chatMessages) { try { chatMessages[task.id] = JSON.parse(task.chatMessages); } catch(e) { chatMessages[task.id] = []; } }
+            else if (!chatMessages[task.id]) chatMessages[task.id] = [];
+        });
+    }
+    if (rv && !rv.error) allReviews = Array.isArray(rv) ? rv : (rv.reviews || []);
+    if (currentUser) {
+        const me = allUsers.find(u => u.id === currentUser.id);
+        if (me) { currentUser.balance = me.balance; currentUser.bonus_balance = me.bonus_balance; currentUser.tasksCompleted = me.tasksCompleted; currentUser.blackMarks = me.blackMarks; }
+    }
+    updateUI();
+}
+
+function updateUI() {
+    const bc = document.getElementById('balanceCard'), bnc = document.getElementById('bonusCard');
+    if (bc) bc.textContent = `💰 ${(parseFloat(currentUser?.balance)||0).toFixed(2)} ₽`;
+    if (bnc) bnc.textContent = `🎁 ${(parseFloat(currentUser?.bonus_balance)||0).toFixed(2)} ₽`;
+}
+
+function startAutoUpdate() {
+    if (updateInterval) clearInterval(updateInterval);
+    if (chatPollInterval) clearInterval(chatPollInterval);
+    updateInterval = setInterval(loadAllData, 3000);
+    chatPollInterval = setInterval(pollChat, 1500);
+}
+
+async function pollChat() {
+    if (!activeChatTaskId || !currentUser) return;
+    const t = await callAPI('getTasks');
+    if (t && !t.error) {
+        const tasks = Array.isArray(t) ? t : (t.tasks || []);
+        const task = tasks.find(x => x.id === activeChatTaskId);
+        if (task && task.chatMessages) {
+            try {
+                const msgs = JSON.parse(task.chatMessages);
+                if (JSON.stringify(msgs) !== JSON.stringify(chatMessages[activeChatTaskId])) {
+                    chatMessages[activeChatTaskId] = msgs;
+                    const container = document.getElementById('chatMessages');
+                    if (container) updateChatDisplay();
+                }
+            } catch(e) {}
+        }
+    }
+}
+
+function openChat(taskId, recipientId) {
+    activeChatTaskId = taskId;
+    activeChatRecipient = recipientId;
+    if (!chatMessages[taskId]) chatMessages[taskId] = [];
+    const existing = document.querySelector('.chat-modal');
+    if (existing) existing.remove();
+    const recipient = allUsers.find(u => u.id === recipientId);
+    const task = allTasks.find(t => t.id === taskId);
+    const modal = document.createElement('div'); modal.className = 'chat-modal show';
+    modal.innerHTML = `
+        <div class="chat-content">
+            <div class="chat-header">
+                <div><strong>💬 Чат по заданию</strong><br><small style="opacity:0.7;">${escapeHtml(recipient?.name||'Пользователь')} • ${escapeHtml(task?.description?.substring(0,30)||'Задание')}...</small></div>
+                <button class="btn-danger" id="ccb" style="padding:8px 14px;">✕ Закрыть</button>
+            </div>
+            <div class="chat-messages" id="chatMessages"></div>
+            <div class="chat-input-container">
+                <input type="text" id="ci" placeholder="Введите сообщение..." maxlength="500">
+                <button class="btn-primary" id="csb" style="padding:12px 20px;">➤ Отправить</button>
+            </div>
+        </div>`;
+    document.body.appendChild(modal);
+    modal.querySelector('#ccb').onclick = () => { modal.remove(); activeChatTaskId = null; };
+    modal.querySelector('#csb').onclick = sendChat;
+    modal.querySelector('#ci').onkeypress = e => { if (e.key === 'Enter') sendChat(); };
+    updateChatDisplay();
+}
+
+function updateChatDisplay() {
+    const container = document.getElementById('chatMessages');
+    if (!container) return;
+    const msgs = chatMessages[activeChatTaskId] || [];
+    container.innerHTML = msgs.length ? msgs.map(m => {
+        const isMine = m.senderId === currentUser.id;
+        const sender = allUsers.find(u => u.id === m.senderId);
+        return `<div class="chat-message ${isMine?'mine':'other'}"><div>${escapeHtml(m.text)}</div><div class="chat-message-time">${escapeHtml(sender?.name||'?')} • ${new Date(m.createdAt).toLocaleTimeString()}</div></div>`;
+    }).join('') : '<div style="text-align:center;color:#888;padding:30px;">💬 Нет сообщений. Начните общение!</div>';
+    container.scrollTop = container.scrollHeight;
+}
+
+async function sendChat() {
+    const input = document.getElementById('ci');
+    if (!input || !input.value.trim()) return;
+    const text = input.value.trim(); input.value = '';
+    chatMessages[activeChatTaskId].push({ senderId: currentUser.id, text, createdAt: new Date().toISOString() });
+    const result = await callAPI('updateTask', { id: activeChatTaskId, chatMessages: JSON.stringify(chatMessages[activeChatTaskId]) });
+    if (result && result.success) { playSound('message'); updateChatDisplay(); }
+    else { showToast('❌ Ошибка отправки сообщения', true); chatMessages[activeChatTaskId].pop(); }
+}
+
+async function register(name, school, corp, password, ref, btn) {
+    if (!name || name.length < 3 || !/^[a-zA-Zа-яА-Я0-9_]+$/.test(name)) { showToast('❌ Имя должно быть 3-10 символов (буквы, цифры, _)', true); if(btn) {btn.disabled=false; btn.textContent='📝 Зарегистрироваться';} return; }
+    if (!school || !/^\d+$/.test(school) || !corp || !/^\d+$/.test(corp)) { showToast('❌ Школа и корпус — только цифры', true); if(btn) {btn.disabled=false; btn.textContent='📝 Зарегистрироваться';} return; }
+    if (!password || password.length < 3) { showToast('❌ Пароль минимум 3 символа', true); if(btn) {btn.disabled=false; btn.textContent='📝 Зарегистрироваться';} return; }
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Регистрация...'; }
+    const result = await callAPI('registerUser', {
+        id: 'u' + Date.now(), name, school, corp, password,
+        referral_code: name + '_' + Math.random().toString(36).substr(2,4).toUpperCase(),
+        referred_by: ref || '', registeredAt: new Date().toISOString(), blackMarks: 0
+    });
+    if (result && result.success) { showToast('✅ Регистрация успешна! Теперь войдите'); await loadAllData(); document.getElementById('tabLogin').click(); }
+    else showToast('❌ ' + (result?.error || 'Ошибка регистрации'), true);
+    if (btn) { btn.disabled = false; btn.textContent = '📝 Зарегистрироваться'; }
+}
+
+async function login(name, school, corp, password, btn) {
+    if (!name || !school || !corp || !password) { showToast('❌ Заполните все поля', true); if(btn) {btn.disabled=false; btn.textContent='🔐 Войти';} return; }
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Вход...'; }
+    
+    // Загружаем данные и ждём
+    await loadAllData();
+    
+    // Ищем пользователя
+    const user = allUsers.find(u => 
+        String(u.name).toLowerCase() === String(name).toLowerCase().trim() && 
+        String(u.school) === String(school).trim() && 
+        String(u.corp) === String(corp).trim()
+    );
+    
+    if (!user) { 
+        showToast('❌ Пользователь не найден. Проверьте имя, школу и корпус', true); 
+        if(btn) {btn.disabled=false; btn.textContent='🔐 Войти';} 
+        return; 
+    }
+    if ((parseInt(user.blackMarks)||0) >= 3) { 
+        showToast('❌ АККАУНТ ЗАБЛОКИРОВАН НАВСЕГДА! Причина: 3 чёрные метки', true); 
+        if(btn) {btn.disabled=false; btn.textContent='🔐 Войти';} 
+        return; 
+    }
+    if (String(user.password) !== String(password)) { 
+        showToast('❌ Неверный пароль', true); 
+        if(btn) {btn.disabled=false; btn.textContent='🔐 Войти';} 
+        return; 
+    }
+    
+    currentUser = JSON.parse(JSON.stringify(user));
+    localStorage.setItem('schooltask_user', JSON.stringify({ id: currentUser.id, name: currentUser.name }));
+    showToast(`✅ Добро пожаловать, ${user.name}!`);
+    if (btn) { btn.disabled = false; btn.textContent = '🔐 Войти'; }
+    startAutoUpdate();
+    renderMain();
+}
+
+function logout() {
+    currentUser = null; activeChatTaskId = null;
+    if (updateInterval) clearInterval(updateInterval);
+    if (chatPollInterval) clearInterval(chatPollInterval);
+    localStorage.removeItem('schooltask_user');
+    renderAuth();
+}
+
+function toggleTheme() {
+    isDark = !isDark; localStorage.setItem('dark', isDark);
+    document.body.classList.toggle('dark', isDark);
+    if (currentUser) renderMain(); else renderAuth();
+}
+
+async function createTask(desc, price, location, paymentType, btn) {
+    if (!desc || !price || !location) { showToast('❌ Заполните все поля: описание, цена, место', true); if(btn) btn.disabled = false; return; }
+    const p = parseFloat(price);
+    if (isNaN(p) || p <= 0) { showToast('❌ Цена должна быть больше 0', true); if(btn) btn.disabled = false; return; }
+    const currentBalance = paymentType === 'bonus' ? parseFloat(currentUser.bonus_balance)||0 : parseFloat(currentUser.balance)||0;
+    if (currentBalance < p) { showToast('❌ Недостаточно средств на балансе', true); if(btn) btn.disabled = false; return; }
+    if (paymentType === 'bonus') currentUser.bonus_balance = (currentBalance - p).toFixed(2);
+    else currentUser.balance = (currentBalance - p).toFixed(2);
+    updateUI();
+    const updateResult = await callAPI('updateUser', { id: currentUser.id, balance: currentUser.balance, bonus_balance: currentUser.bonus_balance });
+    if (!updateResult || updateResult.error) { showToast('❌ Ошибка обновления баланса', true); await loadAllData(); if(btn) btn.disabled = false; return; }
+    const taskId = 'task_' + Date.now();
+    const result = await callAPI('createTask', { id: taskId, creatorId: currentUser.id, description: desc, price: p, location, payment_type: paymentType, createdAt: new Date().toISOString() });
+    if (result && result.success) {
+        showToast(`✅ Задание создано! С баланса списано ${p.toFixed(2)} ₽`);
+        await loadAllData();
+        if(btn) btn.disabled = false;
+        renderMain();
+    } else {
+        if (paymentType === 'bonus') currentUser.bonus_balance = currentBalance.toFixed(2);
+        else currentUser.balance = currentBalance.toFixed(2);
+        await callAPI('updateUser', { id: currentUser.id, balance: currentUser.balance, bonus_balance: currentUser.bonus_balance });
+        showToast('❌ Ошибка создания задания', true);
+        if(btn) btn.disabled = false;
+        await loadAllData();
+    }
+}
+
+async function takeTask(taskId, btn) {
+    if (btn) btn.disabled = true;
+    const r = await callAPI('takeTaskSafe', { taskId, userId: currentUser.id });
+    if (r && r.success) { showToast('📢 Задание взято! Приступайте к выполнению'); await loadAllData(); renderMain(); }
+    else { showToast('❌ ' + (r?.error || 'Ошибка при взятии задания'), true); if(btn) btn.disabled = false; }
+}
+
+async function completeTask(taskId, btn) {
+    if (btn) btn.disabled = true;
+    const r = await callAPI('updateTask', { id: taskId, status: 'awaiting_confirmation' });
+    if (r && r.success) { showToast('✅ Задание отмечено как выполненное! Ожидайте подтверждения'); await loadAllData(); renderMain(); }
+    else { showToast('❌ Ошибка', true); if(btn) btn.disabled = false; }
+}
+
+async function confirmTask(taskId, price, executorId, btn) {
+    if (btn) btn.disabled = true;
+    const gain = parseFloat(price) * 0.95;
+    const exec = allUsers.find(u => u.id === executorId);
+    if (exec) await callAPI('updateUser', { id: executorId, balance: ((parseFloat(exec.balance)||0) + gain).toFixed(2), tasksCompleted: (parseInt(exec.tasksCompleted)+1).toString() });
+    const r = await callAPI('updateTask', { id: taskId, status: 'completed' });
+    if (r && r.success) { showToast(`💰 Задание подтверждено! Исполнитель получил +${gain.toFixed(2)} ₽`); await loadAllData(); renderMain(); }
+    else { showToast('❌ Ошибка подтверждения', true); if(btn) btn.disabled = false; }
+}
+
+async function disputeTask(taskId, price, executorId, btn) {
+    if (btn) btn.disabled = true;
+    const exec = allUsers.find(u => u.id === executorId);
+    if (exec) await callAPI('updateUser', { id: executorId, blackMarks: (parseInt(exec.blackMarks)+1).toString() });
+    const task = allTasks.find(t => t.id === taskId);
+    if (task && task.payment_type === 'bonus') currentUser.bonus_balance = ((parseFloat(currentUser.bonus_balance)||0) + parseFloat(price)).toFixed(2);
+    else currentUser.balance = ((parseFloat(currentUser.balance)||0) + parseFloat(price)).toFixed(2);
+    await callAPI('updateUser', { id: currentUser.id, balance: currentUser.balance, bonus_balance: currentUser.bonus_balance });
+    const r = await callAPI('updateTask', { id: taskId, status: 'disputed' });
+    if (r && r.success) { showToast(`⚠️ Жалоба принята! Исполнитель получил чёрную метку. Средства возвращены`); await loadAllData(); renderMain(); }
+    else { showToast('❌ Ошибка', true); if(btn) btn.disabled = false; }
+}
+
+async function deleteTask(taskId, btn) {
+    if (btn) btn.disabled = true;
+    const r = await callAPI('deleteTask', { id: taskId });
+    if (r && r.success) { showToast('🗑️ Задание удалено'); await loadAllData(); renderMain(); }
+    else { showToast('❌ Ошибка удаления', true); if(btn) btn.disabled = false; }
+}
+
+function getStatusText(s) {
+    const m = { open: ['📋 Доступно','status-open'], in_progress: ['⏳ Выполняется','status-in_progress'], awaiting_confirmation: ['🕐 Ожидает подтверждения','status-awaiting_confirmation'], completed: ['✅ Выполнено','status-completed'], disputed: ['⚠️ Спорное','status-disputed'] };
+    return { text: m[s]?.[0]||s, class: m[s]?.[1]||'' };
+}
+
+function getUserRank(user) {
+    const c = parseInt(user?.tasksCompleted) || 0;
+    if(c >= 200) return { emoji: '👑', name: 'Легенда' };
+    if(c >= 100) return { emoji: '💎', name: 'Мастер' };
+    if(c >= 50) return { emoji: '⭐', name: 'Продвинутый' };
+    if(c >= 20) return { emoji: '📌', name: 'Опытный' };
+    if(c >= 10) return { emoji: '🌱', name: 'Ученик' };
+    return { emoji: '🐣', name: 'Новичок' };
+}
+
+function getTop3() {
+    return [...allUsers].filter(u => (parseInt(u.tasksCompleted)||0) > 0).sort((a, b) => (parseInt(b.tasksCompleted)||0) - (parseInt(a.tasksCompleted)||0)).slice(0, 3);
+}
+
+function renderAuth() {
+    document.getElementById('app').innerHTML = `
+        <div class="container">
+            <div class="header">
+                <div class="logo"><h1>🏫 SchoolTask</h1><span>Биржа школьных поручений</span></div>
+                <button class="theme-toggle" onclick="toggleTheme()">${isDark?'☀️ Светлая тема':'🌙 Тёмная тема'}</button>
+            </div>
+            <div class="warning-banner">
+                <h2>⚠️ ВАЖНОЕ ПРЕДУПРЕЖДЕНИЕ ⚠️</h2>
+                <p>ОБЯЗАТЕЛЬНО ЗАПИСЫВАЙТЕ НА ВИДЕО ПРОЦЕСС ВЫПОЛНЕНИЯ ЗАДАНИЯ!</p>
+                <p>Если вас обманут, а видео не будет — мы не сможем помочь</p>
+            </div>
+            <div class="card">
+                <div class="tabs">
+                    <div class="tab active" id="tabLogin">🔐 Вход в аккаунт</div>
+                    <div class="tab" id="tabReg">📝 Регистрация</div>
+                </div>
+                <div id="authForm">
+                    <input id="ln" placeholder="Введите имя пользователя">
+                    <input id="ls" placeholder="Номер школы (только цифры)">
+                    <input id="lc" placeholder="Номер корпуса (только цифры)">
+                    <input id="lp" type="password" placeholder="Введите пароль">
+                    <button class="btn-primary" id="loginBtn" style="width:100%;">🔐 Войти в аккаунт</button>
+                </div>
+                <div class="support-link">📞 Поддержка: <strong>@leshr_ak47</strong> | Реферальный код при регистрации | ⚫ 3 чёрные метки = блокировка</div>
+            </div>
+            <div class="commission-table">
+                💰 <strong>Комиссия на пополнения и выводы 10%</strong><br>
+                Пиши в Telegram: <a href="https://t.me/leshr_ak47" target="_blank">@Leshr_ak47</a>
+            </div>
+        </div>`;
+    document.getElementById('tabReg').onclick = () => {
+        document.getElementById('authForm').innerHTML = `
+            <input id="rn" placeholder="Имя пользователя (3-10 символов)">
+            <input id="rs" placeholder="Номер школы (цифры)">
+            <input id="rc" placeholder="Номер корпуса (цифры)">
+            <input id="rp" type="password" placeholder="Придумайте пароль (мин. 3 символа)">
+            <input id="rr" placeholder="Реферальный код (если есть)">
+            <button class="btn-primary" id="regBtn" style="width:100%;">📝 Зарегистрироваться</button>`;
+        document.getElementById('regBtn').onclick = () => register(document.getElementById('rn').value.trim(), document.getElementById('rs').value.trim(), document.getElementById('rc').value.trim(), document.getElementById('rp').value, document.getElementById('rr').value.trim(), document.getElementById('regBtn'));
+        document.getElementById('tabLogin').classList.remove('active'); document.getElementById('tabReg').classList.add('active');
+    };
+    document.getElementById('tabLogin').onclick = () => {
+        document.getElementById('authForm').innerHTML = `
+            <input id="ln" placeholder="Введите имя пользователя">
+            <input id="ls" placeholder="Номер школы (только цифры)">
+            <input id="lc" placeholder="Номер корпуса (только цифры)">
+            <input id="lp" type="password" placeholder="Введите пароль">
+            <button class="btn-primary" id="loginBtn2" style="width:100%;">🔐 Войти в аккаунт</button>`;
+        document.getElementById('loginBtn2').onclick = () => login(document.getElementById('ln').value.trim(), document.getElementById('ls').value.trim(), document.getElementById('lc').value.trim(), document.getElementById('lp').value, document.getElementById('loginBtn2'));
+        document.getElementById('tabReg').classList.remove('active'); document.getElementById('tabLogin').classList.add('active');
+    };
+    document.getElementById('loginBtn').onclick = () => login(document.getElementById('ln').value.trim(), document.getElementById('ls').value.trim(), document.getElementById('lc').value.trim(), document.getElementById('lp').value, document.getElementById('loginBtn'));
+}
+
+function renderMain() {
+    if (!currentUser) { renderAuth(); return; }
+    if ((parseInt(currentUser.blackMarks)||0) >= 3) {
+        document.getElementById('app').innerHTML = `<div class="container"><div class="card" style="text-align:center;"><h2>⚠️ АККАУНТ ЗАБЛОКИРОВАН НАВСЕГДА</h2><p style="margin:15px 0;">Причина: 3 чёрные метки за невыполнение заданий</p><button class="btn-primary" onclick="logout()">Выйти</button></div></div>`;
+        return;
+    }
+    const top3 = getTop3();
+    const rank = getUserRank(currentUser);
+    const progress = Math.min(100, ((parseInt(currentUser.tasksCompleted)||0) / 200) * 100);
+    let c = '';
+    if (currentTab === 'allTasks') {
+        const tasks = allTasks.filter(t => t.status === 'open' && t.creatorId !== currentUser.id);
+        c = `<h3 style="margin-bottom:15px;">📋 Доступные задания</h3><div class="tasks-grid">${tasks.length ? tasks.map(t => {
+            const creator = allUsers.find(u => u.id === t.creatorId);
+            const st = getStatusText(t.status);
+            return `<div class="task-card"><div class="task-header"><div class="task-price">${parseFloat(t.price).toFixed(2)} ₽</div><div class="task-status ${st.class}">${st.text}</div></div><div class="task-info"><strong>📌 Описание:</strong> ${escapeHtml(t.description)}</div><div class="task-info"><strong>📍 Место:</strong> ${escapeHtml(t.location)}</div><div class="task-info"><strong>👤 Создатель:</strong> ${escapeHtml(creator?.name||'Неизвестно')} (Школа ${escapeHtml(creator?.school||'?')})</div><div class="action-buttons"><button class="btn-primary take-btn" data-id="${t.id}">📌 Взять задание</button></div></div>`;
+        }).join('') : '<div style="text-align:center;padding:40px;color:#888;">✨ Пока нет доступных заданий</div>'}</div>`;
+    } else if (currentTab === 'myTasks') {
+        const tasks = allTasks.filter(t => t.creatorId === currentUser.id);
+        c = `<h3 style="margin-bottom:15px;">📦 Мои созданные задания</h3><div class="tasks-grid">${tasks.length ? tasks.map(t => {
+            const st = getStatusText(t.status);
+            const taker = allUsers.find(u => u.id === t.takerId);
+            return `<div class="task-card"><div class="task-header"><div class="task-price">${parseFloat(t.price).toFixed(2)} ₽</div><div class="task-status ${st.class}">${st.text}</div></div><div class="task-info"><strong>📌 Описание:</strong> ${escapeHtml(t.description)}</div><div class="task-info"><strong>📍 Место:</strong> ${escapeHtml(t.location)}</div>${taker ? `<div class="task-info"><strong>👤 Исполнитель:</strong> ${escapeHtml(taker.name)}</div>` : ''}<div class="action-buttons">${t.status==='open'?`<button class="btn-danger del-btn" data-id="${t.id}">🗑️ Удалить</button>`:''}${t.takerId?`<button class="btn-chat chat-btn" data-id="${t.id}" data-r="${t.takerId}">💬 Чат с исполнителем</button>`:''}</div></div>`;
+        }).join('') : '<div style="text-align:center;padding:40px;color:#888;">✨ Вы ещё не создали ни одного задания</div>'}</div>`;
+    } else if (currentTab === 'myWork') {
+        const tasks = allTasks.filter(t => t.takerId === currentUser.id && t.status === 'in_progress');
+        c = `<h3 style="margin-bottom:15px;">⚡ Задания в работе</h3><div class="tasks-grid">${tasks.length ? tasks.map(t => {
+            const creator = allUsers.find(u => u.id === t.creatorId);
+            return `<div class="task-card"><div class="task-header"><div class="task-price">${parseFloat(t.price).toFixed(2)} ₽</div><div class="task-status status-in_progress">⏳ Выполняется</div></div><div class="task-info"><strong>📌 Описание:</strong> ${escapeHtml(t.description)}</div><div class="task-info"><strong>📍 Место:</strong> ${escapeHtml(t.location)}</div><div class="task-info"><strong>👤 Заказчик:</strong> ${escapeHtml(creator?.name||'?')}</div><div class="action-buttons"><button class="btn-success comp-btn" data-id="${t.id}">✅ Отметить выполненным</button><button class="btn-chat chat-btn" data-id="${t.id}" data-r="${t.creatorId}">💬 Чат с заказчиком</button></div></div>`;
+        }).join('') : '<div style="text-align:center;padding:40px;color:#888;">✨ У вас нет активных заданий</div>'}</div>`;
+    } else if (currentTab === 'awaiting') {
+        const tasks = allTasks.filter(t => t.creatorId === currentUser.id && t.status === 'awaiting_confirmation');
+        c = `<h3 style="margin-bottom:15px;">🕐 Ожидают подтверждения</h3><div class="tasks-grid">${tasks.length ? tasks.map(t => {
+            const taker = allUsers.find(u => u.id === t.takerId);
+            return `<div class="task-card"><div class="task-header"><div class="task-price">${parseFloat(t.price).toFixed(2)} ₽</div><div class="task-status status-awaiting_confirmation">🕐 Ожидает</div></div><div class="task-info"><strong>📌 Описание:</strong> ${escapeHtml(t.description)}</div><div class="task-info"><strong>👤 Исполнитель:</strong> ${escapeHtml(taker?.name||'?')}</div><div class="action-buttons"><button class="btn-success conf-btn" data-id="${t.id}" data-p="${t.price}" data-e="${t.takerId}">💰 Подтвердить получение</button><button class="btn-warning dispute-btn" data-id="${t.id}" data-p="${t.price}" data-e="${t.takerId}">❌ Пожаловаться (не получил)</button><button class="btn-chat chat-btn" data-id="${t.id}" data-r="${t.takerId}">💬 Чат</button></div></div>`;
+        }).join('') : '<div style="text-align:center;padding:40px;color:#888;">✨ Нет заданий, ожидающих подтверждения</div>'}</div>`;
+    } else if (currentTab === 'completed') {
+        const tasks = allTasks.filter(t => t.status === 'completed' && (t.creatorId === currentUser.id || t.takerId === currentUser.id));
+        c = `<h3 style="margin-bottom:15px;">✅ Завершённые задания</h3><div class="tasks-grid">${tasks.length ? tasks.map(t => `<div class="task-card"><div class="task-header"><div class="task-price">${parseFloat(t.price).toFixed(2)} ₽</div><div class="task-status status-completed">✅ Выполнено</div></div><div class="task-info"><strong>📌 Описание:</strong> ${escapeHtml(t.description)}</div><div class="task-info"><strong>📍 Место:</strong> ${escapeHtml(t.location)}</div></div>`).join('') : '<div style="text-align:center;padding:40px;color:#888;">✨ Нет завершённых заданий</div>'}</div>`;
+    } else if (currentTab === 'profile') {
+        c = `<div class="card profile-card"><h3 style="margin-bottom:15px;">👤 Мой профиль</h3><p><strong>Имя:</strong> ${escapeHtml(currentUser.name)}</p><p><strong>Школа / Корпус:</strong> ${currentUser.school} / ${currentUser.corp}</p><p><strong>💰 Основной баланс:</strong> ${(parseFloat(currentUser.balance)||0).toFixed(2)} ₽</p><p><strong>🎁 Бонусный баланс:</strong> ${(parseFloat(currentUser.bonus_balance)||0).toFixed(2)} ₽</p><p><strong>📊 Выполнено заданий:</strong> ${parseInt(currentUser.tasksCompleted)||0}</p><p><strong>🏆 Звание:</strong> <span class="rank-badge">${rank.emoji} ${rank.name}</span></p><div class="progress-container"><div class="progress-fill" style="width:${progress}%"></div></div><p style="font-size:0.8rem;color:#888;">Прогресс до следующего звания: ${Math.min(100, progress).toFixed(0)}%</p><div class="referral-code" onclick="navigator.clipboard.writeText('${currentUser.referral_code||''}'); showToast('✅ Реферальный код скопирован!')">🔗 Ваш реферальный код: <strong>${currentUser.referral_code||'Не указан'}</strong> (нажмите чтобы скопировать)</div></div>`;
+    } else if (currentTab === 'create') {
+        c = `<div class="card"><h3 style="margin-bottom:15px;">📝 Создать новое задание</h3><textarea id="td" rows="3" placeholder="Опишите что нужно сделать..."></textarea><input type="number" id="tp" placeholder="Цена за выполнение (в ₽)"><input id="tl" placeholder="Место выполнения (например: 3 этаж, кабинет 305)"><select id="pt"><option value="main">💰 Списать с основного баланса (${(parseFloat(currentUser.balance)||0).toFixed(2)} ₽)</option><option value="bonus">🎁 Списать с бонусного баланса (${(parseFloat(currentUser.bonus_balance)||0).toFixed(2)} ₽)</option></select><button class="btn-primary" id="cb" style="width:100%;">📝 Создать задание</button></div>`;
+    }
+    document.getElementById('app').innerHTML = `
+        <div class="container">
+            <div class="header">
+                <div class="logo"><h1>🏫 SchoolTask</h1><span>Биржа школьных поручений</span></div>
+                <div class="user-info">
+                    <div style="font-weight:600;">👋 ${escapeHtml(currentUser.name)} | 🏫 ${currentUser.school}</div>
+                    <div class="balance-card" id="balanceCard">💰 ${(parseFloat(currentUser.balance)||0).toFixed(2)} ₽</div>
+                    <div class="bonus-card" id="bonusCard">🎁 ${(parseFloat(currentUser.bonus_balance)||0).toFixed(2)} ₽</div>
+                    <button class="theme-toggle" onclick="toggleTheme()">${isDark?'☀️ Светлая':'🌙 Тёмная'}</button>
+                    <button class="btn-danger" onclick="logout()">🚪 Выйти</button>
+                </div>
+            </div>
+            <div class="honor-board">
+                <h3>🏅 Доска почёта (топ исполнителей)</h3>
+                <div class="honor-list">
+                    ${top3.length ? top3.map((u, i) => `
+                        <div class="honor-item">
+                            <span class="honor-medal">${i===0?'🥇':i===1?'🥈':'🥉'}</span>
+                            <div class="honor-name">${escapeHtml(u.name)}</div>
+                            <div class="honor-count">✅ ${parseInt(u.tasksCompleted)||0} заданий</div>
+                        </div>
+                    `).join('') : '<div style="color:#888;">Пока нет данных</div>'}
+                </div>
+            </div>
+            <div class="tabs">
+                <div class="tab ${currentTab==='allTasks'?'active':''}" data-tab="allTasks">📋 Все задания</div>
+                <div class="tab ${currentTab==='myTasks'?'active':''}" data-tab="myTasks">📦 Мои задания</div>
+                <div class="tab ${currentTab==='myWork'?'active':''}" data-tab="myWork">⚡ В работе</div>
+                <div class="tab ${currentTab==='awaiting'?'active':''}" data-tab="awaiting">🕐 Ожидают</div>
+                <div class="tab ${currentTab==='completed'?'active':''}" data-tab="completed">✅ Завершённые</div>
+                <div class="tab ${currentTab==='profile'?'active':''}" data-tab="profile">👤 Профиль</div>
+                <div class="tab ${currentTab==='create'?'active':''}" data-tab="create">➕ Создать</div>
+            </div>
+            ${c}
+            <div class="support-link">📞 Поддержка: <strong>@leshr_ak47</strong> | 💱 1₽ = 0.9₽ на сайте | ⚫ 3 чёрные метки = блокировка</div>
+            <div class="commission-table">
+                💰 <strong>Комиссия на пополнения и выводы 10%</strong><br>
+                Пиши в Telegram: <a href="https://t.me/leshr_ak47" target="_blank">@Leshr_ak47</a>
+            </div>
+        </div>`;
+    document.getElementById('balanceCard').onclick = () => showWalletModal();
+    document.getElementById('bonusCard').onclick = () => showModal('🎁 Бонусный счёт', 'Бонусный счёт используется для создания заданий и получения наград.<br><br>⚠️ Бонусы нельзя вывести на реальные деньги.<br><br>Для вывода доступен только основной баланс.');
+    document.querySelectorAll('[data-tab]').forEach(t => t.onclick = function() { playSound('click'); currentTab = this.dataset.tab; renderMain(); });
+    if (currentTab === 'create') document.getElementById('cb').onclick = async () => { const btn = document.getElementById('cb'); btn.disabled = true; btn.textContent = '⏳ Создание...'; await createTask(document.getElementById('td').value, document.getElementById('tp').value, document.getElementById('tl').value, document.getElementById('pt').value, btn); };
+    document.querySelectorAll('.take-btn').forEach(b => b.onclick = () => takeTask(b.dataset.id, b));
+    document.querySelectorAll('.del-btn').forEach(b => b.onclick = () => deleteTask(b.dataset.id, b));
+    document.querySelectorAll('.comp-btn').forEach(b => b.onclick = () => completeTask(b.dataset.id, b));
+    document.querySelectorAll('.conf-btn').forEach(b => b.onclick = () => confirmTask(b.dataset.id, parseFloat(b.dataset.p), b.dataset.e, b));
+    document.querySelectorAll('.dispute-btn').forEach(b => b.onclick = () => disputeTask(b.dataset.id, parseFloat(b.dataset.p), b.dataset.e, b));
+    document.querySelectorAll('.chat-btn').forEach(b => b.onclick = () => openChat(b.dataset.id, b.dataset.r));
+}
+
+(async function() {
+    const saved = localStorage.getItem('schooltask_user');
+    if (saved) {
+        try {
+            const ses = JSON.parse(saved);
+            await loadAllData();
+            const user = allUsers.find(u => u.id === ses.id);
+            if (user && (parseInt(user.blackMarks)||0) < 3) {
+                currentUser = JSON.parse(JSON.stringify(user));
+                renderMain();
+                startAutoUpdate();
+                return;
+            }
+        } catch(e) {}
+    }
+    renderAuth();
+})();
+</script>
+</body>
+</html>
